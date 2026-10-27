@@ -33,6 +33,9 @@ import { runMomentsPlanFlow } from '../../src/features/moments/agent/plan-flow'
 import { createMomentsPlanMockResponder } from '../../src/features/moments/agent/demo-responder'
 import { runPersonaFlow } from '../../src/features/persona/agent/persona-flow'
 import { createPersonaMockResponder } from '../../src/features/persona/agent/demo-responder'
+import { runProductPositionFlow } from '../../src/features/product-position/agent/product-position-flow'
+import { createProductMockResponder } from '../../src/features/product-position/agent/demo-responder'
+import { createMockAgentClients } from '../../src/agent/mock-clients'
 import type { ScriptConfig } from '../../src/features/script-lab/agent/types'
 
 let pass = 0
@@ -78,6 +81,34 @@ async function main() {
   check('注册表：script 阶段数=8', (getFlow('script-generate')?.stages.length ?? 0) === 8)
   check('注册表：moments-plan 阶段数=5', (getFlow('moments-plan')?.stages.length ?? 0) === 5)
   check('注册表：moments-copy 阶段数=5', (getFlow('moments-copy')?.stages.length ?? 0) === 5)
+  check('注册表：product-position 已注册', flows.includes('product-position'))
+  check('注册表：product-position 阶段数=5', (getFlow('product-position')?.stages.length ?? 0) === 5)
+
+  /* ---------------- 产品定位：演示报告端到端 ---------------- */
+  {
+    const snapshot = {
+      product: {
+        id: 'flow-check-product',
+        name: '21 天声音训练营',
+        type: '线上训练营',
+        specs: [{ id: 's1', name: '标准版', price: '2980 元 / 期' }],
+        answers: { usage: '每日打卡 + 4 次直播点评', current: '', purchase: '', delivery: '' },
+        attachments: [],
+        createdAt: '2026-10-27T00:00:00.000Z',
+        updatedAt: '2026-10-27T00:00:00.000Z',
+      },
+      attachments: [],
+    }
+    const result = await runProductPositionFlow({
+      snapshot: snapshot as unknown as Parameters<typeof runProductPositionFlow>[0]['snapshot'],
+      clients: createMockAgentClients({ mockResponder: createProductMockResponder() }),
+    })
+    check('产品定位：演示报告结构合格', result.ok, result.issues.map((i) => i.message).join('；'))
+    check('产品定位：解析出六章', (result.view?.chapters.length ?? 0) === 6)
+    check('产品定位：五页签均有内容', (result.view?.chapters.filter((c) => c.blocks.length > 0).length ?? 0) >= 5)
+    check('产品定位：产品名称来自 H1', (result.view?.title ?? '') === '21 天声音训练营')
+    check('产品定位：营销表达可抽查', result.markdown.includes('一句话产品定位'))
+  }
 
   /* ------------------------------------------------------------------ *
    * 用户可见文案的诚实性（「了解生产流程」面板 + 页头副标题）

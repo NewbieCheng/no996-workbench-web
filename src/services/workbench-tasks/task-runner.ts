@@ -3,6 +3,7 @@ import { requireTaskLocks, tryTaskLock, withTaskLock } from './task-locks'
 import { apiErrorMessage } from '../../api/client'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { executePersonaGenerate } from './executors/persona-generate'
+import { executeProductPositioning } from './executors/product-positioning'
 import { executeScriptGenerate } from './executors/script-generate'
 import { executeSourceCreate } from './executors/source-create'
 import { executeIPVideoCreate } from './executors/ip-video-create'
@@ -147,6 +148,8 @@ export class WorkbenchTaskRunner {
             await executeVoiceDubAdvanced(this.repo, job, ac.signal, this.options.onVoiceListStale)
           } else if (job.kind === 'persona_generate') {
             await executePersonaGenerate(this.repo, job, ac.signal)
+          } else if (job.kind === 'product_positioning') {
+            await executeProductPositioning(this.repo, job, ac.signal)
           } else if (job.kind === 'source_create') {
             await executeSourceCreate(this.repo, job, ac.signal)
           } else if (job.kind === 'script_generate') {
@@ -174,6 +177,12 @@ export class WorkbenchTaskRunner {
                 status: 'failed',
                 finishedAt: Date.now(),
                 errorMessage: '页面已刷新或关闭，浏览器合成已中断，请重新导出',
+              })
+            } else if (job.kind === 'voice_tts' || job.kind === 'ip_video_audio') {
+              await this.repo.patchJob(job.id, {
+                status: 'failed',
+                finishedAt: Date.now(),
+                errorMessage: '页面或连接中断，配音提交结果未知。为防止重复计费，已停止自动重试，请手动核对后重试。',
               })
             } else {
               // Pausing for logout is not a user cancellation. The next owner-scoped bootstrap resumes local work.

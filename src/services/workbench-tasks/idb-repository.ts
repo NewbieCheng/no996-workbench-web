@@ -11,6 +11,7 @@ import {
   type IPVideoAudioPayload,
   type IPVideoCreatePayload,
   type PersonaGeneratePayload,
+  type ProductPositioningPayload,
   type ScriptTaskPayload,
   type TaskBlobRecord,
   type TaskPayloadRecord,
@@ -317,7 +318,15 @@ export function createIndexedDbWorkbenchTaskRepository(): WorkbenchTaskRepositor
         const started = job.startedAt ?? job.createdAt
         const stale = maxAgeMs <= 0 || now - started > maxAgeMs
         if (stale) {
-          if (job.kind === 'video_factory_export') {
+          if (job.kind === 'voice_tts' || job.kind === 'ip_video_audio') {
+            store.put({
+              ...job,
+              status: 'failed',
+              finishedAt: now,
+              startedAt: undefined,
+              errorMessage: '配音任务中断，提交结果和费用可能尚未确认。请先核对任务历史与账户记录，勿直接重复提交。',
+            })
+          } else if (job.kind === 'video_factory_export') {
             store.put({
               ...job,
               status: 'failed',
@@ -576,8 +585,32 @@ export function createIndexedDbWorkbenchTaskRepository(): WorkbenchTaskRepositor
       return job
     },
 
-    async createTitlesJob(ownerUserId, input) {
+    async createProductPositioningJob(ownerUserId, input) {
       await repo.ensureMigrated()
+      const id = newTaskId()
+      const payload: ProductPositioningPayload = {
+        productId: input.productId,
+        productName: input.productName,
+        snapshot: input.snapshot,
+      }
+      const job: WorkbenchTaskRecord = {
+        id,
+        ownerUserId,
+        kind: 'product_positioning',
+        status: 'queued',
+        title: input.productName || '产品定位分析',
+        subtitle: '定位与优势分析',
+        route: '/workbench/product-position',
+        createdAt: Date.now(),
+        payloadId: id,
+        meta: { productId: input.productId },
+      }
+      await repo.putPayload({ id, kind: 'product_positioning', data: payload })
+      await repo.putJob(job)
+      return job
+    },
+
+    async createTitlesJob(ownerUserId, input) {      await repo.ensureMigrated()
       const id = newTaskId()
       const payload: TitlesTaskPayload = {
         input: input.input,

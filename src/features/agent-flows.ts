@@ -12,6 +12,7 @@
 import './script-lab/agent/stages'
 import './titles/agent/stages'
 import './persona/agent/persona-flow'
+import './product-position/agent/product-position-flow'
 import './social-studio/agent/stages'
 import './social-studio/agent/topic-angles-stages'
 import './social-studio/agent/wizard-outline-stages'

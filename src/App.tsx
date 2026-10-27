@@ -11,6 +11,7 @@ import { legacyRoutes } from './app/navigation'
 import LoginPage from './features/auth/LoginPage'
 import HomePage from './features/home/HomePage'
 import PersonaPage from './features/persona/PersonaPage'
+import ProductPositionPage from './features/product-position/ProductPositionPage'
 import TitlesPage from './features/titles/TitlesPage'
 import ScriptLabPage from './features/script-lab/ScriptLabPage'
 import XiaohongshuPage from './features/xiaohongshu/XiaohongshuPage'
@@ -63,6 +64,7 @@ function AppRoutes() {
       >
         <Route index element={<HomePage />} />
         <Route path="persona" element={<PersonaPage />} />
+        <Route path="product-position" element={<ProductPositionPage />} />
         <Route path="titles" element={<TitlesPage />} />
         <Route path="video-script" element={<ScriptLabPage key="video-script" mode="video" />} />
         <Route path="live-script" element={<ScriptLabPage key="live-script" mode="live" />} />

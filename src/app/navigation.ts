@@ -17,6 +17,7 @@ import {
   Scissors,
   ShieldCheck,
   SquareTerminal,
+  Target,
   TrendingUp,
   UserRound,
   CreditCard,
@@ -33,6 +34,7 @@ import {
 export type PageId =
   | 'home'
   | 'persona'
+  | 'product-position'
   | 'titles'
   | 'video-script'
   | 'live-script'
@@ -104,6 +106,17 @@ export const navigation: NavItem[] = [
     icon: UserRound,
     path: '/workbench/persona',
     availability: 'demo',
+  },
+  {
+    id: 'product-position',
+    labelKey: 'navProductPosition',
+    descriptionKey: 'navDescProductPosition',
+    group: '内容创作',
+    groupKey: 'navGroupContent',
+    icon: Target,
+    path: '/workbench/product-position',
+    availability: 'demo',
+    badge: 'beta',
   },
   {
     id: 'titles',

@@ -10,6 +10,7 @@
 | 交互参考（仅表单与字段） | `F:/UserData/Desktop/运营社逆向`、`/agent-factory-web` |
 | Social Studio WYSIWYG（TipTap preview 编辑、MD/HTML 互转、图文图廊） | `F:/Dev/Desktop-Projects/my-new-plugin`（`src/editor/core/conversion-service.ts`、`components/workspace/utils/utils.ts` 节选、`article-preview-panel`、`image-text-preview-panel` 节选；无代码模式/AI/违禁词） |
 | 后端契约候选 | `F:/Dev/Desktop-Projects/不加班智能团后端/.worktrees/v1-backend` |
+| 产品定位与分析 Skill（方法论、正式报告模板、网页端 PRD 与线框原型） | `D:/社交工具/xwechat_files/wxid_wq09nrejrlhv12_066b/msg/file/2026-10/2-产品定位与分析 skill`（`product-positioning-analysis/SKILL.md`、`assets/report-template.md` 及同名 PRD / 线框 / Mermaid 文档；只内联方法论与模板正文，无运行时代码或依赖） |
 
 迁移只修改本项目 `F:/Dev/Desktop-Projects/不加班工作台-web`。未迁入密钥、IPC、认证运行时、DSH 内核、模型供应层或后端服务；来源仓库保持只读，导出/复制不改动其工作树与 index。
 

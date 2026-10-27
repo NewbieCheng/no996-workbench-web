@@ -35,6 +35,7 @@ import type {
   EnqueueIPVideoAudioInput,
   EnqueueIPVideoCreateInput,
   EnqueuePersonaInput,
+  EnqueueProductPositioningInput,
   EnqueueScriptGenerateInput,
   EnqueueSourceCreateInput,
   EnqueueTitlesGenerateInput,
@@ -84,6 +85,7 @@ type Actions = {
   enqueueVoiceClone: (input: EnqueueVoiceCloneInput) => Promise<string>
   enqueueVoiceDubAdvanced: (input: EnqueueVoiceDubAdvancedInput) => Promise<string>
   enqueuePersona: (input: EnqueuePersonaInput) => Promise<string>
+  enqueueProductPositioning: (input: EnqueueProductPositioningInput) => Promise<string>
   enqueueSourceCreate: (input: EnqueueSourceCreateInput) => Promise<string>
   enqueueScriptGenerate: (input: EnqueueScriptGenerateInput) => Promise<string>
   enqueueTitlesGenerate: (input: EnqueueTitlesGenerateInput) => Promise<string>
@@ -310,6 +312,19 @@ export function WorkbenchTaskProvider({ children }: { children: ReactNode }) {
         const repo = getRepo()
         await repo.ensureMigrated()
         const job = await repo.createPersonaJob(userId, input)
+        try {
+          await safeLoadJobs()
+          runnerRef.current?.kick()
+        } catch {
+          /* noop */
+        }
+        return job.id
+      },
+      async enqueueProductPositioning(input) {
+        if (userId == null) throw new Error('请先登录')
+        const repo = getRepo()
+        await repo.ensureMigrated()
+        const job = await repo.createProductPositioningJob(userId, input)
         try {
           await safeLoadJobs()
           runnerRef.current?.kick()

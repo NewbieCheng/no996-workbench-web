@@ -14,6 +14,7 @@ import type {
 } from '../../features/moments/agent/types'
 import type { VoiceCloneRecord } from '../../api/voice-clone'
 import type { VoiceDubAdvancedConfig, VoiceDubSegment } from '../../features/voice/agent/types'
+import type { ParseIssue, ProductReportView, ReportInputSnapshot } from '../product-position/types'
 
 import type { RetalkStatus, RetalkTask } from '../../api/video-retalk'
 
@@ -32,7 +33,7 @@ export type EnqueueDigitalHumanRetalkInput = {
 export type DigitalHumanRetalkPayload = EnqueueDigitalHumanRetalkInput & {
   taskId?: string
   status?: RetalkStatus
-  result?: Omit<RetalkTask, 'source_url'>
+  result?: RetalkTask
   submissionAttempted?: boolean
   submissionUncertain?: boolean
   submissionErrorCode?: string
@@ -53,6 +54,7 @@ export type WorkbenchTaskKind =
   | 'ip_video_create'
   | 'voice_dub_advanced'
   | 'persona_generate'
+  | 'product_positioning'
   | 'text_sections'
   | 'source_create'
   | 'script_generate'
@@ -282,6 +284,25 @@ export type EnqueuePersonaInput = {
   instruction?: string
   currentProfile?: string
   chatAttachments?: StoredChatAttachment[]
+}
+
+/** 产品定位分析：入队时冻结产品与人设快照，执行器只消费这份快照。 */
+export type EnqueueProductPositioningInput = {
+  productId: string
+  productName: string
+  snapshot: ReportInputSnapshot
+}
+
+export type ProductPositioningPayload = {
+  productId: string
+  productName: string
+  snapshot: ReportInputSnapshot
+  reportId?: string
+  reportMarkdown?: string
+  issues?: ParseIssue[]
+  view?: ProductReportView
+  run?: AgentRunSnapshot
+  usedMock?: boolean
 }
 
 export type EnqueueTextSectionsInput = {

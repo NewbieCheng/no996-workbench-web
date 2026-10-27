@@ -1206,3 +1206,19 @@ npm run test:flows   # 122 项
 每轮都核对：HTTP 全 200、`usedMock === false`、每次调用都带 `reasoning_effort=low`、**每一步都注入背景**、整轮 `fallback === false`、无步骤失败、无步骤残留 `idle`、界面不泄露提示词与裸 JSON。
 
 > 这一轮真机复测抓到 3 个单测抓不到的问题（都在**呈现层**，静态断言看不见）：① `skip()` 残留上一轮的计时与提示词（见 §2.7）；② `titles-flow` 提前收敛时「编辑」永远停在 `idle`（见 `finish()`）；③ `AgentStageDetail` 压根不显示状态，被跳过的步骤和跑过的长得一样（见 §3.3）。三个都改成了**结构性**的修法（内核兜底 / 共用一份状态文案），而不是在调用点逐个打补丁。
+
+## 10. 产品定位与分析（2026-10-27）
+
+页面与设计说明见 `docs/product-positioning.md`。可直接复用的部分：
+
+| 能力 | 入口 |
+| --- | --- |
+| 模板驱动的 Markdown 报告解析（六章 / 固定栏目 / 动态表格 / 引用原话 / 未识别内容保留） | `src/features/product-position/lib/report-parser.ts`、结构清单 `src/features/product-position/lib/report-template.ts` |
+| 报告的章节与表达读取（一句话定位、卖点、介绍、购买理由、营销表达抽取） | `src/features/product-position/lib/report-view.ts` |
+| 资料充分性预检（无字数阈值、缺失可定位） | `src/features/product-position/lib/adequacy.ts` |
+| 报告呈现原子件（编号标题、字段表、引用、横滚表格、可展开条目、复制按钮） | `src/features/product-position/views/blocks/ReportBlocks.tsx` |
+| 本机产品与报告仓储（含 ownerSub 隔离、失败不覆盖有效报告） | `src/services/product-position/store.ts` |
+| 方法论 + 正式模板常量（改模板必须同步解析器） | `src/prompts/product-positioning.ts` |
+| 后台任务 kind `product_positioning` 与执行器 | `src/services/workbench-tasks/executors/product-positioning.ts` |
+
+测试：`report-parser.test.mjs` / `adequacy.test.mjs` 挂 `npm run test:agent`；`product-position` 的注册与演示端到端断言在 `scripts/agent-flow-check/entry.ts`（`npm run test:flows`）。

@@ -20,6 +20,7 @@ export function taskModuleLabel(task: Pick<WorkbenchTaskRecord, 'kind' | 'meta'>
   if (task.kind === 'voice_clone') return '声音克隆'
   if (task.kind === 'voice_dub_advanced') return '高阶配音'
   if (task.kind === 'persona_generate') return '人设定位'
+  if (task.kind === 'product_positioning') return '产品定位'
   if (task.kind === 'titles_generate') return '爆款标题'
   if (task.kind === 'moments_plan') return i18next.language?.startsWith('en') ? 'Moments plan' : '朋友圈排期'
   if (task.kind === 'moments_copy') {
@@ -63,6 +64,8 @@ export function taskSuccessToast(kind: WorkbenchTaskKind, title: string, meta?: 
       return meta?.awaiting_confirm === '1' ? `分段方案已就绪：${short}` : `高阶配音已完成：${short}`
     case 'persona_generate':
       return `人设生成已完成：${short}`
+    case 'product_positioning':
+      return `产品定位分析已完成：${short}`
     case 'moments_plan':
       return i18next.language?.startsWith('en') ? `Moments plan is ready: ${short}` : `朋友圈排期已完成：${short}`
     case 'moments_copy':

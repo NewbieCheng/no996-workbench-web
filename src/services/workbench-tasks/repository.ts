@@ -3,6 +3,7 @@ import type {
   EnqueueIPVideoCreateInput,
   EnqueueDigitalHumanRetalkInput,
   EnqueuePersonaInput,
+  EnqueueProductPositioningInput,
   EnqueueScriptGenerateInput,
   EnqueueSourceCreateInput,
   EnqueueTitlesGenerateInput,
@@ -59,6 +60,10 @@ export type WorkbenchTaskRepository = {
     input: EnqueueVoiceDubAdvancedInput,
   ): Promise<WorkbenchTaskRecord>
   createPersonaJob(ownerUserId: number, input: EnqueuePersonaInput): Promise<WorkbenchTaskRecord>
+  createProductPositioningJob(
+    ownerUserId: number,
+    input: EnqueueProductPositioningInput,
+  ): Promise<WorkbenchTaskRecord>
   createTitlesJob(ownerUserId: number, input: EnqueueTitlesGenerateInput): Promise<WorkbenchTaskRecord>
   createMomentsPlanJob(ownerUserId: number, input: EnqueueMomentsPlanInput): Promise<WorkbenchTaskRecord>
   createMomentsCopyJob(ownerUserId: number, input: EnqueueMomentsCopyInput): Promise<WorkbenchTaskRecord>
