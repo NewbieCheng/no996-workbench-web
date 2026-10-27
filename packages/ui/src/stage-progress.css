@@ -1,0 +1,165 @@
+/* ===========================================================================
+   通用步骤进度条 StageProgress（packages/ui/src/stage-progress.tsx）
+   ---------------------------------------------------------------------------
+   令牌三级回退：--sp-*（调用方主题）→ --sl-*（旧过程面板主题）→ 全局主题令牌。
+   这样它既能在 script-lab / titles 这类自带换肤的容器里跟着走，也能脱离它们
+   独立使用（此时落到 --primary / --card / --border，明暗主题都稳定）。
+   =========================================================================== */
+
+.stage-progress {
+  border: 1px solid var(--sp-line, var(--sl-line, var(--border)));
+  border-radius: var(--sp-radius, var(--sl-radius, var(--radius)));
+  background: var(--sp-surface, var(--sl-surface, var(--card)));
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.stage-progress__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage-progress__title {
+  font-family: var(--sp-display, var(--sl-display, inherit));
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stage-progress__progress,
+.stage-progress__round,
+.stage-progress__badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--sp-line, var(--sl-line, var(--border)));
+  color: var(--sp-mute, var(--sl-mute, var(--muted-foreground)));
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-progress__badge {
+  border-color: var(--sp-acc, var(--sl-acc, var(--primary)));
+  color: var(--sp-acc, var(--sl-acc, var(--primary)));
+}
+
+.stage-progress__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.stage-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--sp-mute, var(--sl-mute, var(--muted-foreground)));
+}
+
+.stage-step[data-status='running'] {
+  color: var(--sp-acc, var(--sl-acc, var(--primary)));
+  font-weight: 600;
+}
+
+.stage-step[data-status='done'] {
+  color: var(--sp-ink, var(--sl-ink, var(--foreground)));
+}
+
+.stage-step__icon--done {
+  color: var(--sp-ok, #059669);
+}
+
+.stage-step__icon--running {
+  color: var(--sp-acc, var(--sl-acc, var(--primary)));
+  animation: stage-step-spin 1s linear infinite;
+}
+
+.stage-step__icon--failed {
+  color: var(--sp-err, var(--destructive, #dc2626));
+}
+
+/* 跳过的步骤整体调暗：它占一行是为了说明「有这一步、但本轮没做」 */
+.stage-step__icon--skipped {
+  opacity: 0.5;
+}
+
+.stage-step__order {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.stage-step__label {
+  font-weight: 600;
+}
+
+.stage-step__tag {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+.stage-step__tag--algo {
+  border-style: dashed;
+}
+
+.stage-step__note {
+  flex-basis: 100%;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.stage-step__status {
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-step__error {
+  flex-basis: 100%;
+  color: var(--sp-err, var(--destructive, #dc2626));
+}
+
+@keyframes stage-step-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stage-progress__stream {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sp-acc, var(--sl-acc, var(--primary))) 8%, transparent);
+  font-size: 12px;
+  line-height: 1.7;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.stage-progress__caret {
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--sp-acc, var(--sl-acc, var(--primary)));
+  animation: stage-caret 1s step-end infinite;
+}
+
+@keyframes stage-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-step__icon--running,
+  .stage-progress__caret {
+    animation: none;
+  }
+}

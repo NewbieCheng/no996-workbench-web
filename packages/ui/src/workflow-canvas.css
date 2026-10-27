@@ -1,0 +1,803 @@
+/* =====================================================================
+ * 生产流程画布（Workflow Canvas）· Operate 向说明型拓扑视图
+ * 令牌优先继承工作台主题，再回退到画布专用色。
+ * ===================================================================== */
+
+:root {
+  --awf-bg: var(--background, #eef1f6);
+  --awf-grid: color-mix(in srgb, var(--foreground, #1b2433) 7%, transparent);
+  --awf-dot: color-mix(in srgb, var(--foreground, #1b2433) 5%, transparent);
+  --awf-card: color-mix(in srgb, var(--popover, #ffffff) 90%, var(--background, #eef1f6) 10%);
+  --awf-card-blur: blur(14px) saturate(1.35);
+  --awf-bd: var(--border, #d9dfea);
+  --awf-tx: var(--foreground, #1b2433);
+  --awf-mute: var(--muted-foreground, #6b778c);
+  --awf-hud: color-mix(in srgb, var(--popover, #fff) 92%, transparent);
+  --awf-sh: 0 1px 2px rgba(27, 36, 51, 0.06), 0 12px 32px -16px rgba(27, 36, 51, 0.18);
+  --awf-llm: #5b4fd6;
+  --awf-tool: #0d8f8f;
+  --awf-guard: #c47a12;
+  --awf-input: #2f7df6;
+  --awf-err: var(--destructive, #e5484d);
+  --awf-ok: #2a9d62;
+}
+
+:root[data-theme='dark'],
+.dark {
+  --awf-card: color-mix(in srgb, var(--popover, #12141a) 82%, var(--background, #08090a) 18%);
+  --awf-sh: 0 2px 8px rgba(0, 0, 0, 0.35), 0 16px 40px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* ------------------------------ 视口 ------------------------------ */
+.awf-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  border-radius: 0 0 14px 14px;
+  background-color: var(--awf-bg);
+  background-image:
+    linear-gradient(to right, var(--awf-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--awf-grid) 1px, transparent 1px),
+    radial-gradient(var(--awf-dot) 1px, transparent 1.2px);
+  background-size: 48px 48px, 48px 48px, 20px 20px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--awf-bd) 65%, transparent);
+}
+
+.awf-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.awf-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+.awf-stage.is-smooth {
+  transition: transform 0.55s cubic-bezier(0.22, 0.8, 0.22, 1);
+}
+
+/* ------------------------------ 连线 ------------------------------ */
+.awf-edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.awf-edges path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--awf-bd) 90%, var(--awf-tx));
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 0.35s ease, opacity 0.35s ease;
+}
+
+.awf-edges path.is-done {
+  stroke: color-mix(in srgb, var(--awf-ok) 75%, var(--awf-bd));
+  opacity: 0.95;
+}
+
+.awf-edges path.is-flow {
+  stroke: var(--awf-llm);
+  stroke-dasharray: 5 7;
+  animation: awf-edge-flow 0.75s linear infinite;
+}
+
+.awf-edges path.is-skipped {
+  stroke: var(--awf-bd);
+  stroke-dasharray: 4 6;
+  opacity: 0.42;
+}
+
+@keyframes awf-edge-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* ------------------------------ 节点卡片 ------------------------------ */
+.awf-node {
+  position: absolute;
+  box-sizing: border-box;
+  background: var(--awf-card);
+  backdrop-filter: var(--awf-card-blur);
+  -webkit-backdrop-filter: var(--awf-card-blur);
+  border: 1px solid color-mix(in srgb, var(--awf-bd) 88%, var(--awf-tx) 8%);
+  border-radius: 12px;
+  box-shadow: var(--awf-sh);
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.22s ease,
+    opacity 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.18s ease;
+}
+
+.awf-node:hover {
+  border-color: color-mix(in srgb, var(--c, var(--awf-llm)) 45%, var(--awf-bd));
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(27, 36, 51, 0.06),
+    0 14px 36px -14px rgba(27, 36, 51, 0.22);
+}
+
+.awf-node[data-status='pending'] {
+  opacity: 0.52;
+}
+
+.awf-node[data-status='running'] {
+  border-color: color-mix(in srgb, var(--c, var(--awf-llm)) 55%, var(--awf-bd));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--c, var(--awf-llm)) 14%, transparent),
+    var(--awf-sh);
+}
+
+.awf-node[data-status='done'] {
+  border-color: color-mix(in srgb, var(--awf-ok) 25%, var(--awf-bd));
+}
+
+.awf-node[data-status='error'] {
+  border-color: color-mix(in srgb, var(--awf-err) 55%, var(--awf-bd));
+}
+
+.awf-node[data-status='skipped'] {
+  opacity: 0.42;
+  filter: grayscale(0.7);
+}
+
+.awf-node.is-selected {
+  outline: 2px solid color-mix(in srgb, var(--awf-tx) 75%, var(--primary, #5b4fd6));
+  outline-offset: 2px;
+}
+
+.awf-seq {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid var(--awf-bd);
+  background: color-mix(in srgb, var(--awf-bg) 70%, var(--awf-card));
+  color: var(--awf-mute);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  text-align: center;
+}
+
+.awf-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, var(--c, var(--awf-llm)), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  opacity: 0;
+}
+
+.awf-node[data-status='running'] .awf-bar {
+  opacity: 0.85;
+  animation: awf-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes awf-sweep {
+  from {
+    background-position: -50% 0;
+  }
+  to {
+    background-position: 150% 0;
+  }
+}
+
+.awf-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 28px;
+}
+
+.awf-ic {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--c, var(--awf-llm)) 12%, var(--awf-card));
+  color: var(--c, var(--awf-llm));
+  border: 1px solid color-mix(in srgb, var(--c, var(--awf-llm)) 28%, var(--awf-bd));
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+
+.awf-ti {
+  font-weight: 650;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  color: var(--awf-tx);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.awf-st {
+  font-size: 11px;
+  color: var(--awf-mute);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.awf-node[data-status='done'] .awf-st {
+  color: var(--awf-ok);
+  font-weight: 600;
+}
+
+.awf-node[data-status='running'] .awf-st {
+  color: var(--c, var(--awf-llm));
+  font-weight: 600;
+}
+
+.awf-node[data-status='error'] .awf-st {
+  color: var(--awf-err);
+  font-weight: 600;
+}
+
+.awf-node[data-status='skipped'] .awf-st {
+  color: var(--awf-mute);
+}
+
+.awf-ds {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 2.6em;
+}
+
+.awf-ds__kind {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--c, var(--awf-llm)) 70%, var(--awf-mute));
+}
+
+.awf-ds__text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--awf-mute);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.awf-out {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--awf-tx);
+  border-top: 1px solid color-mix(in srgb, var(--awf-bd) 80%, transparent);
+  padding-top: 7px;
+  margin-top: 2px;
+}
+
+.awf-node[data-status='pending'] .awf-out {
+  opacity: 0.45;
+}
+
+.awf-out > div {
+  max-height: 100%;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.awf-cur {
+  display: inline-block;
+  width: 5px;
+  height: 1em;
+  background: var(--c, var(--awf-llm));
+  vertical-align: -2px;
+  margin-left: 2px;
+  animation: awf-blink 0.9s steps(1) infinite;
+}
+
+@keyframes awf-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------ HUD ------------------------------ */
+.awf-hud {
+  position: absolute;
+  background: var(--awf-hud);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid color-mix(in srgb, var(--awf-bd) 85%, transparent);
+  border-radius: 11px;
+  box-shadow: var(--awf-sh);
+  cursor: default;
+  z-index: 10;
+}
+
+.awf-top {
+  left: 16px;
+  top: 16px;
+  padding: 11px 14px 12px;
+  min-width: 240px;
+  max-width: min(420px, calc(100% - 32px));
+}
+
+.awf-top b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--awf-tx);
+}
+
+.awf-prog {
+  height: 5px;
+  background: color-mix(in srgb, var(--awf-bd) 70%, transparent);
+  border-radius: 999px;
+  margin: 9px 0 6px;
+  overflow: hidden;
+}
+
+.awf-prog i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--awf-ok) 85%, var(--awf-llm)),
+    var(--awf-ok)
+  );
+  transition: width 0.35s ease;
+}
+
+.awf-sub {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--awf-mute);
+}
+
+.awf-ctl {
+  right: 16px;
+  top: 16px;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+}
+
+.awf-ctl button,
+.awf-tl button {
+  font: inherit;
+  font-size: 12px;
+  color: var(--awf-tx);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.awf-ctl button:hover,
+.awf-tl button:hover {
+  background: color-mix(in srgb, var(--awf-bd) 55%, transparent);
+}
+
+.awf-tl button.is-active {
+  background: var(--awf-tx);
+  color: var(--awf-bg);
+}
+
+.awf-tl button.awf-tl-live {
+  min-height: 32px;
+  border: 1px solid var(--fg-12);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: color-mix(in oklab, var(--background) 25%, transparent);
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+.awf-tl button.awf-tl-live:hover {
+  border-color: var(--fg-22);
+  background: color-mix(in oklab, var(--background) 55%, transparent);
+  color: var(--foreground);
+}
+
+.awf-tl button.awf-tl-live.is-active {
+  border-color: var(--fg-12);
+  background: color-mix(in oklab, var(--background) 25%, transparent);
+  color: var(--foreground);
+}
+
+.awf-tl {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  width: min(720px, calc(100% - 32px));
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  --awf-tl-track: color-mix(in srgb, var(--awf-bd) 65%, transparent);
+}
+
+.awf-tl-range {
+  --awf-tl-fill: 0%;
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    var(--awf-llm) var(--awf-tl-fill),
+    var(--awf-tl-track) var(--awf-tl-fill)
+  );
+  transition: background 0.12s ease;
+}
+
+.awf-tl-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.awf-tl-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--awf-llm);
+  border: 2px solid color-mix(in srgb, var(--awf-hud) 92%, #ffffff);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--awf-llm) 35%, transparent);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.awf-tl-range::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--awf-llm) 45%, transparent);
+}
+
+.awf-tl-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--awf-tl-track);
+}
+
+.awf-tl-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--awf-llm);
+}
+
+.awf-tl-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--awf-llm);
+  border: 2px solid color-mix(in srgb, var(--awf-hud) 92%, #ffffff);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--awf-llm) 35%, transparent);
+  cursor: pointer;
+}
+
+.awf-tl-range:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--awf-llm) 55%, var(--awf-tx));
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.awf-tl span {
+  font-size: 11.5px;
+  color: var(--awf-mute);
+  min-width: 96px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------ 详情抽屉 ------------------------------ */
+.awf-dr {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(380px, 90%);
+  border-radius: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 1px solid var(--awf-bd);
+  transform: translateX(105%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 18px 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  user-select: text;
+  cursor: auto;
+  z-index: 20;
+}
+
+.awf-dr.is-open {
+  transform: none;
+}
+
+.awf-dr-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.awf-dr-close {
+  background: none;
+  border: 0;
+  font-size: 16px;
+  color: var(--awf-mute);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.awf-dr-close:hover {
+  color: var(--awf-tx);
+  background: color-mix(in srgb, var(--awf-bd) 50%, transparent);
+}
+
+.awf-dr h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--awf-tx);
+}
+
+.awf-dr dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 14px 0;
+  font-size: 12.5px;
+}
+
+.awf-dr dt {
+  color: var(--awf-mute);
+}
+
+.awf-dr dd {
+  margin: 0;
+  color: var(--awf-tx);
+  word-break: break-word;
+}
+
+.awf-dr-output-box {
+  margin-top: 12px;
+}
+
+.awf-dr-output-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.awf-dr-output-box b {
+  display: block;
+  font-size: 12.5px;
+  color: var(--awf-tx);
+}
+
+.awf-dr-output-hd .awf-dr-copy {
+  min-height: 28px;
+  height: 28px;
+  padding-inline: 10px;
+  font-size: 11px;
+}
+
+.awf-dr-output-hd .awf-dr-copy svg {
+  width: 13px;
+  height: 13px;
+}
+
+.awf-dr-output-hd .awf-dr-copy:disabled {
+  opacity: 0.45;
+}
+
+.awf-dr pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  background: color-mix(in srgb, var(--awf-bg) 65%, var(--awf-card));
+  border: 1px solid var(--awf-bd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0;
+  max-height: min(42vh, 360px);
+  overflow: auto;
+}
+
+.awf-dr-stream {
+  position: relative;
+}
+
+.awf-stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--awf-llm, #5b4fd6);
+  animation: awf-caret-blink 1s step-end infinite;
+}
+
+@keyframes awf-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.awf-dr-retry {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--awf-bd);
+}
+
+.awf-dr-retry p,
+.awf-dr-retry span {
+  margin: 0;
+  color: var(--awf-mute);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.awf-dr-retry button {
+  min-height: 30px;
+}
+
+.awf-dr-thinking-box {
+  margin-top: 12px;
+}
+
+.awf-dr-thinking-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.awf-dr-thinking-hd b {
+  font-size: 12.5px;
+  color: var(--awf-tx);
+}
+
+.awf-dr-thinking-toggle {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--awf-llm, #5b4fd6);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.awf-dr-thinking-toggle:hover {
+  text-decoration: underline;
+}
+
+.awf-dr-thinking-body.is-masked {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+  max-height: 72px;
+  overflow: hidden;
+  position: relative;
+}
+
+.awf-dr-thinking-body.is-masked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--awf-card) 85%, transparent) 70%
+  );
+  border-radius: inherit;
+}
+
+.awf-dr-thinking-body {
+  max-height: min(28vh, 200px);
+  overflow: auto;
+}
+
+/* ------------------------------ 全屏弹窗 ------------------------------ */
+.awf-dialog-content {
+  width: 92vw !important;
+  max-width: 1400px !important;
+  height: 88vh !important;
+  max-height: 900px !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--popover) !important;
+}
+
+.awf-dialog-body {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 主题化滚动条（画布内可滚动区域） */
+.awf-viewport ::-webkit-scrollbar,
+.awf-dr ::-webkit-scrollbar,
+.awf-dr pre::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.awf-viewport ::-webkit-scrollbar-thumb,
+.awf-dr ::-webkit-scrollbar-thumb,
+.awf-dr pre::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--awf-mute) 35%, transparent);
+  border-radius: 999px;
+}
+
+.awf-viewport ::selection,
+.awf-dr ::selection {
+  background: color-mix(in srgb, var(--primary, var(--awf-llm)) 28%, transparent);
+}

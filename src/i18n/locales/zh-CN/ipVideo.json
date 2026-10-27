@@ -1,0 +1,56 @@
+{
+  "title": "IP 口播视频", "subtitle": "把你的观点，变成一条可以发布的口播视频。",
+  "history": "历史生成", "demoMode": "演示模式", "realMode": "正式模式", "demo": "演示", "demoPoints": "演示余 {{n}} 积分",
+  "demoBoundary": "本地演示，不调用付费模型、不扣账号积分。配音为静音排版演示。",
+  "realBoundary": "正式配音走平台后台任务；封面排版和视频合成本机完成。",
+  "galleryTitle": "先选一个适合你的模板", "galleryDescription": "从文案到成片，三步准备。模板与封面排版已内置，可自由替换素材。",
+  "templateFilter": "模板分类", "filter": { "all": "全部模板", "knowledge": "知识分享", "opinion": "观点表达", "life": "生活与故事" },
+  "templates": {
+    "scroll": { "name": "经典滚动字幕", "category": "知识分享", "description": "让每句话都成为重点。三行滚动字幕，适合观点与干货口播。" },
+    "poster": { "name": "醒目大字报", "category": "观点表达", "description": "一句话先抓住注意力，大字排版为你的观点留出空间。" },
+    "call": { "name": "来电式开场", "category": "情绪共鸣", "description": "用一通「来电」开启对话，适合提醒、共鸣与个人故事。" },
+    "career": { "name": "职场观点卡", "category": "职场成长", "description": "简洁的编辑式排版，适合经验复盘、行业见解与专业 IP。" },
+    "life": { "name": "生活手记", "category": "生活记录", "description": "留白与纸感排版，让日常经验成为值得分享的故事。" },
+    "lesson": { "name": "知识小黑板", "category": "知识分享", "description": "清晰的主题标题搭配高对比字幕，适合课程与方法拆解。" },
+    "audiogram": { "name": "声纹电台波形", "category": "情绪共鸣", "description": "播客式动态声波随配音强弱起伏，适合深度思考与声音叙事。" },
+    "tiktok": { "name": "TikTok 逐词高亮", "category": "观点表达", "description": "逐词变色强调，统一断行与字距，适合快节奏观点口播。" }
+  },
+  "styleRating": "模板视觉推荐 {{n}} 星", "styleRatingLabel": "排版推荐", "prepare": "你需要准备", "scriptMaterial": "口播文案", "coverMaterial": "封面 / 照片", "useTemplate": "用这个模板", "viewCases": "查看模板案例", "demoCase": "演示排版案例 · 非真实流量数据",
+  "changeTemplate": "返回选模板", "expandWizard": "展开输入面板", "collapseWizard": "收起输入面板", "continueEditing": "继续编辑",
+  "scriptStep": "确认脚本", "audioStep": "口播音频", "coverStep": "选择封面", "scriptStepDescription": "粘贴你想说的话，或通过已连接的采集扩展提取参考文案。", "audioStepDescription": "选择适合你的音色和语速，试听后确认使用哪一版。", "coverStepDescription": "选择一张封面，或用你的照片与内置排版制作新封面。",
+  "fromLink": "视频链接生成", "pasteScript": "直接粘贴文案", "videoLink": "参考视频链接", "linkPlaceholder": "粘贴{{platform}}等平台的公开作品链接", "demoLinkNote": "演示模式返回当前模板的示例文案，不抓取链接内容。", "realLinkNote": "通过已连接扩展采集现有正文；作品只有视频而没有正文时不会伪造语音转写。", "fillExampleLink": "填入演示链接", "extractScript": "抓取视频脚本", "extracting": "抓取中…", "urlRequired": "请先填写参考视频链接。", "urlInvalid": "请输入有效的 HTTP 或 HTTPS 链接。",
+  "scriptLabel": "口播文案", "scriptHint": "至少 20 字。建议控制在 5 分钟以内，标点会用于字幕断句。", "scriptPlaceholder": "从一个想讲清楚的观点开始，粘贴你的口播文案…", "charCount": "{{n}} 字", "estimatedRange": "预计 {{from}}–{{to}} 口播", "fillDemoScript": "填入演示文案", "confirmedScript": "已确认口播脚本", "editInvalidates": "修改后需重新生成音频", "confirmScriptFirst": "先确认脚本", "confirmScript": "确认脚本",
+  "availableVoices": "可用音色", "refreshVoices": "刷新音色", "modelVoice": "平台音色", "demoVoice": "演示音色", "sampleVoice": "试听样音", "addVoice": "新增音色", "speed": "语速", "generateAudio": "生成口播音频", "regenerateAudio": "重新生成口播音频", "audioGenerating": "生成演示中…", "audioQueued": "后台生成中…", "generateAudioFirst": "先生成音频", "confirmAudio": "确认音频", "useAudio": "确认使用音频，去选封面", "silentDemoAudio": "演示音轨仅用于预览时长与字幕排版，不含生成语音。正式模式可生成真实配音。", "customVoiceFailed": "个人音色加载失败，仍可使用已登记的平台音色。", "sampleUnavailable": "暂无已核实的平台样音接口。请生成实际配音后试听，或前往声音克隆管理音色。", "sampleUnsupported": "当前浏览器不支持本机语音试听。", "sampleText": "你好，今天想和你分享一个小小的发现。", "browserVoiceDemo": "正在试听浏览器系统语音演示，并非所选平台音色的真实样音。", "audioLoadFailed": "配音文件读取失败，请从后台任务重试。", "queued": "配音任务已发送，可在后台任务或本页历史中查看。", "tooLong": "预计时长超过 5 分钟，请缩短文案或提高语速。", "audioRequired": "正式视频需要一份真实配音，请先生成并确认音频。",
+  "coverLibrary": "我的封面库", "uploadCover": "上传封面图", "coverUses": "使用 {{n}} 次", "composeCover": "用模板制作封面", "demoCoverCost": "演示 {{n}} 积分 / 次", "localFree": "本机排版 · 不扣平台积分", "coverComposeBoundary": "你的照片只在本机用于排版，不上传服务器。可直接使用内置封面。", "ownPhoto": "本人照片", "uploadPhoto": "上传本人照片", "coverTemplate": "封面排版", "coverStyles": { "poster": "大字报", "call": "来电", "pink": "粉色爆款", "career": "职场" }, "coverText": "封面的文案", "coverTextHint": "最多 32 字。尽量使用短标题，避免遮挡人物。", "generateCover": "生成模板封面", "coverGenerating": "制作封面中…", "coverCreated": "封面已生成并加入本机封面库。", "aiCoverPending": "AI 人像重绘待接入。当前真实输出是照片与模板排版，不冒充模型生成。", "pointsInsufficient": "演示积分不足，请使用已有封面或成片。账号积分不受影响。",
+  "generateVideo": "合成视频 · 本机免费", "generateDemoVideo": "生成演示视频 · {{n}} 模拟积分", "renderTitle": "正在合成视频，请稍等", "renderNote": "在你的浏览器内生成实际视频。请保持页面前台，合成用时接近视频时长。", "rendering": "生成中…", "cancelRender": "取消合成", "renderProgress": "视频合成进度", "preparing": "准备素材…", "remainingEstimate": "预计还需约 {{n}} 秒", "prepareStage": "准备素材", "coverStage": "合成封面", "audioStage": "载入口播音频", "subtitleStage": "渲染字幕", "encodeStage": "编码导出", "renderUnsupported": "当前浏览器不支持本地视频编码，请使用新版 Chrome 或 Edge。",
+  "resultTitle": "你的口播视频，已完成", "resultDemoNote": "这是静音演示成片，可调整字幕并下载实际视频文件。", "resultRealNote": "真实配音与封面已合成。可调整字幕样式，再重新导出。", "newTask": "新建任务", "subtitleStyle": "字幕样式", "subtitleStyleDescription": "在左侧拖动虚线框，或用滑杆调整字幕位置。", "subtitleSize": "字幕大小", "subtitleColor": "字幕颜色", "colors": { "0": "黄色", "1": "白色", "2": "蓝色", "3": "粉色" }, "subtitleFont": "字幕字体", "fontSans": "黑体 / 无衬线", "fontSerif": "宋体 / 衬线", "fontKai": "楷体（使用本机字体）", "subtitlePosition": "字幕位置", "fileFormat": "{{format}} · {{size}} MB · 1080 × 1920", "styleDirty": "排版或字幕已修改。重新合成后再下载，确保文件与预览一致。", "applyStyle": "应用字幕并重新合成", "downloadVideo": "下载视频", "downloadSrt": "下载字幕 SRT", "downloadStarted": "已提交浏览器下载，请检查下载列表。", "viewScript": "查看口播脚本", "preview": "竖屏口播视频预览", "selectedCover": "选中的视频封面", "coverPlaceholder": "选择封面后在这里预览", "dragSubtitle": "上下拖动字幕", "play": "播放预览", "pause": "暂停预览", "playbackPosition": "预览进度", "preview8x": "8 倍速排版预览 · 无音轨演示", "previewRealtime": "真实配音 · 1 倍速预览",
+  "historyLocal": "仅保存在当前账号的本机浏览器。最多 12 条成片 / 250 MB，不跨设备同步。", "historySaveFailed": "成片已生成，但本机历史保存失败：{{error}}。请先下载视频。", "historyEmpty": "还没有成片，选择一个模板开始吧。", "completed": "已完成", "realVideo": "真实配音", "openVideo": "打开成片", "deleteHistory": "删除本机历史", "audioTaskHistory": "正式配音任务", "useAudioTask": "恢复配音", "cancel": "取消", "taskStatus": { "queued": "等待后台处理", "running": "正在生成配音", "succeeded": "配音已生成", "failed": "配音失败", "cancelled": "已取消" },
+  "encoding": {
+    "editTitle": "调整排版与导出", "editNote": "先调整文字、照片和字幕，再导出本机视频。当前编辑稿尚未合成，也未存入成片历史。", "pendingExport": "1080 × 1920 · 待导出，格式以浏览器编码能力为准", "exportVideo": "导出视频",
+    "workerNote": "正在独立工作线程内按帧合成视频。请保持此页面打开；浏览器休眠或关闭页面会中断任务。", "offlineNote": "正在按帧生成本机视频，无需完整播放音轨。合成速度取决于素材与设备，完成后可下载。",
+    "errors": {
+      "invalidDuration": "视频时长必须大于零且不超过 5 分钟。", "invalidLayout": "排版参数无效，请检查图层的位置、尺寸和字体设置。", "invalidSubtitle": "字幕时间无效，请检查先后顺序、重叠和总时长。", "subtitleOverflow": "文字超出了文本框。请放大文本框或缩小字号后重新导出，系统不会截掉正文。", "audioDurationMismatch": "音频实际时长与项目时长不一致，请重新确认配音。", "invalidAudio": "音频无法处理或超过本机容量限制，请选择不超过 5 分钟的单声道或双声道音频。", "audioDecodeUnsupported": "浏览器无法解码音频，请使用新版 Chrome 或 Edge。", "invalidImage": "图片无法处理或超过 4000 万像素，请压缩后重试。", "exportTooLarge": "素材或成片超过 250 MB 本机容量限制，请缩短内容或压缩素材。", "capacityLimit": "成片超过 250 MB，请缩短内容后重新导出。", "encodeFailed": "本机编码失败，请检查浏览器支持情况后重新导出。", "encodingFailed": "浏览器实时录制失败，请保持前台后重试。", "foregroundRequired": "兼容录制需要保持页面前台，请返回页面后重新导出。", "mediaTimeout": "本机合成超时，请重新导出。", "canvasFailed": "无法创建画布，请关闭占用较高的页面后重试。", "audioBlocked": "浏览器未允许音频处理，请点击导出按钮重试。", "renderUnsupported": "当前浏览器没有可用的视频编码方式，请使用新版 Chrome 或 Edge。"
+    }
+  },
+  "editor": {
+    "label": "固定模板编辑器", "properties": "图层属性", "selectLayers": "选择图层", "selectLayer": "选择{{layer}}图层",
+    "layers": { "title": "标题", "subtitle": "字幕", "photo": "照片" },
+    "undo": "撤销", "redo": "重做", "reset": "恢复布局", "snapping": "吸附", "safeArea": "安全区",
+    "canvasHelp": "拖动或缩放选中的框；方向键微调 1 像素，Shift + 方向键微调 10 像素。标题与字幕内容只由画布渲染。",
+    "overflow": "文字超出当前文本框，内容未被删除。请增大文本框、减小字号或调整文案，避免导出时超出画面。",
+    "layout": "布局与样式", "coordinateHelp": "坐标和尺寸以 1080 × 1920 输出像素保存。恢复布局只重置样式与位置，保留标题、脚本和字幕。",
+    "box": { "x": "横坐标 X", "y": "纵坐标 Y", "width": "宽度 W", "height": "高度 H" },
+    "centerHorizontal": "水平居中", "centerVertical": "垂直居中", "focalX": "图片焦点 X（0–1）", "focalY": "图片焦点 Y（0–1）",
+    "titleText": "标题文字", "layerVisible": "显示此图层", "font": "字体", "fontSize": "字号", "fontWeight": "字重", "lineHeight": "行高倍数", "letterSpacing": "字距", "color": "文字颜色", "outline": "描边宽度", "background": "文字底色", "backgroundMode": "底色模式", "enableBackground": "启用底色", "transparent": "设为透明", "align": "对齐方式",
+    "fonts": { "sans": "阿里巴巴普惠体 / 无衬线", "serif": "宋体 / 衬线", "kai": "楷体（使用本机字体）", "current": "项目当前字体" },
+    "alignment": { "left": "左对齐", "center": "居中", "right": "右对齐" },
+    "numberRange": "请输入 {{min}}–{{max}} 之间的数字。",
+    "captions": "字幕与时间校准", "timing": { "estimated": "估算时间 · 按文案分句推算，未做语音识别校准", "srt": "SRT 时间 · 使用导入文件的字幕时间码", "manual": "手动校准 · 已手动修改字幕或时间码" },
+    "timingHelp": "单位为秒，总时长 {{duration}} 秒。字幕按顺序排列、不可重叠，结束时间不能超过音频。修改文字不会重新生成配音。",
+    "importSrt": "导入 SRT", "exportSrt": "导出 SRT", "importing": "正在读取…", "unsavedCaptions": "字幕草稿尚未应用。请先应用编辑，再导入或导出；校验失败会保留全部草稿文字。",
+    "noCaptions": "暂无字幕，可导入 SRT 文件。", "segment": "第 {{n}} 段", "startTime": "开始（秒）", "endTime": "结束（秒）", "captionText": "字幕文字", "applyCaptions": "应用字幕编辑", "captionsApplied": "字幕编辑已应用，可撤销。", "srtImported": "SRT 已导入，原字幕替换可通过撤销恢复。", "srtExported": "SRT 下载已提交，请检查浏览器下载列表。",
+    "presets": "本机布局预设", "presetsHelp": "仅保存布局与样式，不含脚本、字幕、标题文字或图片。按当前账号隔离，只在本机浏览器可用，最多 {{max}} 个。选择预设会立即应用，可撤销。",
+    "choosePreset": "选择并应用预设", "noPreset": "未选择预设", "deletePreset": "删除所选预设", "presetName": "新预设名称", "savePreset": "保存当前布局", "presetSaved": "布局预设已保存到本机。", "presetDeleted": "布局预设已删除，当前作品保持不变。", "presetApplied": "布局预设已应用，作品文字与字幕保持不变。",
+    "errors": { "invalidSubtitle": "字幕格式或时间无效。请检查文本不能为空、开始早于结束、各段不重叠且不超过音频时长。原文与未应用的草稿均已保留。", "assetLimit": "SRT 文件超过 1 MB，请选择较小的文件。现有字幕未更改。", "invalidLayout": "布局参数无效，请检查坐标、尺寸和文字样式。", "invalidOwner": "请登录有效账号后使用本机布局预设。", "storageUnavailable": "本机预设存储不可用，请检查浏览器权限或存储空间后重试。当前编辑仍保留在页面中。", "invalidPresetName": "请输入 1–80 个字符的预设名称。", "presetLimit": "已达到 20 个预设的上限，请先删除不再使用的预设。", "operationFailed": "操作未完成，请重试。现有作品内容未被替换。" }
+  }
+}

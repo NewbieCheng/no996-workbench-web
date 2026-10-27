@@ -1,0 +1,13 @@
+@import '../../packages/ui/src/ui-surface-tokens.css';
+@import '../../packages/ui/src/scrollbar.css';
+@import '../../packages/ui/src/wizard-steps.css';
+/* 通用步骤进度条：样式随组件走，见 §3.1。 */
+@import '../../packages/ui/src/stage-progress.css';
+/* 了解生产流程（页头按钮 + 弹层）：样式随组件走，见 §3.12。 */
+@import '../../packages/ui/src/flow-explain.css';
+/* AI 流程画布（组件 + 全屏弹层）：样式随组件走。 */
+@import '../../packages/ui/src/workflow-canvas.css';
+/* 毛玻璃菜单与浮层系统 */
+@import '../../packages/ui/src/glass-menu.css';
+/* Source menu surfaces are used by Select and DropdownMenu. */
+[data-slot='select-item'][data-highlighted], [data-slot='dropdown-menu-item'][data-highlighted] { background: var(--accent); color: var(--accent-foreground); }

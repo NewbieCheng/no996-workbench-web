@@ -1,0 +1,168 @@
+/* Shared divider for preview/form grids; the parent reserves a 12px column. */
+.ui-column-divider {
+  position: relative;
+  align-self: stretch;
+  min-height: 80px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.ui-column-divider::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--sl-acc, var(--primary));
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+.ui-column-divider:hover::after,
+.ui-column-divider:focus-visible::after,
+[data-resizing] > .ui-column-divider::after { opacity: .5; }
+.ui-column-divider:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+:has(> .ui-column-divider)[data-resizing] {
+  cursor: col-resize;
+  user-select: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-column-divider::after { transition: none; }
+}
+
+/* One shared selection surface per tab list; labels stay above its transform layer. */
+.ui-motion-tabs {
+  position: relative;
+  isolation: isolate;
+}
+.ui-motion-tabs [data-slot='tabs-trigger'] {
+  position: relative;
+  transition-property: color, background-color, box-shadow;
+  transition-duration: 120ms;
+}
+.ui-motion-tabs [data-slot='tabs-highlight'] {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--background);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+.ui-motion-tabs .ui-tab-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+  white-space: nowrap;
+}
+.ui-motion-tabs:has([data-slot='tabs-highlight']) [data-slot='tabs-trigger'][data-active] {
+  background: transparent;
+  box-shadow: none;
+}
+.ui-motion-tabs [data-slot='tabs-trigger']:active:not(:disabled) .ui-tab-label {
+  opacity: .78;
+}
+
+/* Reusable flat toolbar controls; independent of page-header ancestor selectors. */
+.ui-flat-button {
+  border-radius: 8px;
+  background-image: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.ui-toolbar-button {
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+}
+.ui-toolbar-button:hover:not(:disabled) {
+  background: var(--secondary);
+  border-color: color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+.ui-generate-button {
+  --ui-action-fill: color-mix(in srgb, var(--primary) 65%, #562400);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--ui-action-fill);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ui-generate-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-action-fill) 90%, #22252b);
+}
+.ui-flat-button:active:not(:disabled) { transform: translateY(1px); }
+.ui-flat-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.ui-flat-button:disabled { opacity: .5; cursor: not-allowed; }
+
+.ui-segmented-tabs {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  height: 36px;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+}
+.ui-segmented-tabs [data-slot='tabs-trigger'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  min-height: 30px;
+  flex: 0 0 auto;
+  gap: 5px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted-foreground);
+  box-shadow: none;
+  font: 400 13px / 20px var(--font-sans);
+  white-space: nowrap;
+}
+.ui-segmented-tabs [data-slot='tabs-trigger'][data-active] {
+  background: var(--background);
+  color: var(--foreground);
+  font-weight: 500;
+  box-shadow: none;
+}
+.ui-segmented-tabs [data-slot='tabs-trigger']:hover:not(:disabled) { color: var(--foreground); }
+.ui-segmented-tabs [data-slot='tabs-trigger']:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ui-segmented-tabs [data-slot='tabs-trigger']:disabled { opacity: .5; cursor: not-allowed; }
+.ui-segmented-tabs [data-slot='tabs-trigger']::after { display: none; }
+
+/* 菜单/折叠触发器：展开时背景与箭头旋转（与 titles-select、details 等行为一致） */
+.wb-disclosure-chevron {
+  flex-shrink: 0;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button[aria-expanded='true'] > .wb-disclosure-chevron,
+button[aria-expanded='true'] .wb-disclosure-chevron,
+summary[aria-expanded='true'] .wb-disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+.wb-menu-trigger[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-flat-button, .ui-segmented-tabs [data-slot='tabs-trigger'] { transition: none; }
+  .wb-disclosure-chevron { transition: none; }
+}

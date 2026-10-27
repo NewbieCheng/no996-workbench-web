@@ -1,0 +1,48 @@
+{
+  "title": "会员方案与权益",
+  "description": "按需选择适合您的创作规格\n所有方案均可用于平台创作工具与数字人能力。",
+  "previewTitle": "会员方案（预览）",
+  "previewDescription": "价格与权益尚未定稿，以下为占位展示，不代表最终方案。",
+  "previewNotice": "本页为预览，价格与权益以正式上线为准。",
+  "annualBilling": "按年付费",
+  "savePercent": "（省 20%）",
+  "billedMonthly": "按月计费",
+  "billedAnnually": "按年计费",
+  "popular": "热门",
+  "free": "免费",
+  "periodMonth": "月",
+  "periodYear": "年",
+  "consultNotice": "{{name}}：您的账户正在使用中，如需批量升级或专属定制请联系客服。",
+  "trial": {
+    "name": "新人体验",
+    "features": [
+      "基础 AI 对话与标题提取",
+      "小红书与公众号爆款文案生成",
+      "多语种数字人与声音试听"
+    ],
+    "description": "新用户注册后即送基础体验积分。",
+    "buttonText": "当前已享"
+  },
+  "pro": {
+    "name": "专业月度会员",
+    "features": [
+      "全套短视频与直播脚本生成",
+      "每月充裕的创作额度",
+      "专属快速生成通道",
+      "优先体验最新创作模块"
+    ],
+    "description": "适合个人创作者与自媒体操盘手。",
+    "buttonText": "咨询开通"
+  },
+  "enterprise": {
+    "name": "企业年度会员",
+    "features": [
+      "支持多成员协作与配额分配",
+      "海量生成点数与声音克隆支持",
+      "品牌专属私域人设定制",
+      "1 对 1 专家运营接入支持"
+    ],
+    "description": "适合品牌商家、矩阵团队与企业机构。",
+    "buttonText": "咨询开通"
+  }
+}

@@ -1,0 +1,32 @@
+/* Alibaba PuHuiTi 3.0 — 与桌面 Shell 同源（@pinhai/ali-fonts） */
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@pinhai/ali-fonts/fonts/AlibabaPuHuiTi-3-55-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('@pinhai/ali-fonts/fonts/AlibabaPuHuiTi-3-65-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('@pinhai/ali-fonts/fonts/AlibabaPuHuiTi-3-75-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@pinhai/ali-fonts/fonts/AlibabaPuHuiTi-3-85-Bold.woff2') format('woff2');
+}

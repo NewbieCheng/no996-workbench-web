@@ -1,0 +1,93 @@
+/* 统一业务模块布局骨架（ModuleLayout）
+   全透明承载：环境渐变色（shell-ambient）由 Shell 宿主统一透出，严禁叠加实白或蒙层遮罩。 */
+
+.no996-module-layout {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 100%;
+  overflow: auto;
+  background: transparent;
+  padding: 1.5rem 2rem 3rem;
+  color: var(--foreground);
+}
+
+.no996-module-layout__width-root {
+  width: 100%;
+}
+
+.no996-module-layout__top-chrome {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  flex-shrink: 0;
+}
+
+.no996-module-layout__body {
+  position: relative;
+  min-height: 0;
+}
+
+.no996-module-layout__inner {
+  position: relative;
+  width: 100%;
+  max-width: var(--module-content-width, 1120px);
+  margin-inline: auto;
+}
+
+/* 两侧拖拽手柄：挂在 __body 上，热区落在内容列外侧 gutter，不遮挡正文 */
+.module-content-width-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 8;
+  width: clamp(12px, calc((100% - var(--module-content-width, 1120px)) / 2 - 8px), 20px);
+  cursor: col-resize;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.module-content-width-handle[data-side='left'] {
+  right: calc(50% + var(--module-content-width, 1120px) / 2 + 8px);
+  left: auto;
+}
+
+.module-content-width-handle[data-side='right'] {
+  left: calc(50% + var(--module-content-width, 1120px) / 2 + 8px);
+  right: auto;
+}
+
+.module-content-width-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2.5px;
+  border-radius: 2px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent calc(var(--content-width-handle-pointer-y, 50%) - 26px),
+    var(--dsw-alias-scrollbar-hover-l1, color-mix(in srgb, var(--primary) 65%, transparent))
+      calc(var(--content-width-handle-pointer-y, 50%) - 6px),
+    var(--dsw-alias-scrollbar-hover-l1, color-mix(in srgb, var(--primary) 65%, transparent))
+      calc(var(--content-width-handle-pointer-y, 50%) + 6px),
+    transparent calc(var(--content-width-handle-pointer-y, 50%) + 26px)
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.module-content-width-handle:hover::after,
+.module-content-width-handle[data-dragging]::after {
+  opacity: 1;
+}
+
+@media (max-width: 767px) {
+  .module-content-width-handle {
+    display: none;
+  }
+}
+

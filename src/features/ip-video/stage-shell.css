@@ -1,0 +1,141 @@
+.ipv-stage-surround {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--ipv-paper, var(--muted));
+  border-radius: var(--radius-xl, 18px);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ipv-stage-surround--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 16px 16px 12px;
+}
+
+.ipv-stage-surround--dark-studio {
+  background: #0b0c10 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-xl, 16px) !important;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.45), 0 4px 20px -6px rgba(0, 0, 0, 0.12) !important;
+}
+
+.ipv-stage-surround--dark-studio .ipv-stage {
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  border-radius: 4px;
+}
+
+.ipv-stage-surround__monitor {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.ipv-stage-surround--stacked .ipv-stage-surround__monitor {
+  flex: 1;
+  min-height: 0;
+}
+
+.ipv-stage-surround__footer {
+  flex-shrink: 0;
+  min-width: 0;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+
+.ipv-stage-surround__footer .ipv-player-controls {
+  gap: 8px;
+}
+
+.ipv-stage-surround__footer .ipv-player-controls > input {
+  min-width: 0;
+}
+
+.ipv-stage {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: var(--ipv-stage-aspect, 9 / 16);
+  width: min(100%, var(--ipv-stage-width, calc(var(--ipv-stage-max-height, 640px) * 9 / 16)));
+  max-width: var(--ipv-stage-max-width, 100%);
+  max-height: var(--ipv-stage-max-height, 640px);
+  background: var(--muted);
+  --moveable-color: var(--primary);
+}
+
+.ipv-stage--compact {
+  --ipv-stage-max-width: 324px;
+  --ipv-stage-max-height: 576px;
+}
+
+.ipv-stage--fluid {
+  --ipv-stage-max-width: 100%;
+  --ipv-stage-max-height: min(72vh, 640px);
+}
+
+.ipv-stage > canvas,
+.ipv-stage .ipv-stage-canvas,
+.ipv-stage .ipv-stage-canvas canvas,
+.ipv-stage .ipv-editor-canvas,
+.ipv-stage .ipv-editor-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ipv-stage-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ipv-stage-overlay > * {
+  pointer-events: auto;
+}
+
+.ipv-stage-note {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  color: var(--foreground);
+  font-size: 13px;
+}
+
+.ipv-stage-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: ipv-stage-spin 0.7s linear infinite;
+}
+
+@keyframes ipv-stage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ipv-preview-column {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ipv-stage-spinner {
+    animation: none;
+  }
+}

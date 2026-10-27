@@ -1,0 +1,48 @@
+{
+  "title": "Membership plans & benefits",
+  "description": "Pick the plan that fits your creative workload.\nEvery plan covers platform creation tools and digital-human capabilities.",
+  "previewTitle": "Membership (preview)",
+  "previewDescription": "Pricing and benefits are not final. This page is a placeholder only.",
+  "previewNotice": "Preview only. Final pricing and benefits will apply at launch.",
+  "annualBilling": "Annual billing",
+  "savePercent": "(Save 20%)",
+  "billedMonthly": "Billed monthly",
+  "billedAnnually": "Billed annually",
+  "popular": "Popular",
+  "free": "Free",
+  "periodMonth": "mo",
+  "periodYear": "yr",
+  "consultNotice": "{{name}}: Your account is already active. Contact support for bulk upgrades or custom plans.",
+  "trial": {
+    "name": "Starter trial",
+    "features": [
+      "Basic AI chat and title extraction",
+      "Xiaohongshu and WeChat hit-copy generation",
+      "Multilingual digital human and voice preview"
+    ],
+    "description": "New sign-ups receive starter experience credits.",
+    "buttonText": "Already included"
+  },
+  "pro": {
+    "name": "Pro monthly",
+    "features": [
+      "Full short-video and live-script generation",
+      "Generous monthly creation quota",
+      "Priority generation lane",
+      "Early access to new creation modules"
+    ],
+    "description": "Built for individual creators and social operators.",
+    "buttonText": "Talk to sales"
+  },
+  "enterprise": {
+    "name": "Enterprise yearly",
+    "features": [
+      "Multi-seat collaboration and quota allocation",
+      "High-volume credits and voice cloning",
+      "Brand-exclusive persona customization",
+      "1:1 expert ops onboarding"
+    ],
+    "description": "For brands, matrix teams, and organizations.",
+    "buttonText": "Talk to sales"
+  }
+}

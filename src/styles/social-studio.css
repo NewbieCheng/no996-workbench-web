@@ -1,0 +1,879 @@
+.social-studio--planner {
+  grid-template-columns: var(--social-studio-prep-width, 320px) 6px minmax(360px, 1.15fr) minmax(300px, 1fr);
+}
+
+.social-studio--planner .social-studio__rail--prep {
+  border-right: 1px solid var(--ss-border);
+}
+
+.social-studio--planner .social-studio__rail--editor {
+  border-right: 1px solid var(--ss-border);
+}
+
+.social-studio--planner .social-studio__rail--preview {
+  border-right: none;
+}
+
+.social-studio {
+  --ss-border: var(--border);
+  --ss-surface: var(--card);
+  --ss-surface-muted: var(--muted);
+  --ss-fg: var(--card-foreground);
+  --ss-muted-fg: var(--muted-foreground);
+  --ss-inset: var(--background);
+  --ss-device-frame: color-mix(in srgb, var(--foreground) 10%, var(--card));
+  --ss-device-screen: var(--background);
+  --ss-device-chrome: color-mix(in srgb, var(--foreground) 6%, var(--muted));
+  /* merged 页底留白（与工具页 module body padding-bottom 同步） */
+  --ss-bottom-gap: 5px;
+
+  display: grid;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(360px, 1.1fr) 6px var(--social-studio-prep-width, 320px);
+  gap: 0;
+  align-items: stretch;
+  min-height: min(72vh, 820px);
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+  color: var(--ss-fg);
+}
+
+/* merged 须写在 .social-studio 之后，否则四列模板会把准备区挤进 6px 分隔列 */
+.social-studio.social-studio--merged {
+  grid-template-columns: minmax(0, 1fr) 6px var(--social-studio-prep-width, 320px);
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+}
+
+.social-studio.social-studio--merged .social-studio__rail--stage {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ss-surface);
+  border-right: 1px solid var(--ss-border);
+}
+
+.social-studio.social-studio--merged .social-studio__rail-head {
+  padding: 8px 12px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-height: 49px;
+  box-sizing: border-box;
+}
+
+.social-studio.social-studio--merged .social-studio__rail--stage .social-studio__rail-head {
+  border-bottom-color: var(--ss-border);
+  color: var(--ss-fg);
+}
+
+.social-studio.social-studio--merged .social-studio__rail--stage .social-studio__rail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.social-studio__rail-head-spacer {
+  flex: 1;
+  min-width: 12px;
+}
+
+.social-studio-stage-view-switch {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  gap: 2px;
+}
+
+.social-studio-stage-view-switch button {
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.social-studio-stage-view-switch button.is-active {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.social-studio-stage-view-switch button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.social-studio.social-studio--merged .social-studio-mode-switch {
+  padding: 2px;
+}
+
+.social-studio.social-studio--merged .social-studio-mode-switch button {
+  padding: 4px 12px;
+  line-height: 1.25;
+}
+
+.social-studio.social-studio--merged .social-studio-theme-select {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.social-studio.social-studio--merged .social-studio__rail--stage .social-studio__rail-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 12px 18px;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.social-studio.social-studio--merged .social-studio-divider {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.social-studio.social-studio--merged .social-studio__rail--prep {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: var(--social-studio-prep-width, 320px);
+  max-width: var(--social-studio-prep-width, 320px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.social-studio.social-studio--merged.social-studio--prep-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.social-studio.social-studio--merged.social-studio--prep-collapsed .social-studio__rail--stage {
+  border-right: none;
+}
+
+.social-studio__rail-head--prep {
+  justify-content: space-between;
+}
+
+.social-studio__rail-head-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.social-studio__prep-collapse {
+  flex-shrink: 0;
+}
+
+.social-studio-footer-actions--stage {
+  flex-shrink: 0;
+}
+
+.social-studio-prep-reopen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.social-studio-prep-reopen svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.social-studio.social-studio--merged.social-studio--prep-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.social-studio.social-studio--merged.social-studio--prep-collapsed .social-studio__rail--stage {
+  border-right: none;
+}
+
+.social-studio__rail-head--prep {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.social-studio__rail-head-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.social-studio__prep-collapse {
+  flex-shrink: 0;
+}
+
+.social-studio-prep-reopen svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.social-studio.social-studio--merged .social-studio-editor-canvas--merged {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0 0 10px;
+  box-sizing: border-box;
+}
+
+.social-studio.social-studio--merged .social-studio-editor-canvas--merged .editor-preview-wrap {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.social-studio.social-studio--merged .editor-preview-wrap.editor-preview-wrap-fixed {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.social-studio.social-studio--merged
+  .social-studio-editor-canvas--merged
+  .editor-preview-wrap:not(.editor-preview-wrap-image-text) {
+  overflow: hidden;
+}
+
+.social-studio.social-studio--merged .social-studio-layout-preview {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.social-studio.social-studio--merged .social-studio-layout-preview__web,
+.social-studio.social-studio--merged .social-studio-wechat-pc {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+}
+
+/* PC 正文区：不再套内层圆角边框，舞台由 rail-body / 外层面板承托 */
+.social-studio.social-studio--merged .social-studio-wechat-pc--embedded,
+.social-studio-layout-preview .social-studio-wechat-pc--embedded {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  max-width: none;
+}
+
+.social-studio.social-studio--merged .social-studio-wechat-pc--embedded .social-studio-wechat-pc__scroll,
+.social-studio-layout-preview .social-studio-wechat-pc--embedded .social-studio-wechat-pc__scroll {
+  padding: 0 16px 16px;
+}
+
+/* Web 排版预览：与 PC 嵌入一致，只保留 rail-body 外框 */
+.social-studio.social-studio--merged .social-studio-layout-preview__web.social-studio-wechat-editable {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  max-width: none;
+  overflow: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 16px 12px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.social-studio.social-studio--merged .social-studio-wechat-mobile {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.social-studio.social-studio--merged .social-studio-wechat-mobile__screen {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+.social-studio-stage-empty {
+  flex: 1;
+  width: 100%;
+  min-height: min(48vh, 520px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  border-radius: 12px;
+  border: 1px dashed var(--ss-border);
+  background: var(--ss-surface-muted);
+  box-sizing: border-box;
+}
+
+.social-studio-stage-empty__text,
+.social-studio-stage-empty .social-studio-empty-preview {
+  margin: 0;
+  max-width: 36ch;
+  width: 100%;
+  text-align: center;
+  color: var(--ss-muted-fg);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.social-studio__rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.social-studio__rail--preview {
+  background: var(--ss-surface);
+  border-right: 1px solid var(--ss-border);
+}
+
+.social-studio__rail--editor {
+  background: color-mix(in srgb, var(--ss-inset) 96%, var(--ss-surface-muted));
+  border-right: 1px solid var(--ss-border);
+}
+
+.social-studio__rail--prep {
+  background: var(--ss-surface);
+}
+
+.social-studio__rail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ss-border);
+  flex-shrink: 0;
+  color: var(--ss-fg);
+}
+
+.social-studio__rail-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.social-studio__rail--preview .social-studio__rail-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px 12px 24px;
+}
+
+.social-studio-divider {
+  display: none;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  border-left: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.social-studio-divider:hover,
+.social-studio-divider.is-dragging {
+  background: color-mix(in srgb, var(--border) 22%, transparent);
+  border-left-color: var(--border);
+}
+
+.social-studio-mode-switch {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px;
+  background: var(--secondary);
+  gap: 2px;
+}
+
+.social-studio-mode-switch button {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--ss-muted-fg);
+}
+
+.social-studio-mode-switch button.is-active {
+  background: var(--ss-inset);
+  color: var(--foreground);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.social-studio-editor-canvas {
+  background: var(--ss-inset);
+  border-radius: 12px;
+  border: 1px solid var(--ss-border);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 360px;
+}
+
+.social-studio__rail--prep .social-studio__rail-body--prep {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.social-studio__rail--prep .social-studio__rail-body--prep .social-studio-footer-actions {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.social-studio-prep-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.social-studio-prep-panel details {
+  border-radius: 10px;
+  border: 1px solid var(--ss-border);
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.social-studio-empty-preview {
+  text-align: center;
+  color: var(--ss-muted-fg);
+  font-size: 13px;
+  padding: 48px 16px;
+  max-width: 280px;
+}
+
+.social-studio-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--ss-border);
+  background: var(--secondary);
+  color: var(--ss-fg);
+  cursor: pointer;
+}
+
+.social-studio-icon-btn.is-active {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--accent-foreground);
+}
+
+.social-studio-theme-select {
+  font-size: 12px;
+  max-width: 140px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--input);
+  background: var(--ss-inset);
+  color: var(--foreground);
+}
+
+.social-studio-image-text {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.42fr) minmax(0, 1fr);
+  gap: 12px;
+  min-height: 320px;
+}
+
+.social-studio-image-text__gallery {
+  border: 1px dashed var(--ss-border);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--ss-surface-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.social-studio-image-text__gallery-toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.social-studio-image-text__drop {
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ss-muted-fg);
+  padding: 12px;
+}
+
+.social-studio-image-text__thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.social-studio-image-text__thumbs img {
+  width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+  max-height: 120px;
+}
+
+.social-studio-layout-preview {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.social-studio-layout-preview__web {
+  width: 100%;
+  max-width: 720px;
+  max-height: 720px;
+  overflow: auto;
+  background: var(--ss-inset);
+  border-radius: 12px;
+  border: 1px solid var(--ss-border);
+  padding: 24px 28px;
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.social-studio-layout-preview__web h1,
+.social-studio-layout-preview__web h2,
+.social-studio-layout-preview__web h3 {
+  color: var(--foreground);
+}
+
+.social-studio-wechat-mobile {
+  width: min(100%, 340px);
+  background: var(--ss-device-frame);
+  border-radius: 2rem;
+  padding: 10px;
+  border: 1px solid var(--ss-border);
+  box-shadow: var(--shadow-card);
+}
+
+.social-studio-wechat-mobile__screen {
+  background: var(--ss-device-screen);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 640px;
+}
+
+.social-studio-wechat-mobile__bar {
+  background: var(--ss-device-chrome);
+  padding: 18px 12px 6px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--ss-border);
+}
+
+.social-studio-wechat-mobile__scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 0 16px 48px;
+  min-height: 280px;
+}
+
+.social-studio-wechat-pc {
+  width: 100%;
+  max-width: 760px;
+  max-height: 720px;
+  background: var(--ss-inset);
+  border-radius: 12px;
+  border: 1px solid var(--ss-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.social-studio-wechat-pc__titlebar {
+  height: 44px;
+  background: var(--ss-device-chrome);
+  border-bottom: 1px solid var(--ss-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--ss-muted-fg);
+}
+
+.social-studio-wechat-pc__scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 32px 32px;
+}
+
+.social-studio-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ss-border);
+  margin-top: 8px;
+}
+
+@media (min-width: 1024px) {
+  .social-studio-divider {
+    display: block;
+  }
+}
+
+.social-studio-preview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.social-studio-preview-toolbar__label {
+  font-size: 12px;
+  color: var(--ss-muted-fg);
+}
+
+.social-studio-segment {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: 10px;
+  border: 1px solid var(--ss-border);
+  background: var(--secondary);
+}
+
+.social-studio-segment--compact {
+  padding: 2px;
+}
+
+.social-studio-segment__btn {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ss-muted-fg);
+  white-space: nowrap;
+}
+
+.social-studio-segment__btn--icon {
+  min-width: 36px;
+  padding: 6px 8px;
+}
+
+.social-studio-segment__btn.is-active {
+  background: var(--ss-inset);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.social-studio-segment__btn--wechat.is-active {
+  background: #07c160;
+  color: #fff;
+}
+
+.social-studio-mode-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, var(--ss-inset));
+  color: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+@media (max-width: 1023px) {
+  .social-studio {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .social-studio.social-studio--merged {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .social-studio.social-studio--merged .social-studio__rail--prep {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .social-studio.social-studio--merged .social-studio__rail--stage {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  .social-studio.social-studio--merged .social-studio-divider {
+    display: none;
+  }
+
+  .social-studio__rail--preview {
+    order: 3;
+    max-height: 420px;
+  }
+
+  .social-studio__rail--editor {
+    order: 2;
+  }
+
+  .social-studio__rail--prep {
+    order: 1;
+  }
+
+  .social-studio:not(.social-studio--planner):not(.social-studio--merged) .social-studio__rail--preview {
+    order: 1;
+  }
+
+  .social-studio:not(.social-studio--planner):not(.social-studio--merged) .social-studio__rail--prep {
+    order: 3;
+  }
+
+  .social-studio-image-text {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-studio-divider {
+    transition: none;
+  }
+}
+
+/* 撑满主区剩余高度（公众号 / 小红书 merged 共用；距底部约 5px） */
+.wb-page-area.workbench-tool-page:has(.social-studio--merged),
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) {
+  --ss-bottom-gap: 5px;
+  min-height: 0;
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .wb-module-page-layout .no996-module-layout__body {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: var(--ss-bottom-gap);
+  overflow: hidden;
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .wb-page-area__scroll,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .wb-page-area__scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--ss-bottom-gap);
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .no996-module-layout,
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .no996-module-layout__width-root,
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .no996-module-layout__body,
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .no996-module-layout__inner,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .no996-module-layout,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .no996-module-layout__width-root,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .no996-module-layout__body,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .no996-module-layout__inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .no996-module-layout__inner > .flex.w-full,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .no996-module-layout__inner > .flex.w-full {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .flex.w-full > .localized-panel-copy,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .flex.w-full > .localized-panel-copy {
+  flex: 1;
+  min-height: 0;
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .localized-panel-copy,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .localized-panel-copy {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.wb-page-area.workbench-tool-page:has(.social-studio--merged) .localized-panel-copy > .glass-panel,
+.wb-page-area.workbench-page--fluid:has(.social-studio--merged) .localized-panel-copy > .glass-panel {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* PhoneChrome（social-publish）在 Studio 内与工作台主题一致 */
+.social-studio .social-phone-shell {
+  border-color: color-mix(in srgb, var(--foreground) 14%, var(--card));
+  background: var(--ss-device-frame);
+  box-shadow: var(--shadow-card);
+}
+
+.social-studio .social-phone-screen {
+  background: var(--ss-device-screen);
+}
+
+.social-studio .social-phone-topbar {
+  background: var(--ss-device-chrome);
+  border-bottom: 1px solid var(--ss-border);
+  color: var(--foreground);
+}
+
+.social-studio .social-phone-subtitle {
+  color: var(--ss-muted-fg);
+}
+
+.social-studio .social-phone-body {
+  color: var(--foreground);
+}

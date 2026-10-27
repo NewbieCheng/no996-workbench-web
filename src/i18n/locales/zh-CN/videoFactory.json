@@ -1,0 +1,16 @@
+{
+  "title": "视频工厂",
+  "subtitle": "浏览器内的动效剪辑台：从镜头库拖入动效，配好音效，一键导出成片。",
+  "loginRequired": "登录后即可在浏览器内创建与保存成片工程。",
+  "loading": "正在载入工程…",
+  "tabMedia": "素材",
+  "tabShots": "动效库",
+  "tabAudio": "音效",
+  "rightInspector": "画面",
+  "rightCaptions": "字幕",
+  "rightTiming": "变速",
+  "rightAudio": "音频",
+  "timelineResizeHandle": "拖动调整时间轴高度，最高占工作区一半",
+  "railResizeLeft": "拖动调整左侧素材栏宽度",
+  "railResizeRight": "拖动调整右侧属性栏宽度"
+}

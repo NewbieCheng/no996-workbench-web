@@ -1,0 +1,333 @@
+/* 墨囊 Toast · 对齐「墨囊与填空弹窗」设计规范（虚线倒计时环 + 胶囊浮层） */
+
+@property --ink-toast-angle {
+  syntax: '<angle>';
+  initial-value: 360deg;
+  inherits: false;
+}
+
+:root {
+  --toast-surface: var(--popover);
+  --toast-ink: var(--popover-foreground);
+  --toast-sub: var(--muted-foreground);
+  --toast-brand: var(--primary);
+  --toast-ok: #16a05a;
+  --toast-err: var(--destructive);
+  --toast-warn: #d18a00;
+  --toast-info: #2f7cf6;
+  --toast-shadow:
+    0 14px 34px -10px color-mix(in srgb, var(--foreground) 22%, transparent),
+    0 0 0 1px var(--border);
+}
+
+:root.dark,
+:root[data-theme='dark'] {
+  --toast-ok: #41c681;
+  --toast-warn: #f4bb2c;
+  --toast-info: #5c9cff;
+  --toast-shadow:
+    0 18px 40px -10px color-mix(in srgb, #000 70%, transparent),
+    0 0 0 1px var(--border);
+}
+
+@keyframes ink-toast-ring {
+  to {
+    --ink-toast-angle: 0deg;
+  }
+}
+
+@keyframes ink-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.9);
+    filter: blur(5px);
+  }
+}
+
+@keyframes ink-toast-exit {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.94);
+    filter: blur(3px);
+  }
+}
+
+@keyframes ink-toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+[data-sonner-toaster].ink-toast-host {
+  --width: min(420px, calc(100vw - 24px));
+  top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%);
+  font-family: inherit;
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast] {
+  width: 100%;
+  max-width: min(420px, calc(100vw - 24px));
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px 9px 11px;
+  border-radius: 22px;
+  border: none;
+  background: var(--toast-surface);
+  color: var(--toast-ink);
+  box-shadow: var(--toast-shadow);
+  animation: ink-toast-enter 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.1);
+  overflow: visible;
+  height: auto !important;
+  min-height: 56px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-mounted='true'][data-expanded='true'],
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-mounted='true'][data-expanded='false'] {
+  height: auto !important;
+  min-height: 56px;
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-removed='true'] {
+  animation: ink-toast-exit 0.22s forwards;
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast]:hover .ink-toast__ring::before {
+  animation-play-state: paused;
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast] [data-icon],
+[data-sonner-toaster].ink-toast-host .ink-toast__icon-slot {
+  margin: 0 !important;
+  width: 38px !important;
+  height: 38px !important;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+[data-sonner-toaster].ink-toast-host [data-content],
+[data-sonner-toaster].ink-toast-host .ink-toast__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-sonner-toaster].ink-toast-host [data-title],
+[data-sonner-toaster].ink-toast-host .ink-toast__title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--toast-ink);
+}
+
+[data-sonner-toaster].ink-toast-host [data-description],
+[data-sonner-toaster].ink-toast-host .ink-toast__description {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--toast-sub);
+}
+
+[data-sonner-toaster].ink-toast-host [data-close-button],
+[data-sonner-toaster].ink-toast-host .ink-toast__close {
+  position: static !important;
+  transform: none !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  flex: none;
+  order: 10;
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--toast-sub);
+  opacity: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+[data-sonner-toaster].ink-toast-host [data-close-button]:hover,
+[data-sonner-toaster].ink-toast-host .ink-toast__close:hover {
+  color: var(--toast-ink);
+  background: color-mix(in oklab, var(--toast-ink) 10%, transparent);
+}
+
+.ink-toast__close-glyph {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+[data-sonner-toaster].ink-toast-host [data-button][data-action],
+[data-sonner-toaster].ink-toast-host .ink-toast__action {
+  flex: none;
+  flex-shrink: 0;
+  order: 9;
+  width: auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  line-height: 1;
+  color: var(--toast-ink);
+  background: color-mix(in oklab, var(--toast-ink) 10%, transparent);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.15s ease;
+}
+
+[data-sonner-toaster].ink-toast-host [data-button][data-action]:hover,
+[data-sonner-toaster].ink-toast-host .ink-toast__action:hover {
+  background: color-mix(in oklab, var(--toast-ink) 22%, transparent);
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-type='error'] [data-button][data-action],
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-type='error'] .ink-toast__action {
+  color: var(--toast-err);
+  background: color-mix(in oklab, var(--toast-err) 14%, transparent);
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-type='error'] [data-button][data-action]:hover,
+[data-sonner-toaster].ink-toast-host [data-sonner-toast][data-type='error'] .ink-toast__action:hover {
+  background: color-mix(in oklab, var(--toast-err) 24%, transparent);
+}
+
+[data-sonner-toaster].ink-toast-host [data-button][data-cancel],
+[data-sonner-toaster].ink-toast-host .ink-toast__cancel {
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+[data-sonner-toaster].ink-toast-host [data-type='success'] {
+  --toast-ring-color: var(--toast-ok);
+  --toast-ring-duration: 3s;
+}
+
+[data-sonner-toaster].ink-toast-host [data-type='error'] {
+  --toast-ring-color: var(--toast-err);
+  --toast-ring-duration: 5s;
+}
+
+[data-sonner-toaster].ink-toast-host [data-type='warning'] {
+  --toast-ring-color: var(--toast-warn);
+  --toast-ring-duration: 4s;
+}
+
+[data-sonner-toaster].ink-toast-host [data-type='info'] {
+  --toast-ring-color: var(--toast-info);
+  --toast-ring-duration: 3s;
+}
+
+[data-sonner-toaster].ink-toast-host [data-type='loading'] {
+  --toast-ring-color: var(--toast-brand);
+  --toast-ring-duration: 0ms;
+}
+
+[data-sonner-toaster].ink-toast-host [data-sonner-toast]:not([data-type]) {
+  --toast-ring-color: var(--toast-brand);
+  --toast-ring-duration: 3s;
+}
+
+.ink-toast__ring {
+  --c: var(--toast-ring-color, var(--toast-brand));
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: var(--c);
+}
+
+.ink-toast__ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(var(--c) 0 9deg, transparent 9deg 15deg);
+  -webkit-mask:
+    radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px)),
+    conic-gradient(#000 var(--ink-toast-angle), transparent 0);
+  mask:
+    radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px)),
+    conic-gradient(#000 var(--ink-toast-angle), transparent 0);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  animation: ink-toast-ring var(--toast-ring-duration, 3s) linear forwards;
+}
+
+.ink-toast__ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--c) 16%, transparent) inset;
+}
+
+.ink-toast__ring--static::before {
+  animation: none;
+  --ink-toast-angle: 250deg;
+}
+
+.ink-toast__ring--spin::before {
+  animation: ink-toast-spin 1s linear infinite;
+  --ink-toast-angle: 100deg;
+}
+
+.ink-toast__glyph {
+  position: relative;
+  z-index: 1;
+  width: 1em;
+  height: 1em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toaster].ink-toast-host [data-sonner-toast] {
+    animation: none;
+  }
+
+  .ink-toast__ring::before {
+    animation: none;
+    --ink-toast-angle: 250deg;
+  }
+
+  .ink-toast__ring--spin::before {
+    animation: none;
+  }
+}

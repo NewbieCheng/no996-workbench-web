@@ -1,0 +1,305 @@
+/* WizardSteps — unified multi-step bar (dot / number / line / vertical) */
+
+.wizard-steps-shell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.wizard-steps-back {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.125rem;
+  border-radius: 0.375rem;
+  color: var(--muted-foreground);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.wizard-steps-back:hover {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+
+.wizard-steps-back-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1.5rem;
+  margin-block: 0.25rem;
+  flex: 0 0 auto;
+  background: var(--border);
+}
+
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  margin: 0;
+}
+
+.wizard-steps-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.wizard-steps-item--clickable {
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.wizard-steps-item--clickable:hover {
+  background: color-mix(in oklab, var(--muted) 45%, transparent);
+}
+
+.wizard-steps-item:disabled {
+  cursor: default;
+}
+
+.wizard-steps-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  min-width: 0;
+}
+
+.wizard-steps-title {
+  font-size: 0.84375rem;
+  font-weight: 550;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  transition: color 0.25s ease;
+}
+
+.wizard-steps-desc {
+  font-size: 0.71875rem;
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  white-space: nowrap;
+  transition: color 0.25s ease;
+}
+
+.wizard-steps-item.is-active .wizard-steps-title {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.wizard-steps-item.is-done .wizard-steps-title {
+  color: color-mix(in oklab, var(--foreground) 82%, var(--muted-foreground));
+}
+
+.wizard-steps-item.is-done .wizard-steps-desc {
+  color: var(--muted-foreground);
+}
+
+.wizard-steps-item.is-error .wizard-steps-title {
+  color: var(--destructive);
+}
+
+.wizard-steps-item.is-skipped .wizard-steps-title {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+
+.wizard-steps-line {
+  flex: 1 1 auto;
+  height: 1.5px;
+  margin: 0 0.75rem;
+  min-width: 0.875rem;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.wizard-steps-line > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--primary);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wizard-steps-line.is-fill > i {
+  transform: scaleX(1);
+}
+
+/* dot */
+.wizard-steps[data-variant='dot'] .wizard-steps-mark {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: box-shadow 0.25s ease;
+}
+
+.wizard-steps[data-variant='dot'] .wizard-steps-mark::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--muted-foreground) 38%, var(--border));
+  transition: background 0.25s ease;
+}
+
+.wizard-steps[data-variant='dot'] .wizard-steps-item.is-done .wizard-steps-mark::before,
+.wizard-steps[data-variant='dot'] .wizard-steps-item.is-active .wizard-steps-mark::before {
+  background: var(--primary);
+}
+
+.wizard-steps[data-variant='dot'] .wizard-steps-item.is-active .wizard-steps-mark {
+  box-shadow: 0 0 0 3.5px color-mix(in oklab, var(--primary) 12%, transparent);
+}
+
+/* number + vertical marks */
+.wizard-steps[data-variant='number'] .wizard-steps-mark,
+.wizard-steps[data-variant='vertical'] .wizard-steps-mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.71875rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in oklab, var(--muted) 70%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.wizard-steps[data-variant='number'] .wizard-steps-mark svg,
+.wizard-steps[data-variant='vertical'] .wizard-steps-mark svg {
+  width: 0.6875rem;
+  height: 0.6875rem;
+}
+
+.wizard-steps[data-variant='number'] .wizard-steps-item.is-done .wizard-steps-mark,
+.wizard-steps[data-variant='vertical'] .wizard-steps-item.is-done .wizard-steps-mark {
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.wizard-steps[data-variant='number'] .wizard-steps-item.is-active .wizard-steps-mark,
+.wizard-steps[data-variant='vertical'] .wizard-steps-item.is-active .wizard-steps-mark {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 12%, transparent);
+}
+
+.wizard-steps[data-variant='number'] .wizard-steps-item.is-error .wizard-steps-mark,
+.wizard-steps[data-variant='vertical'] .wizard-steps-item.is-error .wizard-steps-mark {
+  background: color-mix(in oklab, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+/* line */
+.wizard-steps[data-variant='line'] {
+  align-items: stretch;
+}
+
+.wizard-steps[data-variant='line'] .wizard-steps-mark,
+.wizard-steps[data-variant='line'] .wizard-steps-line {
+  display: none;
+}
+
+.wizard-steps[data-variant='line'] .wizard-steps-item {
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0 1rem 0.75rem 0;
+  position: relative;
+}
+
+.wizard-steps[data-variant='line'] .wizard-steps-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+.wizard-steps[data-variant='line'] .wizard-steps-item.is-done::after,
+.wizard-steps[data-variant='line'] .wizard-steps-item.is-active::after {
+  background: var(--primary);
+}
+
+.wizard-steps[data-variant='line'] .wizard-steps-text {
+  gap: 0.125rem;
+}
+
+/* vertical */
+.wizard-steps[data-variant='vertical'] {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.wizard-steps[data-variant='vertical'] .wizard-steps-item {
+  width: 100%;
+}
+
+.wizard-steps[data-variant='vertical'] .wizard-steps-text {
+  gap: 0.125rem;
+}
+
+.wizard-steps[data-variant='vertical'] .wizard-steps-line {
+  width: 1.5px;
+  height: 1.375rem;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0.4375rem 0 0.4375rem 0.703125rem;
+}
+
+.wizard-steps[data-variant='vertical'] .wizard-steps-line > i {
+  transform: scaleY(0);
+  transform-origin: top center;
+}
+
+.wizard-steps[data-variant='vertical'] .wizard-steps-line.is-fill > i {
+  transform: scaleY(1);
+}
+
+@media (max-width: 640px) {
+  .wizard-steps:not([data-variant='vertical']) .wizard-steps-desc {
+    display: none;
+  }
+
+  .wizard-steps-title {
+    font-size: 0.78125rem;
+  }
+
+  .wizard-steps-line {
+    margin-inline: 0.5rem;
+  }
+
+  .wizard-steps[data-variant='line'] .wizard-steps-item {
+    padding-right: 0.625rem;
+  }
+}

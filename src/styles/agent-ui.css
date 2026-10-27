@@ -1,0 +1,1191 @@
+/* ===========================================================================
+   通用 Agent UI（跨功能共享）
+   ---------------------------------------------------------------------------
+   这些样式原先长在 features/script-lab/script-lab.css 里，导致标题页与人设页
+   复用时拿不到样式（只是碰巧看起来还行的偶然耦合）。
+   现在按「共享组件 → 共享样式」上移到这里，由 src/index.css 全局引入。
+
+   令牌全部带兜底（var(--sl-x, var(--brand))），脱离 .script-lab 作用域也能正确渲染。
+   =========================================================================== */
+
+/* --------------------------- 页头右上角控件组 --------------------------- */
+
+/*
+ * `Page` 的 actions 插槽会被 `LocalizedPanelCopy` 包一层 .localized-panel-copy
+ * （那是给页面正文用的 flex column + 24px gap），所以放两个以上控件时必须自己
+ * 再包一层横向容器，否则「了解生产流程」和人设开关会竖着摞起来。
+ */
+.page-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 标题 h2 右侧：流程说明图标 + 创作/历史 Tab（与爆款标题页一致） */
+.page-title-extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+/* --------------------------- 人设注入开关（右上角） --------------------------- */
+
+.persona-injection {
+  --persona-accent: var(--sl-acc, var(--script-page-accent, var(--primary)));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border: 1px solid var(--sl-line, var(--border));
+  border-radius: 999px;
+  background: var(--sl-surface, var(--card));
+  color: var(--sl-mute, var(--muted-foreground));
+  font-size: 12px;
+  line-height: 1.2;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+/* 开关本体（label 里包着真实 checkbox）；换档按钮在它之外，避免点击冒泡互相干扰 */
+.persona-injection__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.persona-injection[data-on] {
+  border-color: var(--persona-accent);
+  background: var(--sl-glow, color-mix(in srgb, var(--persona-accent) 10%, transparent));
+  color: var(--persona-accent);
+}
+
+.persona-injection[data-disabled] {
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.persona-injection[data-disabled] .persona-injection__label {
+  cursor: default;
+}
+
+.persona-injection[data-disabled] .persona-injection__text {
+  font-weight: 500;
+}
+
+.persona-injection__cta {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--persona-accent);
+  color: var(--persona-accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.persona-injection__cta:hover {
+  background: color-mix(in srgb, var(--persona-accent) 12%, transparent);
+}
+
+.persona-injection__cta:focus-visible {
+  outline: none;
+}
+
+.persona-injection svg {
+  flex: none;
+}
+
+.persona-injection__text {
+  /* 中日韩字形约等于 2ch 宽，所以留够「已注入人设：＋九个字名字」≈ 30ch，再多就省略 */
+  max-width: 36ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* 视觉上的开关；真实控件是覆盖在上面的 checkbox，保证键盘与读屏可用 */
+.persona-injection__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.persona-injection__track {
+  flex: none;
+  position: relative;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sl-mute, var(--muted-foreground)) 38%, transparent);
+  transition: background 160ms ease;
+}
+
+.persona-injection__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 160ms var(--shell-ease-out, ease);
+}
+
+.persona-injection[data-on] .persona-injection__track {
+  background: var(--persona-accent);
+}
+
+.persona-injection[data-on] .persona-injection__thumb {
+  transform: translateX(13px);
+}
+
+.persona-injection:focus-within {
+  outline: none;
+}
+
+.persona-injection__label:focus,
+.persona-injection__label:focus-visible,
+.persona-injection__pick:focus,
+.persona-injection__pick:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.persona-injection__label[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--persona-accent, var(--primary)) 10%, var(--card));
+  color: var(--persona-accent, var(--primary));
+}
+
+.persona-injection:has(.persona-injection__label[aria-expanded='true']) {
+  border-color: color-mix(in srgb, var(--persona-accent, var(--primary)) 35%, var(--sl-line, var(--border)));
+}
+
+/* 换档：控件被开关点亮时才出现，且只在真的有多个档时渲染 */
+.persona-injection__pick {
+  flex: none;
+  margin-left: 2px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--persona-accent) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.persona-injection__pick:hover {
+  background: color-mix(in srgb, var(--persona-accent) 16%, transparent);
+}
+
+.persona-injection__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 12rem;
+  max-width: 20rem;
+  max-height: var(--available-height, 320px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  text-align: left;
+}
+
+/* 与顶栏 DropdownMenu（glass-menu-surface）同一套浮层 */
+.persona-injection__menu.glass-menu-surface {
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--glass-menu-text);
+}
+
+.persona-injection__menu-label {
+  margin: 0;
+  padding: 4px 6px 2px;
+  color: color-mix(in srgb, var(--glass-menu-text) 55%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.persona-injection__menu.glass-menu-surface .persona-injection__menu-label {
+  color: color-mix(in srgb, var(--glass-menu-text) 55%, transparent);
+}
+
+.persona-injection__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: calc(100% - 8px);
+  margin: 1px 4px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--glass-menu-item-radius, 6px);
+  background: transparent;
+  color: var(--glass-menu-text, var(--foreground));
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: default;
+}
+
+.persona-injection__item:hover,
+.persona-injection__item:focus-visible {
+  background-color: var(--glass-menu-hover);
+  color: var(--glass-menu-text);
+  outline: none;
+}
+
+.persona-injection__item[data-current] {
+  background-color: var(--glass-menu-hover);
+  color: var(--glass-menu-text);
+}
+
+.persona-injection__item-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.persona-injection__item-hint {
+  color: var(--sl-mute, var(--muted-foreground));
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.persona-binding__none {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--glass-menu-text) 72%, transparent);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.persona-binding__none:hover {
+  background-color: var(--glass-menu-hover);
+  color: var(--glass-menu-text);
+}
+
+.persona-binding__none:focus-visible {
+  outline: none;
+}
+
+/* ------------------------------- 通用 Agent UI ------------------------------- */
+
+/*
+ * 步骤进度条已抽成公共组件 `@no996/ui/stage-progress`（见 §3.1）：样式随组件走
+ * `packages/ui/src/stage-progress.css`，三个创作页与 `WorkflowRunCard` 都改用它。
+ * 这里只留折叠区仍然引用的光标动画，避免与公共件里的同名规则打架。
+ */
+
+@keyframes agent-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 折叠区 */
+.agent-detail {
+  border: 1px solid var(--sl-line, var(--border));
+  border-radius: var(--sl-radius, var(--radius));
+  background: var(--sl-surface, var(--card));
+}
+
+.agent-detail__summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  list-style: none;
+}
+
+.agent-detail__summary::-webkit-details-marker {
+  display: none;
+}
+
+.agent-detail__body {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.agent-detail__note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.agent-detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.agent-detail__item {
+  border: 1px solid var(--sl-line, var(--border));
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.agent-detail__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-detail__head:hover {
+  background: color-mix(in srgb, var(--sl-acc, var(--primary)) 6%, transparent);
+}
+
+.agent-detail__chevron {
+  transition: transform 160ms ease;
+}
+
+.agent-detail__chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+.agent-detail__role {
+  font-weight: 600;
+}
+
+.agent-detail__round {
+  font-size: 10px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+/* 状态文案推到右侧，让「跑过 / 跳过」在扫视时就能区分开 */
+.agent-detail__status {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+/* 跳过的步骤整体调暗：它占一行是为了说明「有这一步、但本轮没做」，
+   不该和真正执行过的步骤抢注意力。 */
+.agent-detail__item[data-status='skipped'] .agent-detail__role,
+.agent-detail__item[data-status='skipped'] .agent-detail__status {
+  color: var(--sl-mute, var(--muted-foreground));
+  font-weight: 400;
+}
+
+.agent-detail__item[data-status='failed'] .agent-detail__status {
+  color: var(--destructive, #d33);
+}
+
+.agent-detail__content {
+  display: grid;
+  gap: 10px;
+  padding: 0 11px 12px;
+}
+
+.agent-detail__principle {
+  margin: 0;
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.agent-detail__block {
+  display: grid;
+  gap: 5px;
+}
+
+.agent-detail__block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+/* 本步产出：一句摘要，不是原始 JSON dump */
+.agent-detail__digest {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sl-mute, var(--muted-foreground)) 10%, transparent);
+  font-size: 12px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+/* 指标行 */
+.agent-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+
+.agent-metrics__item {
+  flex: 1 1 120px;
+  min-width: 108px;
+  padding: 4px 16px;
+  border-left: 1px solid var(--sl-line, var(--border));
+}
+
+.agent-metrics__item:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.agent-metrics__label {
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.agent-metrics__value {
+  margin: 2px 0 0;
+  font-family: var(--sl-display, inherit);
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.agent-metrics__item[data-tone='good'] .agent-metrics__value {
+  color: #047857;
+}
+
+.agent-metrics__item[data-tone='warn'] .agent-metrics__value {
+  color: #b45309;
+}
+
+.agent-metrics__hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+/* 留存曲线 */
+.retention-curve {
+  display: grid;
+  gap: 10px;
+}
+
+.retention-curve__head h3 {
+  margin: 0;
+  font-family: var(--sl-display, inherit);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.retention-curve__head p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.retention-curve__svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.retention-curve__band {
+  fill: color-mix(in srgb, var(--sl-mute, var(--muted-foreground)) 7%, transparent);
+}
+
+.retention-curve__grid {
+  stroke: var(--sl-line, var(--border));
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+.retention-curve__axis,
+.retention-curve__seg {
+  fill: var(--sl-mute, var(--muted-foreground));
+  font-size: 10px;
+}
+
+.retention-curve__area {
+  fill: url(#rc-fill);
+  transition: opacity 620ms ease;
+}
+
+.retention-curve__path {
+  fill: none;
+  stroke: var(--sl-acc, var(--primary));
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  transition: stroke-dashoffset 900ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.retention-curve__path--baseline {
+  stroke: var(--sl-mute, var(--muted-foreground));
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
+}
+
+.retention-curve__dot {
+  fill: var(--sl-surface, var(--card));
+  stroke: var(--sl-acc, var(--primary));
+  stroke-width: 2;
+}
+
+.retention-curve__drop {
+  fill: none;
+  stroke: #dc2626;
+  stroke-width: 2;
+}
+
+.retention-curve__drop-label {
+  fill: #dc2626;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.retention-curve__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.retention-curve__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.retention-curve__swatch {
+  width: 16px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.retention-curve__swatch--final {
+  background: var(--sl-acc, var(--primary));
+}
+
+.retention-curve__swatch--first {
+  background: var(--sl-mute, var(--muted-foreground));
+}
+
+.persona-binding__menu {
+  z-index: 50;
+}
+
+/* --------------------------- Workflow 运行大卡片 --------------------------- */
+
+.wf-card {
+  --wf-acc: var(--sl-acc, var(--primary));
+  border: 1px solid var(--sl-line, var(--border));
+  border-radius: 12px;
+  background: var(--sl-surface, var(--card));
+  color: var(--sl-ink, var(--foreground));
+  overflow: hidden;
+}
+
+.wf-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+}
+
+.wf-card__head-toggle {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.wf-card__head-toggle:hover {
+  background: color-mix(in srgb, var(--wf-acc) 5%, transparent);
+  border-radius: 8px;
+}
+
+.wf-card__head-toggle:focus-visible {
+  outline: 2px solid var(--wf-acc);
+  outline-offset: 2px;
+}
+
+.wf-card__dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--sl-mute, var(--muted-foreground));
+}
+
+.wf-card[data-status='running'] .wf-card__dot {
+  background: var(--wf-acc);
+  animation: wf-pulse 1.6s ease-in-out infinite;
+}
+
+.wf-card[data-status='done'] .wf-card__dot {
+  background: #059669;
+}
+
+.wf-card[data-status='cancelled'] .wf-card__dot {
+  background: var(--sl-mute, var(--muted-foreground));
+}
+
+.wf-card[data-status='failed'] .wf-card__dot {
+  background: var(--destructive, #dc2626);
+}
+
+@keyframes wf-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.wf-card__head-main {
+  display: grid;
+  gap: 6px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.wf-card__meter-row {
+  display: flex;
+  align-items: center;
+  flex: 1 1 120px;
+  min-width: 100px;
+  gap: 8px;
+}
+
+.wf-card__progress {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-acc) 12%, var(--sl-line, var(--border)));
+  overflow: hidden;
+}
+
+.wf-card__progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-acc);
+  transition: width 120ms linear;
+}
+
+.wf-card__percent {
+  min-width: 3ch;
+  color: var(--sl-mute, var(--muted-foreground));
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.wf-card__activity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--sl-ink, var(--foreground));
+  font-size: 12px;
+}
+
+.wf-card__activity > span {
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.wf-card__head-toggle:disabled {
+  cursor: default;
+}
+
+.wf-card__head-toggle:disabled:hover {
+  background: transparent;
+}
+
+.wf-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.wf-card__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.wf-card__stage {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sl-mute, var(--muted-foreground));
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wf-card__status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wf-acc);
+}
+
+.wf-card[data-status='done'] .wf-card__status {
+  color: #059669;
+}
+
+.wf-card[data-status='failed'] .wf-card__status {
+  color: var(--destructive, #dc2626);
+}
+
+.wf-card__round,
+.wf-card__badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--sl-line, var(--border));
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.wf-card__badge {
+  border-color: var(--wf-acc);
+  color: var(--wf-acc);
+}
+
+.wf-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wf-card__chip {
+  padding: 3px 10px;
+  border: 1px solid var(--sl-line, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sl-mute, var(--muted-foreground)) 7%, transparent);
+  font-size: 12px;
+  color: var(--sl-ink, var(--foreground));
+}
+
+.wf-card__time {
+  font-size: 11px;
+  color: var(--sl-mute, var(--muted-foreground));
+  font-variant-numeric: tabular-nums;
+}
+
+.wf-card__chevron {
+  flex: none;
+  margin-top: 2px;
+  color: var(--sl-mute, var(--muted-foreground));
+  transition: transform 160ms ease;
+}
+
+.wf-card__chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+.wf-card__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
+}
+
+.wf-card__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--sl-line, var(--border));
+  border-radius: 10px;
+  background: var(--sl-surface, var(--card));
+  color: var(--sl-ink, var(--foreground));
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.wf-card__icon-btn:hover:not(:disabled),
+.wf-card__icon-btn[data-on] {
+  background: color-mix(in srgb, var(--wf-acc) 8%, var(--sl-surface, var(--card)));
+  border-color: color-mix(in srgb, var(--wf-acc) 35%, var(--sl-line, var(--border)));
+  color: var(--wf-acc);
+}
+
+.wf-card__icon-btn:focus-visible {
+  outline: 2px solid var(--wf-acc);
+  outline-offset: 2px;
+}
+
+.wf-card__icon-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.wf-card__icon-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--destructive, #dc2626) 8%, var(--sl-surface, var(--card)));
+  border-color: color-mix(in srgb, var(--destructive, #dc2626) 40%, var(--sl-line, var(--border)));
+  color: var(--destructive, #dc2626);
+}
+
+.wf-card__action-separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: var(--sl-line, var(--border));
+}
+
+.wf-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.wf-card__head-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--sl-line, var(--border));
+  background: var(--sl-surface, var(--card));
+  color: var(--sl-ink, var(--foreground));
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wf-card__head-btn:hover {
+  background: color-mix(in srgb, var(--sl-mute, var(--muted-foreground)) 10%, transparent);
+}
+
+.wf-card__head-btn--danger {
+  border-color: color-mix(in srgb, var(--destructive, #dc2626) 45%, var(--border));
+  color: var(--destructive, #dc2626);
+}
+
+.wf-card__head-btn--danger:hover {
+  background: color-mix(in srgb, var(--destructive, #dc2626) 10%, transparent);
+}
+
+.wf-card__detail-btn svg[data-open] {
+  transform: rotate(180deg);
+}
+
+.wf-card__search-details {
+  display: grid;
+  gap: 8px;
+  margin: 0 18px 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--wf-acc) 22%, var(--sl-line, var(--border)));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wf-acc) 6%, transparent);
+  color: var(--sl-text, var(--foreground));
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.wf-card__search-attempt {
+  display: grid;
+  gap: 3px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--sl-line, var(--border));
+}
+
+.wf-card__search-attempt:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.wf-card__search-attempt[data-outcome='failed'] strong,
+.wf-card__search-attempt[data-outcome='rejected'] strong {
+  color: var(--destructive, #b91c1c);
+}
+
+.wf-card__search-attempt strong {
+  font-size: 12.5px;
+}
+
+.wf-card__body {
+  display: grid;
+  gap: 12px;
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--sl-line, var(--border));
+  padding-top: 16px;
+}
+
+.wf-card__hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+.wf-card__stream {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wf-acc) 8%, transparent);
+  font-size: 12.5px;
+  line-height: 1.7;
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.wf-card__caret {
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--wf-acc);
+  animation: agent-caret 1s step-end infinite;
+}
+
+.wf-card__error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--destructive, #dc2626) 9%, transparent);
+  color: var(--destructive, #b91c1c);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.wf-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wf-card__btn {
+  padding: 8px 18px;
+  border: 1.5px solid var(--sl-line, var(--border));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sl-ink, var(--foreground));
+  font: 600 13px inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.wf-card__btn:hover {
+  border-color: var(--wf-acc);
+  color: var(--wf-acc);
+}
+
+.wf-card__btn:active {
+  transform: scale(0.98);
+}
+
+.wf-card__btn:focus-visible {
+  outline: 2px solid var(--wf-acc);
+  outline-offset: 2px;
+}
+
+.wf-card__btn--danger:hover {
+  border-color: var(--destructive, #dc2626);
+  color: var(--destructive, #dc2626);
+}
+
+/* --------------------------- 三步向导壳 --------------------------- */
+
+.wf-wizard {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+}
+
+.wf-wizard__steps {
+  padding: 16px 20px 4px;
+  border-bottom: 1px solid var(--sl-line, var(--border));
+}
+
+.wf-wizard__body {
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.wf-wizard__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--sl-line, var(--border));
+  background: color-mix(in srgb, var(--sl-mute, var(--muted-foreground)) 4%, transparent);
+}
+
+/* 积分说明与操作钮分两行时，避免两条顶边叠成「双层底栏」 */
+.wf-wizard__foot--meta {
+  padding-top: 12px;
+  padding-bottom: 10px;
+  border-top: 1px solid var(--sl-line, var(--border));
+  background: transparent;
+}
+
+.wf-wizard__foot--meta + .wf-wizard__foot {
+  border-top: 0;
+  padding-top: 12px;
+}
+
+.wf-wizard__spacer {
+  flex: 1;
+}
+
+.wf-wizard__nav {
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--sl-line, var(--border));
+  background: transparent;
+  color: var(--sl-ink, var(--foreground));
+  font: 600 13px inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.wf-wizard__nav:hover:not(:disabled) {
+  border-color: var(--wf-acc, var(--sl-acc, var(--primary)));
+  color: var(--wf-acc, var(--sl-acc, var(--primary)));
+}
+
+.wf-wizard__nav:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.wf-wizard__nav:focus-visible {
+  outline: 2px solid var(--wf-acc, var(--sl-acc, var(--primary)));
+  outline-offset: 2px;
+}
+
+.wf-wizard__nav:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.wf-wizard__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wf-acc, var(--sl-acc, var(--primary)));
+  color: #fff;
+  font: 700 14px inherit;
+  cursor: pointer;
+  box-shadow: 0 3px 14px color-mix(in srgb, var(--wf-acc, var(--sl-acc, var(--primary))) 24%, transparent);
+  transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+}
+
+.wf-wizard__go:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--wf-acc, var(--sl-acc, var(--primary))) 30%, transparent);
+}
+
+.wf-wizard__go:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.wf-wizard__go:focus-visible {
+  outline: 2px solid var(--wf-acc, var(--sl-acc, var(--primary)));
+  outline-offset: 2px;
+}
+
+.wf-wizard__go:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.wf-wizard__skip {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-acc, var(--sl-acc, var(--primary)));
+  font: 500 13px inherit;
+  cursor: pointer;
+}
+
+.wf-wizard__skip:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wf-wizard__skip:focus-visible {
+  outline: 2px solid var(--wf-acc, var(--sl-acc, var(--primary)));
+  outline-offset: 2px;
+}
+
+.wf-wizard__error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--destructive, #b91c1c);
+}
+
+.wf-wizard__note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--sl-mute, var(--muted-foreground));
+}
+
+/* 减少动效 */
+@media (prefers-reduced-motion: reduce) {
+  .wf-card__dot,
+  .wf-card__progress-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .retention-curve__svg * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .retention-curve__path {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .retention-curve__area {
+    opacity: 1 !important;
+  }
+}

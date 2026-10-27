@@ -1,0 +1,36 @@
+/**
+ * @no996/video-editor 基础剪辑台主题与通用样式（适配亮色系统与宿主主题）
+ */
+
+:root {
+  --ve-bg-canvas: var(--muted, #f1f5f9);
+  --ve-bg-base: var(--background, #ffffff);
+  --ve-bg-subtle: var(--card, #ffffff);
+  --ve-bg-elevated: var(--muted, #f1f5f9);
+  --ve-border: var(--border, #e2e8f0);
+  --ve-text-main: var(--foreground, #0f172a);
+  --ve-text-muted: var(--muted-foreground, #64748b);
+  --ve-accent: var(--primary, #f06418);
+  --ve-accent-hover: var(--primary, #ea580c);
+  --ve-primary: var(--primary, #f06418);
+  --ve-playhead: var(--primary, #f06418);
+}
+
+.ve-timeline-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #e2e8f0) transparent;
+}
+
+.ve-timeline-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ve-timeline-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ve-timeline-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border, #e2e8f0);
+  border-radius: 3px;
+}

@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+deploy/artifact.tar.gz
+deploy/artifact.sha256
+*.local
+
+# 部署说明含服务器地址、SSH 与目录布局，只保留在本机，不入库。
+/DEPLOYMENT.md
+# 部署主机与本机发布清单，只保留在本机。
+/deploy/local.config.json
+/deploy/latest-release.json
+
+# 本机核验产物（截图、检查日志、一次性驱动脚本）。
+# 早期已跟踪的 .verify/shots 等文件保留在库里；新产物不再入库。
+.verify/*.txt
+.verify/digital-human-*.cjs
+.verify/digital-human-*.tsx
+.verify/digital-human-*.html
+.verify/ip-video-*.txt
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+

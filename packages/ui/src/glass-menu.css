@@ -1,0 +1,351 @@
+/* Glass menu surface — CSS variables + backdrop blur + borderless card */
+
+:root {
+  --glass-menu-bg: rgba(243, 243, 243, 0.65);
+  --glass-menu-text: #1a1a1a;
+  --glass-menu-hover: rgba(255, 255, 255, 0.85);
+  --glass-menu-separator: rgba(0, 0, 0, 0.1);
+  --glass-menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --glass-menu-backdrop: blur(25px) saturate(150%);
+  --glass-menu-scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --glass-menu-radius: 10px;
+  --glass-menu-padding: 6px;
+  --glass-menu-item-radius: 6px;
+  --glass-menu-item-padding-block: 10px;
+  --glass-menu-item-padding-inline: 14px;
+}
+
+.dark {
+  --glass-menu-bg: rgba(40, 40, 40, 0.75);
+  --glass-menu-text: #f0f0f0;
+  --glass-menu-hover: rgba(255, 255, 255, 0.15);
+  --glass-menu-separator: rgba(255, 255, 255, 0.1);
+  --glass-menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --glass-menu-scrollbar-thumb: rgba(255, 255, 255, 0.2);
+}
+
+/* Reference alias: .glass-menu === .glass-menu-surface */
+.glass-menu,
+.glass-menu-surface {
+  position: relative;
+  box-sizing: border-box;
+  padding: var(--glass-menu-padding);
+  border: none;
+  border-radius: var(--glass-menu-radius);
+  background: transparent;
+  color: var(--glass-menu-text);
+  box-shadow: var(--glass-menu-shadow);
+  transition:
+    box-shadow 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Electron / Portal 浮层：blur 放在 ::before，与 sidebar-l3-flyout 同套路，打包版 compositor 更稳 */
+.glass-menu::before,
+.glass-menu-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--glass-menu-bg);
+  -webkit-backdrop-filter: var(--glass-menu-backdrop);
+  backdrop-filter: var(--glass-menu-backdrop);
+  transition: background-color 0.3s ease;
+}
+
+.glass-menu > *,
+.glass-menu-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 外壳首帧不透明，内容延迟淡入，等 backdrop-filter 合成稳定 */
+@keyframes glass-surface-content-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.glass-surface-content {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-menu-surface[data-open] > .glass-surface-content,
+.glass-menu-surface[data-open] > *:not([data-slot='dialog-close']) {
+  animation: glass-surface-content-in 100ms ease-out both;
+  animation-delay: 40ms;
+}
+
+.glass-menu-surface--scroll-shell[data-open] > .glass-menu-surface--scrollable {
+  animation: glass-surface-content-in 100ms ease-out both;
+  animation-delay: 40ms;
+}
+
+[data-slot='dialog-content'][data-open] > *:not([data-slot='dialog-close']) {
+  animation: glass-surface-content-in 100ms ease-out both;
+  animation-delay: 40ms;
+}
+
+.home-context-meter__panel > .home-context-meter__body {
+  animation: glass-surface-content-in 100ms ease-out both;
+  animation-delay: 40ms;
+}
+
+.glass-menu-surface[data-open]::before,
+.glass-menu-surface--scroll-shell[data-open]::before {
+  transform: translateZ(0);
+}
+
+html[data-theme='minimal'] .glass-menu::before,
+html[data-theme='minimal'] .glass-menu-surface::before,
+html[data-theme='minimal-dark'] .glass-menu::before,
+html[data-theme='minimal-dark'] .glass-menu-surface::before {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-menu::before,
+  .glass-menu-surface::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--popover, var(--glass-menu-bg));
+  }
+}
+
+@supports not (
+  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+  .glass-menu::before,
+  .glass-menu-surface::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--popover, var(--glass-menu-bg));
+  }
+}
+
+/* 可滚动菜单：blur 固定在外壳，内容在内层滚动，避免 ::before 与滚动底色分层 */
+.glass-menu-surface--scroll-shell {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 80vh;
+  padding: 0;
+  border-radius: var(--glass-menu-radius);
+  color: var(--glass-menu-text);
+  box-shadow: var(--glass-menu-shadow);
+  background: transparent;
+  overflow: hidden;
+  transition:
+    box-shadow 0.3s ease,
+    color 0.3s ease;
+}
+
+.glass-menu-surface--scroll-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--glass-menu-bg);
+  -webkit-backdrop-filter: var(--glass-menu-backdrop);
+  backdrop-filter: var(--glass-menu-backdrop);
+  transition: background-color 0.3s ease;
+}
+
+.glass-menu-surface--scroll-shell > .glass-menu-surface--scrollable {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: var(--glass-menu-padding);
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.glass-menu-surface--scroll-shell > .glass-menu::before,
+.glass-menu-surface--scroll-shell > .glass-menu-surface--scrollable::before {
+  content: none;
+  display: none;
+}
+
+html[data-theme='minimal'] .glass-menu-surface--scroll-shell::before,
+html[data-theme='minimal-dark'] .glass-menu-surface--scroll-shell::before {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-menu-surface--scroll-shell::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--popover, var(--glass-menu-bg));
+  }
+}
+
+@supports not (
+  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+  .glass-menu-surface--scroll-shell::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--popover, var(--glass-menu-bg));
+  }
+}
+
+.glass-menu-surface--scrollable {
+  --no996-scrollbar-thumb: var(--glass-menu-scrollbar-thumb);
+  --no996-scrollbar-thumb-hover: color-mix(
+    in srgb,
+    var(--glass-menu-scrollbar-thumb) 65%,
+    var(--glass-menu-text)
+  );
+  --dsh-scrollbar-thumb: var(--no996-scrollbar-thumb);
+  --dsh-scrollbar-thumb-hover: var(--no996-scrollbar-thumb-hover);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.glass-menu-item {
+  display: flex;
+  align-items: center;
+  padding: var(--glass-menu-item-padding-block) var(--glass-menu-item-padding-inline);
+  border-radius: var(--glass-menu-item-radius);
+  cursor: pointer;
+  user-select: none;
+  color: var(--glass-menu-text, inherit);
+  font-size: 13px;
+  line-height: 1.4;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.glass-menu-item:hover:not(:disabled),
+.glass-menu-item:focus-visible:not(:disabled) {
+  background-color: var(--glass-menu-hover);
+  color: var(--glass-menu-text, inherit);
+}
+
+.glass-menu-separator {
+  flex: none;
+  height: 1px;
+  margin: 4px 12px;
+  background-color: var(--glass-menu-separator);
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.glass-menu-footer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--glass-menu-separator);
+}
+
+.glass-menu-group-label {
+  padding: 4px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--glass-menu-text) 55%, transparent);
+}
+
+/* ── Primitive menu slots inside a glass surface ───────────────── */
+
+.glass-menu-surface [data-slot='dropdown-menu-item'],
+.glass-menu-surface [data-slot='dropdown-menu-sub-trigger'],
+.glass-menu-surface [data-slot='dropdown-menu-checkbox-item'] {
+  border-radius: var(--glass-menu-item-radius, 6px);
+  margin: 1px 4px;
+}
+
+/* 子菜单行：标签区占满剩余宽度，箭头固定在最右（与 shortcut 对齐） */
+.glass-menu-surface [data-slot='dropdown-menu-sub-trigger'] {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.375rem;
+  align-items: center;
+  width: 100%;
+}
+
+.glass-menu-surface [data-slot='dropdown-menu-sub-chevron'] {
+  flex-shrink: 0;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.glass-menu-surface [data-slot='dropdown-menu-item']:not([data-variant='destructive']):focus,
+.glass-menu-surface [data-slot='dropdown-menu-sub-trigger']:focus,
+.glass-menu-surface [data-slot='dropdown-menu-checkbox-item']:focus,
+.glass-menu-surface [data-slot='dropdown-menu-radio-item']:focus,
+.glass-menu-surface [data-slot='select-item']:focus,
+.glass-menu-surface [data-slot='combobox-item'][data-highlighted]:not([data-variant='destructive']),
+.glass-menu-surface [data-slot='dropdown-menu-sub-trigger'][data-popup-open],
+.glass-menu-surface [data-slot='dropdown-menu-sub-trigger'][data-open] {
+  background-color: var(--glass-menu-hover);
+  color: var(--glass-menu-text);
+}
+
+.glass-menu-surface [data-slot='dropdown-menu-separator'],
+.glass-menu-surface [data-slot='select-separator'],
+.glass-menu-surface [data-slot='combobox-separator'] {
+  height: 1px;
+  margin: 4px 12px;
+  background-color: var(--glass-menu-separator);
+}
+
+.glass-menu-surface [data-slot='dropdown-menu-label'],
+.glass-menu-surface [data-slot='select-label'],
+.glass-menu-surface [data-slot='combobox-label'] {
+  color: color-mix(in srgb, var(--glass-menu-text) 55%, transparent);
+}
+
+.glass-menu-surface [data-slot='dropdown-menu-shortcut'] {
+  color: color-mix(in srgb, var(--glass-menu-text) 45%, transparent);
+}
+
+.glass-menu-surface [data-slot='select-scroll-up-button'],
+.glass-menu-surface [data-slot='select-scroll-down-button'] {
+  background-color: var(--glass-menu-bg);
+  color: var(--glass-menu-text);
+}
+
+.glass-menu-item__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 12px;
+  font-size: 16px;
+}
+
+.glass-menu-item__text {
+  min-width: 0;
+  flex: 1;
+}

@@ -1,0 +1,26 @@
+{
+  "camera/space-camera-moves~DroneDiveLanding": {
+    "reason": "纯运镜包装层 + 单一共享占位素材：四个槽位里只有 bg 存在「间接」落点（Backdrop 内置渐变，属 _fixtures 的材质停靠点），另外三个（pri"
+  },
+  "data/before-after-slider-scrub": {
+    "reason": "整页占位式画面：四个槽位都没有可落地的大面积自有颜色，按规范 skip，不硬造字段"
+  },
+  "effects/impact-feedback~AnimeImpact": {
+    "reason": "整页共享占位底图 + 纯特效叠层的镜头，四个槽位里只有 1 个（primary）存在可见落点，其余三个接上去就是「拖了几乎不变」的假控件，按「宁可 skip 也"
+  },
+  "typography/type-entrance-moves": {
+    "reason": "颜色全部来自共享占位令牌 G（_fixtures/Fixtures 的 ink1/ink2 与灰阶玻璃反光），本文件没有自有配色常量，改色无可落地对象"
+  },
+  "ui-entrance/clipcard-looping": {
+    "reason": "画面主体是共享 ClipCard 组件里播放的 mp4 素材（卡片底 #111116、字幕条文字、▸ 强调色都在 assets/lib/ClipCard.tsx"
+  },
+  "ui-entrance/page-waterfall-wall": {
+    "reason": "整页截图/贴图式镜头：画面 100% 由 20 张 card1–10.png 光栅截图切片（714–716×576–624 px，PNG colorType=2"
+  },
+  "ui-entrance/row-embed": {
+    "reason": "整页截图驱动的镜头，四个槽位里 3 个没有任何可映射对象、剩下的 bg 两个候选分别是「被完全遮住」和「必须与截图逐像素同色的障眼补丁」，按规矩 skip，未改"
+  },
+  "ui-entrance/wall-reveal-moves~WireframeDrawOn": {
+    "reason": "纯线框占位镜头：自带颜色实际只有「一支线墨 + 一张纸」，四个槽位里仅 2 个有诚实候选、其中一个还是任务里点名的「单一线条」，另两个必须拿特效光/暗角/共享占"
+  }
+}

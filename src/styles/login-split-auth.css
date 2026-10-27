@@ -1,0 +1,643 @@
+/**
+ * 分栏登录/注册表单 — 独立控件体系
+ * 作用域：.login-page--split .login-split-form 与弹层 .login-split-surface .login-split-form
+ */
+
+.login-page--split,
+.login-split-surface {
+  /* 相对原 3.5rem 输入高度整体约 −20% */
+  --login-split-scale: 0.8;
+  --login-split-h: calc(3.5rem * var(--login-split-scale));
+  --login-split-intent-h: calc(var(--login-split-h) * 0.75);
+  --login-split-btn-h: calc(3rem * var(--login-split-scale));
+  --login-split-alt-icon: calc(2.75rem * var(--login-split-scale));
+  --login-split-radius: 10px;
+  --login-split-border: rgba(0, 0, 0, 0.25);
+  --login-split-bg: #ffffff;
+  --login-split-fg: #0a0a0a;
+  --login-split-muted: rgba(15, 23, 42, 0.55);
+  --login-split-border-strong: rgba(0, 0, 0, 0.42);
+  --login-split-fill-hover: rgba(0, 0, 0, 0.04);
+  --login-split-fill-active: rgba(0, 0, 0, 0.07);
+  --login-split-primary-bg: #0a0a0a;
+  --login-split-primary-fg: #ffffff;
+  --login-split-primary-border: rgba(0, 0, 0, 0.4);
+  /* 身份切换：黑字 + 黑色底线，无品牌橙 */
+  --login-split-intent-rail: rgba(15, 23, 42, 0.12);
+  --login-split-intent-indicator: #0a0a0a;
+  --login-split-intent-active-fg: #0a0a0a;
+  --login-split-intent-idle-fg: rgba(15, 23, 42, 0.45);
+  --login-split-gap: 16px;
+}
+
+html[data-theme='dark'] .login-page--split,
+html[data-theme='deepsea'] .login-page--split,
+html[data-theme='dark'] .login-split-surface,
+html[data-theme='deepsea'] .login-split-surface {
+  --login-split-border: rgba(255, 255, 255, 0.22);
+  --login-split-bg: rgba(255, 255, 255, 0.06);
+  --login-split-fg: #f5f5f5;
+  --login-split-muted: rgba(226, 232, 240, 0.55);
+  --login-split-border-strong: rgba(255, 255, 255, 0.4);
+  --login-split-fill-hover: rgba(255, 255, 255, 0.09);
+  --login-split-fill-active: rgba(255, 255, 255, 0.12);
+  --login-split-primary-bg: #ffffff;
+  --login-split-primary-fg: #0a0a0a;
+  --login-split-primary-border: rgba(255, 255, 255, 0.4);
+  --login-split-intent-rail: rgba(255, 255, 255, 0.18);
+  --login-split-intent-indicator: #ffffff;
+  --login-split-intent-active-fg: #ffffff;
+  --login-split-intent-idle-fg: rgba(255, 255, 255, 0.48);
+}
+
+.login-page--split .login-split-form,
+.login-split-surface .login-split-form {
+  gap: 20px;
+}
+
+.login-page--split .login-split-form [data-slot='field-group'],
+.login-split-surface .login-split-form [data-slot='field-group'] {
+  gap: 20px;
+}
+
+.login-page--split .login-split-form [data-slot='field-label'],
+.login-split-surface .login-split-form [data-slot='field-label'] {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--login-split-muted);
+}
+
+.login-page--split .login-split-form [data-slot='field-error'],
+.login-split-surface .login-split-form [data-slot='field-error'] {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(220, 38, 38, 0.9);
+}
+
+/* 身份切换：文字 Tab + 全宽浅轨 + 黑色滑动底线 */
+.login-page--split .login-split-intent {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  box-sizing: border-box;
+  min-height: var(--login-split-intent-h);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--login-split-intent-rail);
+}
+
+.login-page--split .login-split-intent__indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 2px;
+  border-radius: 1px 1px 0 0;
+  background: var(--login-split-intent-indicator);
+  box-shadow: none;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.login-page--split .login-split-form .login-split-field[data-slot='input'],
+.login-split-surface .login-split-form .login-split-field[data-slot='input'],
+.login-page--split .login-split-form [data-slot='input-group'].login-split-field,
+.login-split-surface .login-split-form [data-slot='input-group'].login-split-field,
+.login-page--split .login-split-form .login-email-composite__suffix,
+.login-split-surface .login-split-form .login-email-composite__suffix,
+.login-page--split .login-split-form .login-phone-prefix,
+.login-split-surface .login-split-form .login-phone-prefix {
+  box-sizing: border-box;
+  min-height: var(--login-split-h);
+  border-radius: var(--login-split-radius);
+  border: 1px solid var(--login-split-border);
+  background: var(--login-split-bg);
+  color: var(--login-split-fg);
+  box-shadow: none;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.login-page--split .login-split-form .login-split-field[data-slot='input'],
+.login-split-surface .login-split-form .login-split-field[data-slot='input'],
+.login-page--split .login-split-form [data-slot='input-group'].login-split-field,
+.login-split-surface .login-split-form [data-slot='input-group'].login-split-field {
+  height: var(--login-split-h);
+  width: 100%;
+  padding-inline: 1.1rem;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.login-page--split .login-split-form .login-split-field[data-slot='input']::placeholder,
+.login-split-surface .login-split-form .login-split-field[data-slot='input']::placeholder,
+.login-page--split .login-split-form [data-slot='input-group-control']::placeholder,
+.login-split-surface .login-split-form [data-slot='input-group-control']::placeholder {
+  color: var(--login-split-muted);
+  opacity: 1;
+}
+
+.login-page--split .login-split-intent__item {
+  position: relative;
+  z-index: 0;
+  box-sizing: border-box;
+  min-height: var(--login-split-intent-h);
+  height: var(--login-split-intent-h);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--login-split-intent-idle-fg);
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 8px 2px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.login-page--split .login-split-intent__item:hover:not(.is-active) {
+  color: var(--login-split-intent-active-fg);
+}
+
+.login-page--split .login-split-intent__item.is-active {
+  background: transparent;
+  color: var(--login-split-intent-active-fg);
+  font-weight: 600;
+}
+
+.login-page--split .login-split-intent__item:focus-visible {
+  outline: 2px solid rgba(15, 23, 42, 0.28);
+  outline-offset: -2px;
+}
+
+.login-page--split .login-split-intent__icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.login-page--split .login-split-intent__item.is-active .login-split-intent__icon {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-page--split .login-split-intent__indicator {
+    transition: none;
+  }
+}
+
+html[data-theme='dark'] .login-page--split .login-split-intent__item:focus-visible,
+html[data-theme='deepsea'] .login-page--split .login-split-intent__item:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.35);
+}
+
+.login-page--split .login-split-form .login-split-field[data-slot='input']:focus-visible,
+.login-split-surface .login-split-form .login-split-field[data-slot='input']:focus-visible,
+.login-page--split .login-split-form [data-slot='input-group'].login-split-field:focus-within,
+.login-split-surface .login-split-form [data-slot='input-group'].login-split-field:focus-within {
+  border-color: var(--login-split-border-strong);
+  background: var(--login-split-bg);
+  box-shadow: none;
+  outline: none;
+}
+
+.login-page--split .login-split-form [data-slot='input-group'].login-split-field,
+.login-split-surface .login-split-form [data-slot='input-group'].login-split-field {
+  display: flex;
+  align-items: center;
+  padding-inline: 0;
+  gap: 0;
+}
+
+.login-page--split .login-split-form [data-slot='input-group-control'].login-split-field__control,
+.login-split-surface .login-split-form [data-slot='input-group-control'].login-split-field__control {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding-inline: 1.1rem 0.35rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+  box-shadow: none;
+  outline: none;
+}
+
+.login-page--split .login-split-form [data-slot='input-group-addon'] [data-slot='button'],
+.login-split-surface .login-split-form [data-slot='input-group-addon'] [data-slot='button'] {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--login-split-muted);
+  box-shadow: none;
+}
+
+.login-page--split .login-split-form [data-slot='input-group-addon'] [data-slot='button']:hover,
+.login-split-surface .login-split-form [data-slot='input-group-addon'] [data-slot='button']:hover {
+  background: var(--login-split-fill-hover);
+  color: var(--login-split-fg);
+}
+
+html[data-theme='dark'] .login-page--split .login-split-form .login-split-field[data-slot='input'],
+html[data-theme='deepsea'] .login-page--split .login-split-form .login-split-field[data-slot='input'],
+html[data-theme='dark'] .login-split-surface .login-split-form .login-split-field[data-slot='input'],
+html[data-theme='deepsea'] .login-split-surface .login-split-form .login-split-field[data-slot='input'],
+html[data-theme='dark'] .login-page--split .login-split-form [data-slot='input-group'].login-split-field,
+html[data-theme='deepsea'] .login-page--split .login-split-form [data-slot='input-group'].login-split-field,
+html[data-theme='dark'] .login-split-surface .login-split-form [data-slot='input-group'].login-split-field,
+html[data-theme='deepsea'] .login-split-surface .login-split-form [data-slot='input-group'].login-split-field,
+html[data-theme='dark'] .login-page--split .login-split-form .login-email-composite__suffix,
+html[data-theme='deepsea'] .login-page--split .login-split-form .login-email-composite__suffix,
+html[data-theme='dark'] .login-split-surface .login-split-form .login-email-composite__suffix,
+html[data-theme='deepsea'] .login-split-surface .login-split-form .login-email-composite__suffix,
+html[data-theme='dark'] .login-page--split .login-split-form .login-phone-prefix,
+html[data-theme='deepsea'] .login-page--split .login-split-form .login-phone-prefix,
+html[data-theme='dark'] .login-split-surface .login-split-form .login-phone-prefix,
+html[data-theme='deepsea'] .login-split-surface .login-split-form .login-phone-prefix {
+  background: var(--login-split-bg);
+  border-color: var(--login-split-border);
+  color: var(--login-split-fg);
+}
+
+html[data-theme='dark'] .login-page--split .login-split-form [data-slot='input-group-control'],
+html[data-theme='deepsea'] .login-page--split .login-split-form [data-slot='input-group-control'],
+html[data-theme='dark'] .login-split-surface .login-split-form [data-slot='input-group-control'],
+html[data-theme='deepsea'] .login-split-surface .login-split-form [data-slot='input-group-control'] {
+  color: var(--login-split-fg);
+  background: transparent;
+}
+
+.login-page--split .login-split-form .login-email-composite,
+.login-split-surface .login-split-form .login-email-composite {
+  display: flex;
+  gap: var(--login-split-gap);
+  align-items: stretch;
+}
+
+.login-page--split .login-split-form .login-email-composite__prefix,
+.login-split-surface .login-split-form .login-email-composite__prefix {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-page--split .login-split-form .login-email-composite__suffix,
+.login-split-surface .login-split-form .login-email-composite__suffix {
+  width: 8.5rem;
+  flex-shrink: 0;
+  height: var(--login-split-h);
+  min-height: var(--login-split-h);
+  padding-inline: 0.75rem;
+  font-size: 14px;
+}
+
+/* 手机号：与普通输入同高、同边框、同背景；+86 只做左侧前缀，不另起一套底色 */
+.login-page--split .login-split-form .login-phone-prefix,
+.login-split-surface .login-split-form .login-phone-prefix {
+  display: flex;
+  align-items: stretch;
+  height: var(--login-split-h);
+  min-height: var(--login-split-h);
+  overflow: hidden;
+  padding: 0;
+}
+
+.login-page--split .login-split-form .login-phone-prefix__badge,
+.login-split-surface .login-split-form .login-phone-prefix__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--login-split-muted);
+  background: transparent;
+  border-right: 1px solid var(--login-split-border);
+  user-select: none;
+}
+
+.login-page--split .login-split-form .login-phone-prefix .login-phone-prefix__input[data-slot='input'],
+.login-split-surface .login-split-form .login-phone-prefix .login-phone-prefix__input[data-slot='input'] {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  padding-inline: 1.1rem;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.login-page--split .login-split-code-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--login-split-gap);
+}
+
+.login-page--split .login-split-code-row .login-split-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-page--split .login-split-btn,
+.login-split-surface .login-split-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--login-split-btn-h);
+  padding: 0 16px;
+  border-radius: var(--login-split-radius);
+  border: 1px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.login-page--split .login-split-btn:disabled,
+.login-split-surface .login-split-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.login-page--split .login-split-btn--primary,
+.login-split-surface .login-split-btn--primary,
+.login-page--split .login-auth-submit,
+.login-split-surface .login-auth-submit {
+  width: 100%;
+  min-height: var(--login-split-btn-h);
+  font-size: 15px;
+  border-color: var(--login-split-primary-border);
+  background: var(--login-split-primary-bg);
+  color: var(--login-split-primary-fg);
+}
+
+.login-page--split .login-split-btn--primary:hover:not(:disabled),
+.login-split-surface .login-split-btn--primary:hover:not(:disabled),
+.login-page--split .login-auth-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.login-page--split .login-split-btn--primary:focus-visible,
+.login-split-surface .login-split-btn--primary:focus-visible,
+.login-page--split .login-auth-submit:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--login-split-primary-border) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.login-page--split .login-split-btn--outline,
+.login-split-surface .login-split-btn--outline {
+  min-height: var(--login-split-h);
+  flex-shrink: 0;
+  padding-inline: 14px;
+  white-space: nowrap;
+  border-color: var(--login-split-border);
+  background: var(--login-split-bg);
+  color: var(--login-split-fg);
+  font-size: 13px;
+}
+
+.login-page--split .login-split-btn--outline:hover:not(:disabled),
+.login-split-surface .login-split-btn--outline:hover:not(:disabled) {
+  background: var(--login-split-fill-hover);
+  border-color: var(--login-split-border-strong);
+}
+
+.login-page--split .login-split-text-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--login-link, var(--login-split-muted));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.login-page--split .login-split-text-btn:hover {
+  color: var(--login-link-hover, var(--login-split-fg));
+}
+
+.login-page--split .login-split-text-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--login-split-border-strong) 50%, transparent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 企业注册：输入/按钮高度与个人注册同一套 token，勿另起高度 */
+.login-page--split .login-enterprise-register__actions {
+  align-items: stretch;
+  gap: var(--login-split-gap);
+}
+
+.login-page--split .login-enterprise-register__actions .login-split-btn--primary,
+.login-page--split .login-enterprise-register__actions .login-split-btn--outline {
+  flex: 1;
+  height: var(--login-split-btn-h);
+  min-height: var(--login-split-btn-h);
+  font-size: 15px;
+}
+
+.login-page--split .login-enterprise-register .login-split-field[data-slot='input'] {
+  height: var(--login-split-h);
+  min-height: var(--login-split-h);
+  padding-inline: 1.1rem;
+  padding-block: 0;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.login-page--split .login-enterprise-register textarea.login-split-field {
+  min-height: calc(4.5rem * var(--login-split-scale));
+  height: auto;
+  padding: 12px 1.1rem;
+  border-radius: var(--login-split-radius);
+  border: 1px solid var(--login-split-border);
+  background: var(--login-split-bg);
+  color: var(--login-split-fg);
+  font-size: 15px;
+  line-height: 1.45;
+  resize: vertical;
+  box-shadow: none;
+  outline: none;
+}
+
+.login-page--split .login-enterprise-register textarea.login-split-field:focus-visible {
+  border-color: var(--login-split-border-strong);
+}
+
+.login-page--split .login-enterprise-register__fields {
+  gap: 20px !important;
+}
+
+.login-page--split .login-enterprise-register__row {
+  gap: 20px;
+}
+
+.login-page--split .login-split-form .text-muted-foreground,
+.login-split-surface .login-split-form .text-muted-foreground {
+  color: var(--login-split-muted);
+  font-size: 12px;
+}
+
+.login-page--split .login-split-form [data-slot='field-label'] .text-destructive,
+.login-split-surface .login-split-form [data-slot='field-label'] .text-destructive {
+  color: rgba(220, 38, 38, 0.92);
+}
+
+.login-page--split .login-split-reveal {
+  animation: login-fade-up 0.35s ease both;
+}
+
+.login-page--split .login-split-optional {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-page--split .login-split-optional__toggle {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--login-split-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.login-page--split .login-split-optional__toggle:hover {
+  color: var(--login-split-fg);
+}
+
+.login-page--split .login-split-optional__toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--login-split-border-strong) 50%, transparent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.login-page--split .login-split-optional__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: login-fade-up 0.35s ease both;
+}
+
+.login-page--split .login-split-alt-methods {
+  margin-top: auto;
+  padding-top: 28px;
+  width: 100%;
+  text-align: center;
+}
+
+.login-page--split .login-split-alt-methods__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.login-page--split .login-split-alt-methods__line {
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--login-split-border) 65%, transparent);
+}
+
+.login-page--split .login-split-alt-methods__label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--login-split-muted);
+  white-space: nowrap;
+}
+
+.login-page--split .login-split-alt-methods__icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.login-page--split .login-split-alt-methods__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--login-split-alt-icon);
+  height: var(--login-split-alt-icon);
+  padding: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--login-split-border);
+  background: var(--login-split-bg);
+  color: var(--login-split-fg);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.login-page--split .login-split-alt-methods__icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.login-page--split .login-split-alt-methods__icon-btn:hover:not(:disabled):not(.is-disabled) {
+  border-color: var(--login-split-border-strong);
+  background: var(--login-split-fill-hover);
+}
+
+.login-page--split .login-split-alt-methods__icon-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--login-split-border-strong) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.login-page--split .login-split-alt-methods__icon-btn.is-disabled,
+.login-page--split .login-split-alt-methods__icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.login-page--split .login-page__lockup {
+  min-height: 68px;
+  /* lockup → 身份切换：约为原 16px 的 3 倍；表单内其它 gap 不变 */
+  margin-bottom: 48px;
+}
+
+.login-page--split .login-page__lockup-img {
+  display: block;
+  height: 68px;
+  width: 330px;
+  max-width: min(100%, 330px);
+  object-fit: contain;
+  object-position: left center;
+}

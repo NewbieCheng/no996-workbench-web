@@ -1,0 +1,131 @@
+{
+  "checkedAt": "2026-10-21T12:28:15.417Z",
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/login",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/persona",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/titles",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/live-script",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/xiaohongshu",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/wechat-article",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/video-script",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/digital-human",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/extension",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/account",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/voice",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/account",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/titles",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/assets/index-DNAjZScc.js",
+      "status": 200,
+      "type": "application/javascript",
+      "valid": true
+    },
+    {
+      "route": "/assets/index-CdYnIDrC.css",
+      "status": 200,
+      "type": "text/css",
+      "valid": true
+    },
+    {
+      "route": "/brand/logo-symbol-color.svg",
+      "status": 200,
+      "type": "image/svg+xml",
+      "valid": true
+    },
+    {
+      "route": "/assets/not-a-real-file.js",
+      "status": 404,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/api/v1/auth/captcha?type=click",
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "valid": true
+    },
+    {
+      "route": "http:/login",
+      "status": 301,
+      "location": "https://agent.no996ai.cn/login",
+      "valid": true
+    }
+  ]
+}

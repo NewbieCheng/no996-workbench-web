@@ -1,0 +1,117 @@
+/* Desktop light/dark semantic token snapshot; browser supports these two appearances only. */
+:root {
+  --brand-navy: #051d43; --brand-navy-soft: #08234d; --brand-orange: #ff6400; --brand-gray: #666666;
+  --shell-ease: cubic-bezier(.32,.72,0,1); --shell-ease-out: cubic-bezier(.16,1,.3,1);
+  --wb-theme-duration: 520ms;
+  --wb-theme-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --shell-surface: rgba(255,255,255,.62); --shell-surface-2: rgba(255,255,255,.88);
+  --shell-border: rgba(9,9,11,.07); --shell-border-2: rgba(9,9,11,.13);
+  --ui-surface-border: var(--shell-border-2); --ui-surface-border-hover: color-mix(in srgb,var(--foreground) 10%,var(--shell-border-2));
+  --ui-surface-shadow-hover: 0 4px 14px color-mix(in srgb,var(--foreground) 5%,transparent);
+  --shell-glass-tint: color-mix(in srgb,var(--sidebar) 78%,transparent); --shell-glass-filter: blur(30px) saturate(180%);
+  --shell-glass-sheen: rgba(255,255,255,.72); --shell-glass-shadow: 0 6px 18px -14px rgba(9,9,11,.55);
+  --shell-glow-1: #ffe4cc; --shell-glow-2: #b6ecf7; --shell-glow-3: #e8d4f5;
+  --shell-canvas-gradient: linear-gradient(168deg,color-mix(in srgb,var(--shell-glow-1) 34%,transparent),color-mix(in srgb,var(--shell-glow-2) 20%,transparent) 52%,color-mix(in srgb,var(--shell-glow-3) 26%,transparent));
+  --shadow-card: 0 1px 0 rgba(255,255,255,.9) inset,0 18px 40px -22px rgba(9,9,11,.22);
+  --background: #fbfbfc; --foreground: #0a0b0d; --card: rgba(255,255,255,.72); --card-foreground: #051d43;
+  --popover: rgba(255,255,255,.92); --popover-foreground: #051d43;
+  --primary: #ff6400; --primary-foreground: #ffffff; --secondary: rgba(5,29,67,.06); --secondary-foreground: #051d43;
+  --muted: rgba(5,29,67,.04); --muted-foreground: #63666e; --accent: rgba(255,100,0,.08); --accent-foreground: #051d43;
+  --destructive: #dc2626; --destructive-foreground: #ffffff; --border: rgba(9,9,11,.07); --input: rgba(5,29,67,.13); --ring: rgba(255,100,0,.45);
+  --radius: 1rem; --glass-panel-radius: 16px; --font-size-base: 16px; --ui-zoom: 1;
+  --sidebar: color-mix(in srgb,var(--shell-glow-1) 18%,color-mix(in srgb,var(--shell-glow-2) 10%,rgba(251,247,242,.58)));
+  --sidebar-foreground: #334155; --sidebar-header-title: #051d43; --sidebar-primary: #ff6400; --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(5,29,67,.05); --sidebar-accent-foreground: #051d43; --sidebar-border: rgba(9,9,11,.07); --sidebar-ring: rgba(255,100,0,.55);
+  --shell-rail-bg: color-mix(in srgb,var(--sidebar) 58%,var(--background));
+  --shell-workspace-bg: color-mix(in srgb,#ffffff 12.5%,var(--shell-rail-bg));
+}
+:root.dark, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --shell-surface: rgba(255,255,255,.028); --shell-surface-2: rgba(255,255,255,.055); --shell-border: rgba(255,255,255,.075); --shell-border-2: rgba(255,255,255,.13);
+  --shell-glass-tint: color-mix(in srgb,var(--sidebar) 68%,transparent); --shell-glass-sheen: rgba(255,255,255,.1); --shell-glass-shadow: 0 6px 18px -14px rgba(0,0,0,.85);
+  --shell-glow-1: #2a1f4e; --shell-glow-2: #0c3a45; --shell-glow-3: #3a1d10;
+  --shell-canvas-gradient: linear-gradient(160deg,#2a1f4e,#0c3a45 42%,#08090a);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.045) inset,0 18px 48px -18px rgba(0,0,0,.85);
+  --background: #08090a; --foreground: #f5f6f7; --card: rgba(255,255,255,.04); --card-foreground: #f5f6f7;
+  --popover: rgba(12,14,18,.92); --popover-foreground: #f5f6f7;
+  --secondary: rgba(255,255,255,.06); --secondary-foreground: #e8eaed; --muted: rgba(255,255,255,.04); --muted-foreground: #8b909a;
+  --accent: rgba(255,100,0,.14); --accent-foreground: #f1f5f9; --destructive: #ef4444; --border: rgba(255,255,255,.075); --input: rgba(255,255,255,.12); --ring: rgba(255,100,0,.4);
+  --sidebar: color-mix(in srgb,var(--shell-glow-1) 16%,color-mix(in srgb,var(--shell-glow-3) 10%,rgba(8,9,10,.72)));
+  --sidebar-foreground: rgba(232,234,237,.88); --sidebar-header-title: #ffffff; --sidebar-accent: rgba(255,255,255,.06); --sidebar-accent-foreground: #ffffff; --sidebar-border: rgba(255,255,255,.075); --sidebar-ring: rgba(255,100,0,.5);
+  --shell-rail-bg: color-mix(in srgb,var(--sidebar) 50%,var(--background)); --shell-workspace-bg: color-mix(in srgb,#000000 10%,var(--shell-rail-bg));
+}
+
+/* 无 View Transition 时的兜底：壳层同一时长、同一曲线 */
+:root,
+body,
+#root,
+.wb-shell,
+.wb-main,
+.wb-sidebar,
+.wb-sidebar-brand,
+.wb-sidebar-panel__head,
+.wb-topbar,
+.wb-page-area,
+.wb-page-area__scroll,
+.home-hero,
+.home-bento-card,
+.home-av-panel,
+.home-extension,
+.login-page,
+.login-card,
+.login-brand-aside,
+.social-studio,
+.social-studio__rail,
+.social-studio-editor-canvas {
+  transition:
+    background-color var(--wb-theme-duration) var(--wb-theme-ease),
+    color var(--wb-theme-duration) var(--wb-theme-ease),
+    border-color var(--wb-theme-duration) var(--wb-theme-ease),
+    box-shadow var(--wb-theme-duration) var(--wb-theme-ease);
+}
+
+/* View Transition：整页同步交叉淡入，侧栏/顶栏/内容不再分段变色 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--wb-theme-duration);
+  animation-timing-function: var(--wb-theme-ease);
+  mix-blend-mode: normal;
+}
+
+:root.wb-theme-transitioning,
+:root.wb-theme-transitioning body,
+:root.wb-theme-transitioning #root,
+:root.wb-theme-transitioning .wb-shell,
+:root.wb-theme-transitioning .wb-main,
+:root.wb-theme-transitioning .wb-sidebar,
+:root.wb-theme-transitioning .wb-topbar,
+:root.wb-theme-transitioning .wb-page-area {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  body,
+  #root,
+  .wb-shell,
+  .wb-main,
+  .wb-sidebar,
+  .wb-sidebar-brand,
+.wb-sidebar-panel__head,
+  .wb-topbar,
+  .wb-page-area,
+  .wb-page-area__scroll,
+  .home-hero,
+  .home-bento-card,
+  .home-av-panel,
+  .home-extension,
+  .login-page,
+  .login-card,
+  .login-brand-aside {
+    transition: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms;
+  }
+}

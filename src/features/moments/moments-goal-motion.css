@@ -1,0 +1,56 @@
+.moments-goal-check__path {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 0;
+}
+
+.moments-goal-check--animate .moments-goal-check__path {
+  stroke-dashoffset: 20;
+  animation: moments-goal-check-draw 0.22s ease forwards;
+}
+
+@keyframes moments-goal-check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moments-goal-check--animate .moments-goal-check__path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+.moments-goal-ring__track {
+  stroke: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+
+.moments-goal-ring__fill {
+  stroke: var(--primary);
+}
+
+.moments-goal-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+}
+
+.moments-goal-ring__text {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.moments-goal-ring__text strong {
+  font-weight: 700;
+}
+
+.moments-goal-ring__sep {
+  color: var(--muted-foreground);
+}

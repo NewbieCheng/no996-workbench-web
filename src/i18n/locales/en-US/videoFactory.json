@@ -1,0 +1,18 @@
+{
+  "title": "Video Factory",
+  "subtitle": "An in-browser motion editing desk: drag motion shots from the library, add sound effects, export in one click.",
+  "loginRequired": "Sign in to create and save video projects in your browser.",
+  "loading": "Loading project…",
+  "desktopOnly": "Video Factory works best on desktop",
+  "desktopOnlyHint": "Widen the window to at least 1280px, or open this page on a computer.",
+  "tabMedia": "Media",
+  "tabShots": "Motion",
+  "tabAudio": "Sound",
+  "rightInspector": "Visual",
+  "rightCaptions": "Captions",
+  "rightTiming": "Speed",
+  "rightAudio": "Audio",
+  "timelineResizeHandle": "Drag to resize the timeline, up to half of the workspace",
+  "railResizeLeft": "Drag to resize the left media panel",
+  "railResizeRight": "Drag to resize the right properties panel"
+}

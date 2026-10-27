@@ -1,0 +1,106 @@
+import { IndexedDBAssetRepository, IndexedDBProjectRepository } from '@no996/video-editor/core/repository/indexeddb.ts'
+import { runBrowserExport } from '../../../features/video-factory/lib/run-browser-export.ts'
+import { isDocumentHidden, waitForDocumentVisible } from '../../../features/video-factory/lib/export-visibility.ts'
+import type { WorkbenchTaskRepository } from '../repository'
+import type { VideoFactoryExportPayload, WorkbenchTaskRecord } from '../types'
+
+export async function executeVideoFactoryExport(
+  repo: WorkbenchTaskRepository,
+  job: WorkbenchTaskRecord,
+  signal?: AbortSignal,
+  /** 进度写库后必须通知任务快照刷新，否则弹窗/任务中心会一直停在「排队中 0%」。 */
+  onProgressPersisted?: () => void,
+): Promise<void> {
+  const payloadRec = await repo.getPayload(job.payloadId)
+  const payload = payloadRec?.data as VideoFactoryExportPayload | undefined
+  if (!payload) throw new Error('导出任务数据丢失')
+
+  const workspace = payload.source === 'ip-composition' ? 'ip-video' : 'video-factory'
+  const projectRepo = new IndexedDBProjectRepository(workspace)
+  const assetRepo = new IndexedDBAssetRepository(workspace)
+
+  if (payload.ownerScope !== String(job.ownerUserId)) throw new Error('导出任务与当前素材账号不一致')
+  const doc = payload.documentSnapshot ?? await projectRepo.getProject(payload.documentId, payload.ownerScope)
+  if (!doc) throw new Error('工程不存在或已被删除，请保存后重试')
+  if (doc.scope !== payload.ownerScope || doc.id !== payload.documentId || doc.revision !== payload.documentRevision) throw new Error('工程已变化，无法还原本次提交的版本，请重新导出。')
+
+  const checkCancelled = () => {
+    if (signal?.aborted) throw new DOMException('编码已取消', 'AbortError')
+  }
+
+  let lastMetaPatch = 0
+  const patchProgress = async (progress: number, stage: string, paused?: boolean) => {
+    const now = Date.now()
+    if (now - lastMetaPatch < 350 && progress < 100 && !paused) return
+    lastMetaPatch = now
+    await repo.patchJob(job.id, {
+      meta: {
+        progress: String(Math.round(progress)),
+        stage: paused ? '已暂停：请保持本页在前台' : stage,
+        resolution: payload.resolutionPreset,
+        source: payload.source,
+        composition: payload.composition === 'offline' ? 'offline' : 'preview',
+      },
+    })
+    onProgressPersisted?.()
+  }
+
+  const visibilityInterval =
+    typeof document !== 'undefined'
+      ? window.setInterval(() => {
+          if (isDocumentHidden()) {
+            void patchProgress(0, '', true)
+          }
+        }, 800)
+      : undefined
+
+  try {
+    // 立刻盖掉入队时的「排队中」，避免任务已 running 但 UI 仍像没开始。
+    await patchProgress(0, '正在启动浏览器合成')
+
+    while (isDocumentHidden()) {
+      await patchProgress(0, '', true)
+      await waitForDocumentVisible(signal)
+    }
+
+    checkCancelled()
+
+    const { blob, fileName } = await runBrowserExport({
+      doc,
+      resolutionPreset: payload.resolutionPreset,
+      getAssetBlob: (blobId) => assetRepo.getAssetBlob(blobId, payload.ownerScope),
+      signal,
+      composition: payload.composition === 'offline' ? 'offline' : 'preview',
+      onProgress: (p, stage) => {
+        void patchProgress(p * 100, stage)
+      },
+      onPausedForVisibility: () => {
+        void patchProgress(0, '', true)
+      },
+    })
+
+    checkCancelled()
+
+    const buf = await blob.arrayBuffer()
+    await repo.putBlob({ id: job.id, mime: blob.type || 'video/mp4', data: buf })
+    await repo.patchPayload(job.payloadId, { ...payload, fileName })
+    await repo.patchJob(job.id, {
+      status: 'succeeded',
+      finishedAt: Date.now(),
+      blobId: job.id,
+      audioByteLength: buf.byteLength,
+      meta: {
+        progress: '100',
+        stage: '导出完成',
+        resolution: payload.resolutionPreset,
+        source: payload.source,
+        composition: payload.composition === 'offline' ? 'offline' : 'preview',
+        fileName,
+        byteLength: String(buf.byteLength),
+      },
+    })
+    await repo.pruneForUser(job.ownerUserId)
+  } finally {
+    if (visibilityInterval !== undefined) clearInterval(visibilityInterval)
+  }
+}

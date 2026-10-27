@@ -1,0 +1,17 @@
+{
+  "titles": {
+    "ok": true,
+    "sec": 40,
+    "dom": "{\"chart\":16,\"candidates\":0,\"demoMark\":true,\"err\":\"\"}"
+  },
+  "video": {
+    "ok": true,
+    "sec": 91,
+    "dom": "{\"phone\":1,\"segs\":1,\"badge\":\"儿童保温杯目标 获客 · 平台 抖音 · 60 秒（约 250 字）部分步骤降级合规校验 3 处待改\",\"demoMark\":true,\"err\":\"\"}"
+  },
+  "live": {
+    "ok": false,
+    "sec": 246,
+    "dom": "{\"cols\":0,\"blocks\":0,\"ck\":0,\"demoMark\":true,\"err\":\"\"}"
+  }
+}

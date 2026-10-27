@@ -1,0 +1,89 @@
+{
+  "seeded": 3,
+  "defaultState": {
+    "text": "已注入人设：餐饮代运营操盘手",
+    "on": true,
+    "disabled": false,
+    "hasPick": true,
+    "pickLabel": "更换",
+    "menuOpen": false,
+    "items": []
+  },
+  "menuOpen": {
+    "text": "已注入人设：餐饮代运营操盘手",
+    "on": true,
+    "disabled": false,
+    "hasPick": true,
+    "pickLabel": "更换",
+    "menuOpen": true,
+    "items": [
+      {
+        "name": "餐饮代运营操盘手",
+        "current": true,
+        "checked": "true"
+      },
+      {
+        "name": "美妆博主分身",
+        "current": false,
+        "checked": "false"
+      },
+      {
+        "name": "职场内容顾问",
+        "current": false,
+        "checked": "false"
+      }
+    ]
+  },
+  "switched": {
+    "text": "已注入人设：职场内容顾问",
+    "on": true,
+    "disabled": false,
+    "hasPick": true,
+    "pickLabel": "更换",
+    "menuOpen": false,
+    "items": []
+  },
+  "off": {
+    "text": "不注入人设",
+    "on": false,
+    "disabled": false,
+    "hasPick": false,
+    "pickLabel": null,
+    "menuOpen": false,
+    "items": []
+  },
+  "checks": [
+    [
+      "默认勾选（进页面即注入）",
+      true
+    ],
+    [
+      "默认选中启用档 pk_b（不是列表首个 pk_a）",
+      true
+    ],
+    [
+      "菜单列出全部 3 档",
+      true
+    ],
+    [
+      "每个档都有名称",
+      true
+    ],
+    [
+      "换档后标签更新",
+      true
+    ],
+    [
+      "关掉后不再显示已注入",
+      true
+    ],
+    [
+      "关掉后开关为未选中",
+      true
+    ],
+    [
+      "关掉后菜单收起",
+      true
+    ]
+  ]
+}

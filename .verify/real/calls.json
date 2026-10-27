@@ -1,0 +1,137 @@
+[
+  {
+    "url": "http://127.0.0.1:8913/src/api/media.ts",
+    "t0": 1791745089486,
+    "method": "GET",
+    "status": 200,
+    "ms": 84,
+    "size": 1720,
+    "head": "import { upgradeInsecureMediaUrl } from \"/src/lib/secure-media-url.ts\"; export function resolveMediaUrl(path) { if (!path) return \"\"; if (path.startsWith(\"h"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745091442,
+    "method": "POST",
+    "status": 200,
+    "ms": 6480,
+    "size": 650,
+    "head": "{\"id\":\"76e684f1-6995-4f7a-9c06-b2cf50d68643_971f0413c55d45bd88e657aa3baf6f21\",\"object\":\"chat.completion\",\"created\":1791745098,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/v1/tools/web_search",
+    "t0": 1791745097935,
+    "method": "POST",
+    "status": 200,
+    "ms": 13126,
+    "size": 1226,
+    "head": "{\"data\":{\"sources\":[{\"url\":\"https://m.book118.com/html/2026/0730/7066054015011136.shtm\",\"title\":\"场景化种草型——通勤党5分钟出门单品——小红书爆款内容创作实战课件.pptx\"},{\"url\":\"https://post.s"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745111067,
+    "method": "POST",
+    "status": 200,
+    "ms": 13262,
+    "size": 644,
+    "head": "{\"id\":\"8328384a-8431-4af9-8623-59493bba5943_33d56772c75c4e00b96946256fe7ca82\",\"object\":\"chat.completion\",\"created\":1791745124,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745124344,
+    "method": "POST",
+    "status": 200,
+    "ms": 6818,
+    "size": 1169,
+    "head": "{\"id\":\"03dc2a49-9e2c-49a0-b3cc-1abdb3cc49e1_6568c030a3884becbe6ce862c25100f1\",\"object\":\"chat.completion\",\"created\":1791745131,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/src/api/media.ts",
+    "t0": 1791745132097,
+    "method": "GET",
+    "status": 200,
+    "ms": 93,
+    "size": 1720,
+    "head": "import { upgradeInsecureMediaUrl } from \"/src/lib/secure-media-url.ts\"; export function resolveMediaUrl(path) { if (!path) return \"\"; if (path.startsWith(\"h"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745139039,
+    "method": "POST",
+    "status": 200,
+    "ms": 5029,
+    "size": 674,
+    "head": "{\"id\":\"adcabcbf-9b3c-47fd-93c6-19f0b337024c_9553008b5fef41b8af0f8236b693e94f\",\"object\":\"chat.completion\",\"created\":1791745144,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745144082,
+    "method": "POST",
+    "status": 200,
+    "ms": 2699,
+    "size": 633,
+    "head": "{\"id\":\"921f5e0b-dbb4-48d6-86ed-3c85467147bd_4bf75abad0bc43fb9b9ac615ed9d8982\",\"object\":\"chat.completion\",\"created\":1791745147,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745146786,
+    "method": "POST",
+    "status": 200,
+    "ms": 29278,
+    "size": 1099,
+    "head": "{\"id\":\"ececb9cf-f514-44b5-b15c-b30a0afa4ac6_5aaac943752846eb94d46fe3e7f8e2bd\",\"object\":\"chat.completion\",\"created\":1791745176,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745176072,
+    "method": "POST",
+    "status": 200,
+    "ms": 20929,
+    "size": 1048,
+    "head": "{\"id\":\"27953a69-f0e6-4cfa-b652-c82d0e6535ba_4b605409cc7942a7b74e4bee0a236ca7\",\"object\":\"chat.completion\",\"created\":1791745197,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745197006,
+    "method": "POST",
+    "status": 200,
+    "ms": 13067,
+    "size": 620,
+    "head": "{\"id\":\"50074234-a3c8-4e90-b04f-5a30c2c51a76_b17658d61a7c47b2b5ee41ae5ff113a2\",\"object\":\"chat.completion\",\"created\":1791745210,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/src/api/media.ts",
+    "t0": 1791745227326,
+    "method": "GET",
+    "status": 200,
+    "ms": 72,
+    "size": 1720,
+    "head": "import { upgradeInsecureMediaUrl } from \"/src/lib/secure-media-url.ts\"; export function resolveMediaUrl(path) { if (!path) return \"\"; if (path.startsWith(\"h"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745232082,
+    "method": "POST",
+    "status": 200,
+    "ms": 7486,
+    "size": 834,
+    "head": "{\"id\":\"3b8ebf11-e269-4853-bb2f-ce3236cfb1db_537d031e32d644fcbc984fc000fa834a\",\"object\":\"chat.completion\",\"created\":1791745240,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745239584,
+    "method": "POST",
+    "status": 200,
+    "ms": 10648,
+    "size": 1047,
+    "head": "{\"id\":\"671dc8fa-00de-4b79-b1ab-a8710093da5e_5fc9462b14e94eb984321909c3204454\",\"object\":\"chat.completion\",\"created\":1791745250,\"model\":\"mimo-v2.6-flash\",\"choices"
+  },
+  {
+    "url": "http://127.0.0.1:8913/api/v1/ai/chat/completions",
+    "t0": 1791745250236,
+    "method": "POST",
+    "status": 200,
+    "ms": 45787,
+    "size": 3369,
+    "head": "{\"id\":\"28b1e2df-e096-47cd-bce2-375220e5b9be_03f9be8c8a3b4191ae511641ee8039d4\",\"object\":\"chat.completion\",\"created\":1791745296,\"model\":\"mimo-v2.6-flash\",\"choices"
+  }
+]

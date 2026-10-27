@@ -1,0 +1,540 @@
+{
+  "video": {
+    "ok": true,
+    "wallSec": 62,
+    "calls": 5,
+    "dom": "{\"badge\":\"儿童保温杯目标 获客 · 平台 抖音 · 60 秒（约 250 字）部分步骤降级合规校验通过\",\"demoBadge\":0,\"note\":\"正式生成会按平台规则扣除积分；脚本全部在本机编排，密钥不进浏览器。\",\"error\":\"\"}",
+    "tasks": [
+      {
+        "kind": "script_generate",
+        "status": "succeeded",
+        "createdAt": 1791745677554,
+        "startedAt": 1791745677560,
+        "finishedAt": 1791745735476,
+        "durSec": 58,
+        "errorMessage": null,
+        "meta": {
+          "mode": "video",
+          "status": "done",
+          "round": "0",
+          "pct": "100",
+          "fallback": "1",
+          "usedMock": "0",
+          "retention": ""
+        },
+        "runStatus": "done",
+        "runRound": 1,
+        "runFallback": true,
+        "stages": [
+          {
+            "id": "autofill",
+            "status": "failed",
+            "round": 1,
+            "ms": 2911,
+            "err": "模型返回不是合法 JSON，已中断本次解析。",
+            "out": null
+          },
+          {
+            "id": "planner",
+            "status": "done",
+            "round": 1,
+            "ms": 4290,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "structurer",
+            "status": "done",
+            "round": 1,
+            "ms": 2417,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "writer",
+            "status": "done",
+            "round": 1,
+            "ms": 40493,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "hardcheck",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "reviewer",
+            "status": "failed",
+            "round": 1,
+            "ms": 7782,
+            "err": "模型返回不是合法 JSON，已中断本次解析。",
+            "out": null
+          },
+          {
+            "id": "editor",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "finalize",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          }
+        ]
+      }
+    ]
+  },
+  "titles": {
+    "ok": true,
+    "wallSec": 55,
+    "calls": 4,
+    "dom": "{\"demoBadge\":0,\"note\":\"\",\"error\":\"\"}",
+    "tasks": [
+      {
+        "kind": "script_generate",
+        "status": "succeeded",
+        "createdAt": 1791745677554,
+        "startedAt": 1791745677560,
+        "finishedAt": 1791745735476,
+        "durSec": 58,
+        "errorMessage": null,
+        "meta": {
+          "mode": "video",
+          "status": "done",
+          "round": "0",
+          "pct": "100",
+          "fallback": "1",
+          "usedMock": "0",
+          "retention": ""
+        },
+        "runStatus": "done",
+        "runRound": 1,
+        "runFallback": true,
+        "stages": [
+          {
+            "id": "autofill",
+            "status": "failed",
+            "round": 1,
+            "ms": 2911,
+            "err": "模型返回不是合法 JSON，已中断本次解析。",
+            "out": null
+          },
+          {
+            "id": "planner",
+            "status": "done",
+            "round": 1,
+            "ms": 4290,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "structurer",
+            "status": "done",
+            "round": 1,
+            "ms": 2417,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "writer",
+            "status": "done",
+            "round": 1,
+            "ms": 40493,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "hardcheck",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "reviewer",
+            "status": "failed",
+            "round": 1,
+            "ms": 7782,
+            "err": "模型返回不是合法 JSON，已中断本次解析。",
+            "out": null
+          },
+          {
+            "id": "editor",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "finalize",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          }
+        ]
+      },
+      {
+        "kind": "titles_generate",
+        "status": "succeeded",
+        "createdAt": 1791745743184,
+        "startedAt": 1791745743193,
+        "finishedAt": 1791745793491,
+        "durSec": 50,
+        "errorMessage": null,
+        "meta": {
+          "platform": "小红书",
+          "status": "done",
+          "pct": "100",
+          "round": "1",
+          "fallback": "0",
+          "usedMock": "0",
+          "score": "72",
+          "pareto": "3"
+        },
+        "runStatus": "done",
+        "runRound": 1,
+        "runFallback": false,
+        "stages": [
+          {
+            "id": "understander",
+            "status": "done",
+            "round": 1,
+            "ms": 6239,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "formula",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "retriever",
+            "status": "done",
+            "round": 1,
+            "ms": 5683,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "writer",
+            "status": "done",
+            "round": 1,
+            "ms": 20793,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "hardcheck",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "reviewer",
+            "status": "done",
+            "round": 1,
+            "ms": 17549,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "editor",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "optimizer",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          }
+        ]
+      }
+    ]
+  },
+  "live": {
+    "ok": true,
+    "wallSec": 94,
+    "calls": 3,
+    "dom": "{\"badge\":\"儿童保温杯目标 成交 · 平台 抖音 · 30 分钟部分步骤降级合规校验通过\",\"demoBadge\":0,\"note\":\"正式生成会按平台规则扣除积分；脚本全部在本机编排，密钥不进浏览器。\",\"error\":\"\"}",
+    "tasks": [
+      {
+        "kind": "script_generate",
+        "status": "succeeded",
+        "createdAt": 1791745800454,
+        "startedAt": 1791745800459,
+        "finishedAt": 1791745890474,
+        "durSec": 90,
+        "errorMessage": null,
+        "meta": {
+          "mode": "live",
+          "status": "done",
+          "round": "0",
+          "pct": "100",
+          "fallback": "1",
+          "usedMock": "0",
+          "retention": ""
+        },
+        "runStatus": "done",
+        "runRound": 1,
+        "runFallback": true,
+        "stages": [
+          {
+            "id": "autofill",
+            "status": "failed",
+            "round": 1,
+            "ms": 3012,
+            "err": "步骤超时（3 秒），已中断本次调用。",
+            "out": null
+          },
+          {
+            "id": "planner",
+            "status": "done",
+            "round": 1,
+            "ms": 6386,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "structurer",
+            "status": "done",
+            "round": 1,
+            "ms": 6662,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "writer",
+            "status": "done",
+            "round": 1,
+            "ms": 28779,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "hardcheck",
+            "status": "done",
+            "round": 1,
+            "ms": 1,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "reviewer",
+            "status": "skipped",
+            "round": 1,
+            "ms": 45151,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "editor",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "finalize",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          }
+        ]
+      },
+      {
+        "kind": "script_generate",
+        "status": "succeeded",
+        "createdAt": 1791745677554,
+        "startedAt": 1791745677560,
+        "finishedAt": 1791745735476,
+        "durSec": 58,
+        "errorMessage": null,
+        "meta": {
+          "mode": "video",
+          "status": "done",
+          "round": "0",
+          "pct": "100",
+          "fallback": "1",
+          "usedMock": "0",
+          "retention": ""
+        },
+        "runStatus": "done",
+        "runRound": 1,
+        "runFallback": true,
+        "stages": [
+          {
+            "id": "autofill",
+            "status": "failed",
+            "round": 1,
+            "ms": 2911,
+            "err": "模型返回不是合法 JSON，已中断本次解析。",
+            "out": null
+          },
+          {
+            "id": "planner",
+            "status": "done",
+            "round": 1,
+            "ms": 4290,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "structurer",
+            "status": "done",
+            "round": 1,
+            "ms": 2417,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "writer",
+            "status": "done",
+            "round": 1,
+            "ms": 40493,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "hardcheck",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "reviewer",
+            "status": "failed",
+            "round": 1,
+            "ms": 7782,
+            "err": "模型返回不是合法 JSON，已中断本次解析。",
+            "out": null
+          },
+          {
+            "id": "editor",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "finalize",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          }
+        ]
+      },
+      {
+        "kind": "titles_generate",
+        "status": "succeeded",
+        "createdAt": 1791745743184,
+        "startedAt": 1791745743193,
+        "finishedAt": 1791745793491,
+        "durSec": 50,
+        "errorMessage": null,
+        "meta": {
+          "platform": "小红书",
+          "status": "done",
+          "pct": "100",
+          "round": "1",
+          "fallback": "0",
+          "usedMock": "0",
+          "score": "72",
+          "pareto": "3"
+        },
+        "runStatus": "done",
+        "runRound": 1,
+        "runFallback": false,
+        "stages": [
+          {
+            "id": "understander",
+            "status": "done",
+            "round": 1,
+            "ms": 6239,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "formula",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "retriever",
+            "status": "done",
+            "round": 1,
+            "ms": 5683,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "writer",
+            "status": "done",
+            "round": 1,
+            "ms": 20793,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "hardcheck",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "reviewer",
+            "status": "done",
+            "round": 1,
+            "ms": 17549,
+            "err": null,
+            "out": "obj"
+          },
+          {
+            "id": "editor",
+            "status": "idle",
+            "ms": null,
+            "err": null,
+            "out": null
+          },
+          {
+            "id": "optimizer",
+            "status": "done",
+            "round": 1,
+            "ms": 2,
+            "err": null,
+            "out": "obj"
+          }
+        ]
+      }
+    ]
+  }
+}

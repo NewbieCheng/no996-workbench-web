@@ -1,0 +1,19 @@
+/* Extend the existing style library layout; basic controls remain @no996/ui. */
+.ipt-template-library { --ipt-template-error: var(--destructive); }
+.ipt-template-library > .ipt-help,.ipt-template-tab-content > .ipt-help { margin: 0; max-width: 72ch; }
+.ipt-template-library [data-slot='tabs'] { display: flex; flex-direction: column; width: 100%; min-width: 0; gap: 10px; }
+.ipt-template-library [data-slot='tabs-list'] { display: inline-flex; flex-direction: row; flex-wrap: wrap; width: 100%; height: 32px; min-height: 32px; max-height: 32px; }
+.ipt-template-library [data-slot='tabs-trigger'] { flex: 1 1 auto; height: calc(100% - 1px); }
+.ipt-template-tab-content { display: grid; gap: 12px; min-width: 0; width: 100%; }
+.ipt-template-library .ipt-style-option { overflow-wrap: anywhere; }
+.ipt-template-library .ipt-style-option strong { max-width: 100%; }
+.ipt-template-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.75; white-space: normal; }
+.ipt-template-check [data-slot='checkbox'] { margin-top: 3px; flex-shrink: 0; }
+.ipt-template-error { color: var(--destructive); margin: 0; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.ipt-template-dialog { width: min(520px,94vw); max-width: 520px !important; max-height: 88dvh; overflow: auto; }
+.ipt-template-dialog .ipt-help { margin: 0; }
+.ipt-template-form { display: flex; flex-direction: column; gap: 16px; }
+.ipt-template-dialog [data-slot='dialog-footer'] { margin-top: 4px; }
+.ipt-template-dialog [data-slot='dialog-footer'] button { white-space: normal; height: auto; min-height: 36px; }
+.ipt-template-library ::selection,.ipt-template-dialog ::selection { background: color-mix(in srgb,var(--primary) 24%,transparent); color: var(--foreground); }
+.ipt-template-library,.ipt-template-dialog { scrollbar-color: var(--border) transparent; scrollbar-width: thin; }

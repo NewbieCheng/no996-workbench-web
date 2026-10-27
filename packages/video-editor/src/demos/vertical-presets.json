@@ -1,0 +1,757 @@
+{
+  "camera/basic-3d-scene": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/crash-zoom-punch~CrashImpactReal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/crash-zoom-punch~CrashZoomReal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/cursor-flyover": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/depth-layer-moves": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/graze-face-tour": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/overhead-camera-moves~OverheadTabletopDrop": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/overhead-camera-moves~TiltReveal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/space-camera-moves~DroneDiveLanding": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/space-camera-moves~ExplodedView": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/steep-tilt-glide": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/tension-camera-moves~BulletTimeFreezeOrbit": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/tension-camera-moves~PullBackIsolation": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "camera/terminal-3d": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/before-after-slider-scrub": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/chart-live-moves~AxisRescaleShockV2": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/chart-live-moves~OscilloscopeStreamV2": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/chart-live-moves~UnitDotSwarmRegroupV2": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/gauge-readout-moves~NeedleSweepSelftest": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/gauge-readout-moves~TapeScrollFixedPointer": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/scroll-brake-moves~BrakeReticleLock": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/scroll-brake-moves~ChangelogScrollBrake": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "data/timeline-travel": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/assemble-then-type-flyin": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/aurora-bloom-bg-flip": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/brand-frame-snap": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/fui-hud-moves": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/glow-flyline-moves~FlylineArc": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/glow-flyline-moves~GlowOrbAmbient": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/glow-flyline-moves~OrbFlylineRelay": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/icon-performance-moves": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/impact-feedback~AnimeImpact": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/impact-feedback~HitCounter": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/light-play-moves~SheenSweepRetry": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/light-play-moves~SpotlightSweepReveal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/radial-ripple-phone-chips": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/riso-print-hits": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/scan-bracket-sweep": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/scanline-annotate-focus": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/scanline-assemble-flyin": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/slam-entrance-moves~ImpactBurstKit": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/slam-entrance-moves~KanadaPerspectiveSnap": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/slam-entrance-moves~ScoreSlam": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/spotlight-sweep-moves~CornerSpotlightReveal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/spotlight-sweep-moves~GlowWakeSleepPanel": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "effects/spotlight-sweep-moves~SlideSpotlightPan": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/autolayout-gap-dial": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/canvas-materialize-moves~DiagramCascadeBuild": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/canvas-materialize-moves~PanelToCanvasMaterialize": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/chip-grid-single-select-blackout": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/collab-cursor-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/glass-pill-dictation-typing": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/hashtag-to-pill-materialize": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/picker-carousel-feature-cycle": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/segmented-thumb-hero": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/theme-switch-moves~PaletteThemeRipple": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/theme-switch-moves~ThemeSweepToggle": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/type-and-filter": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "interaction/voice-waveform-live": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/crane-rise-reveal": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/dataviz-landscape-open": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/fracture": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/icon-field-colorize": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/letterspace-materialize": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/magician-card-flourish": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/orbit-ring-title-open": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/spotlight-hero-card": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/stroke-segment-build": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "opening/text-as-mask": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/grain-dissolve": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/logo-shrink-wordmark-lockup": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/neon-triple-marquee": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/outro-group-photo-launch": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/ui-strip-away-outro": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/ui-to-brand-morph~IconFlipBloomLogo": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "outro/ui-to-brand-morph~InputMorphsIntoLogo": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/beat-cut-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/beat-step-list-theme-cycle": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/panel-grid-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/quad-split-parallel-scenes": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/rhythm-interrupt-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/sakuga-timing-shift": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/speed-ramp-freeze": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "rhythm/trailer-grammar-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/bottom-push-stack-wipe": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/card-flip-reveal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/card-flock-tumble": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/circle-match-iris": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/gradient-transition": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/line-carry-transition": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/mosaic-reframe": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/page-turn-transitions": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/print-texture-transitions": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/shot-transitions~PortalWipeV2": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/shot-transitions~WhipBrakeReal": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/tear-streak-transitions": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/transition-hidden-cut~InvisibleCut": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/transition-hidden-cut~LightLeakBurn": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/transition-hidden-cut~VersusSlam": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/transition-travel": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/white-flash-logo-simplify-cut": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "transition/wipe-transitions": {
+    "mode": "cover",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/blur-slide": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/brace-expand": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/brand-ink-open": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/countdown-arc-scatter": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/flying-words": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/glitch-cycle": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/gradient-word-sweep": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/lead-word-zoom-assemble": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/marker-underline-title": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/outline-word-fill": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/paper-title-card": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/pill-chip-slot-cycle-handled": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/pill-slot-cycle": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/text-column-converge": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/title-demote-to-label": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/type-assembly-moves~LetterformDriftAssembly": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/type-assembly-moves~SplitTextStagger": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/type-assembly-moves~TextOnPath": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/type-entrance-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/type-rhythm-sync~FontWeightPump": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/type-rhythm-sync~KaraokeFillSync": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/typewriter-moves": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/vertical-word-roll-blur-cycle": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/word-relay-filmstrip": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "typography/word-relay-geometry": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/avatar-bracket-carousel": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/bezier-source-converge-merge": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/card-stack": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/carousel-3d": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/clipcard-looping": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/cloner-depth-echo": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/deck-deal-flyin": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/doc-park-left-pill-deal": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/document-typewriter-reveal": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/draw-svg-trace": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/element-body-moves": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/integration-hub-map": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/list-reveal": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/list-stack-press": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/neon-frame-forerun": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/neon-frame-orbit-drop": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/page-waterfall-wall": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/product-card-progressive-assemble": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/radial-wave": {
+    "mode": "reflow",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/research-card-stack-scroll": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/row-embed": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/value-stagger-gradient": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/wall-reveal-moves~BentoLightUp": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  },
+  "ui-entrance/wall-reveal-moves~WireframeDrawOn": {
+    "mode": "fit",
+    "focusX": 0.5,
+    "focusY": 0.5
+  }
+}

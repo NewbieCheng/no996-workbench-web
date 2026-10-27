@@ -1,0 +1,355 @@
+/* Composer input context strip — PPT template, page share, inline attachments */
+
+.ccs {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--secondary) 70%, transparent);
+  overflow: hidden;
+}
+
+/* 默认简略：单行 chip；`kind` 区分 PPT 模板（胶囊 + 主色）与页签分享（圆角 + 青绿）。 */
+.ccs--compact {
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.ccs--compact .ccs-row {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 4px 0 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--secondary) 55%, var(--background));
+}
+
+.ccs--compact .ccs-row--ppt-template {
+  border-radius: 9999px;
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+  background: color-mix(in srgb, var(--primary) 11%, var(--background));
+}
+
+.ccs--compact .ccs-row--ppt-template .ccs-row-icon {
+  color: var(--primary);
+}
+
+.ccs--compact .ccs-row--ppt-template .ccs-row-kind-tag {
+  color: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.ccs--compact .ccs-row--ppt-template .ccs-row-compact-text {
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+}
+
+.ccs--compact .ccs-row--page-share {
+  border-radius: 6px;
+  border-color: color-mix(in srgb, #0d9488 28%, var(--border));
+  background: color-mix(in srgb, #0d9488 9%, var(--background));
+}
+
+.ccs--compact .ccs-row--page-share .ccs-row-icon {
+  color: #0d9488;
+}
+
+.ccs--compact .ccs-row--page-share .ccs-row-kind-tag {
+  color: color-mix(in srgb, #0d9488 78%, var(--muted-foreground));
+  background: color-mix(in srgb, #0d9488 14%, transparent);
+}
+
+.ccs--compact .ccs-row--page-share .ccs-row-compact-text {
+  color: color-mix(in srgb, #0d9488 75%, var(--foreground));
+}
+
+.ccs--compact .ccs-row--ppt-template .ccs-row-icon,
+.ccs--compact .ccs-row--page-share .ccs-row-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.ccs--compact .ccs-row + .ccs-row,
+.ccs--compact .ccs-row + .ccs-scroll,
+.ccs--compact .ccs-scroll + .ccs-row {
+  border-top: 0;
+}
+
+.ccs--compact .ccs-scroll {
+  flex: 1 1 100%;
+  padding: 2px 0 0;
+  border-top: 0;
+}
+
+.ccs-row-label--compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ccs-row-kind-tag {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+}
+
+.ccs-row-compact-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 9rem;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.ccs-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  color: var(--foreground);
+}
+
+.ccs-row + .ccs-row,
+.ccs-row + .ccs-scroll,
+.ccs-scroll + .ccs-row {
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.ccs-row--interactive {
+  cursor: pointer;
+}
+
+.ccs-row--interactive:hover {
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.ccs-row--error {
+  color: var(--destructive, #d54941);
+}
+
+.ccs-row-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+}
+
+.ccs-row-icon .ccs-spinner {
+  width: 14px;
+  height: 14px;
+}
+
+.ccs-row-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: inherit;
+}
+
+button.ccs-row-body {
+  cursor: pointer;
+}
+
+.ccs-row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.ccs-row-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: none;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--muted-foreground);
+}
+
+.ccs-row-meta--error {
+  color: var(--destructive, #d54941);
+}
+
+.ccs-row-actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.ccs-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.ccs-action:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.ccs-action--danger:hover {
+  color: var(--destructive, #d54941);
+}
+
+.ccs-row-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.ccs-row-progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--primary, #4d6bfe);
+  transition: width 0.15s ease;
+}
+
+.ccs-scroll {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ccs-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ccs-chip {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  max-width: 12rem;
+  height: 30px;
+  padding: 0 6px 0 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--background) 55%, transparent);
+}
+
+.ccs-chip--error {
+  border-color: color-mix(in oklch, var(--destructive) 40%, var(--border));
+}
+
+.ccs-chip-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 1px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+button.ccs-chip-body {
+  cursor: pointer;
+}
+
+.ccs-image-btn {
+  display: block;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 6px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--muted);
+  cursor: pointer;
+}
+
+.ccs-image-btn img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ccs-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklch, var(--primary) 25%, transparent);
+  border-top-color: var(--primary);
+  animation: ccs-spin 0.7s linear infinite;
+}
+
+@keyframes ccs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* AttachmentUploader inline root inside scroll */
+.ccs-scroll .au-list--inline {
+  display: contents;
+}
+
+.ccs-scroll .au {
+  display: contents;
+}
+
+.ccs-chip--image {
+  gap: 4px;
+  max-width: none;
+  padding-right: 4px;
+}

@@ -1,0 +1,187 @@
+/* 标尺与轨道：选中环需要画在标尺下缘之上，且不被轨道 overflow 裁切 */
+.ve-timeline-ruler {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.ve-timeline-tracks-stack {
+  position: relative;
+  z-index: 2;
+  padding-top: 4px;
+  margin-top: -4px;
+  box-sizing: border-box;
+}
+
+/* 时间轴片段：选中 = 轨道内撑满 + 抬升阴影 + 单层焦点环（Operate，可读但不霓虹） */
+.ve-timeline-clip {
+  box-sizing: border-box;
+  transition:
+    box-shadow 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.16s ease,
+    filter 0.16s ease,
+    top 0.14s ease,
+    bottom 0.14s ease;
+}
+
+.ve-timeline-clip:not(.ve-timeline-clip--selected):not(.ve-timeline-clip--dragging) {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.ve-timeline-clip--selected:not(.ve-timeline-clip--dragging),
+.ve-timeline-clip--dragging {
+  z-index: 5;
+  border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+  filter: saturate(1.05) brightness(1.05);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 0 0 2px color-mix(in srgb, var(--primary, #f06418) 68%, #262626);
+}
+
+.ve-timeline-clip__trim-bar {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 1px;
+  background-color: rgba(255, 255, 255, 0.42);
+  opacity: 0.55;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.ve-timeline-clip__trim-bar--start {
+  left: 1px;
+}
+
+.ve-timeline-clip__trim-bar--end {
+  right: 1px;
+}
+
+.ve-timeline-clip--handles .ve-timeline-clip__trim-bar {
+  opacity: 0.92;
+  background-color: rgba(255, 255, 255, 0.58);
+}
+
+.ve-timeline-clip--selected .ve-timeline-clip__trim-bar,
+.ve-timeline-clip--dragging .ve-timeline-clip__trim-bar {
+  width: 4px;
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.72);
+}
+
+/* 故事线换位：落槽幽灵（邻块滑开后留下的空位） */
+.ve-timeline-drop-ghost {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 5px;
+  pointer-events: none;
+  z-index: 8;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--primary, #f06418) 16%, transparent);
+  border: 1.5px dashed color-mix(in srgb, var(--primary, #f06418) 72%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary, #f06418) 18%, transparent);
+  transition:
+    left 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 时间轴片段：故事线插入落点（剪映式竖线 + 微光） */
+.ve-timeline-insertion-guide {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  margin-left: -1px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 25;
+  background: color-mix(in srgb, var(--primary, #f06418) 88%, white);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary, #f06418) 35%, transparent),
+    0 0 12px color-mix(in srgb, var(--primary, #f06418) 45%, transparent);
+  animation: ve-timeline-insertion-pulse 0.85s ease-in-out infinite;
+}
+
+@keyframes ve-timeline-insertion-pulse {
+  0%,
+  100% {
+    opacity: 0.92;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ve-timeline-insertion-guide {
+    animation: none;
+    opacity: 1;
+  }
+
+  .ve-timeline-drop-ghost {
+    transition: none;
+  }
+
+  .ve-timeline-clip__trim-bar {
+    transition: none;
+  }
+
+  .ve-timeline-clip {
+    transition: none;
+  }
+
+  .ve-timeline-clip--selected:not(.ve-timeline-clip--dragging),
+  .ve-timeline-clip--dragging {
+    filter: none;
+  }
+}
+
+/* 镜头片段：悬停/选中时「定制」入口（紧贴时长左侧） */
+.ve-timeline-shot-customize-row {
+  z-index: 4;
+}
+
+.ve-timeline-shot-customize {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px 2px 5px;
+  margin: 0;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.ve-timeline-shot-customize:hover {
+  background: rgba(0, 0, 0, 0.52);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.32),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.ve-timeline-shot-customize:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary, #f06418) 75%, white);
+  outline-offset: 1px;
+}
+
+.ve-timeline-shot-customize__icon {
+  flex-shrink: 0;
+  opacity: 0.92;
+}

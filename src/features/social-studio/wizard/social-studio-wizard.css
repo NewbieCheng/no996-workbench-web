@@ -1,0 +1,756 @@
+/* 社媒创作向导 — 第 1 步等：宋体标题 + 轻量分区，避免 SaaS 卡片堆叠感 */
+
+.social-studio-wizard-step-search {
+  --ssw-serif: 'Noto Serif SC', 'Songti SC', 'SimSun', 'STSong', 'FangSong', serif;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding: 0.85rem 0 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.social-studio-wizard-step-search .ssw-step-head {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.social-studio-wizard-step-search .ssw-step-title {
+  margin: 0;
+  font-family: 'Noto Serif SC', 'SimSun', 'Songti SC', 'STSong', 'FangSong', serif;
+  font-size: clamp(20px, 2.2vw, 26px);
+  font-weight: 900;
+  font-synthesis: weight;
+  letter-spacing: 0.06em;
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.social-studio-wizard-step-search .ssw-step-lead {
+  margin: 0.55rem auto 0;
+  max-width: 34rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, var(--foreground));
+}
+
+.social-studio-wizard-step-search .ssw-mode-rail-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.social-studio-wizard-step-search .ssw-mode-rail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.25rem;
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--muted) 26%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  line-height: 1.25;
+  color: var(--muted-foreground);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn:hover {
+  color: var(--foreground);
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn--active {
+  color: var(--foreground);
+  background: var(--background);
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn--spark {
+  position: relative;
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn--spark.ssw-mode-btn--active {
+  color: var(--primary);
+}
+
+@media (max-width: 639px) {
+  .social-studio-wizard-step-search .ssw-mode-rail {
+    width: 100%;
+    padding: 0.2rem;
+  }
+
+  .social-studio-wizard-step-search .ssw-mode-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    padding: 0.38rem 0.45rem;
+    font-size: 0.75rem;
+  }
+
+  .social-studio-wizard-step-search .ssw-step-lead {
+    font-size: 0.8125rem;
+    padding-inline: 0.25rem;
+  }
+}
+
+.social-studio-wizard-step-search .ssw-mode-btn__new {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.15rem;
+  padding: 0.08rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  pointer-events: none;
+}
+
+.social-studio-wizard-step-search .ssw-panel {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--card) 80%, var(--background));
+  padding: 1.1rem 1.2rem;
+}
+
+.social-studio-wizard-step-search .ssw-panel--soft {
+  border-color: color-mix(in srgb, var(--border) 50%, transparent);
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-body {
+  width: 100%;
+}
+
+.social-studio-wizard--step-search {
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+}
+
+.social-studio-wizard--step-search .social-studio-wizard__content {
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.social-studio-wizard-step-search--link-drop .ssw-panel--drop-active,
+.social-studio-wizard-step-search--media-drop .ssw-panel--drop-active {
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
+}
+
+/* 关键词框内：筛选图标与浮层 */
+.social-studio-wizard-step-search .ssw-search-filters-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: color-mix(in srgb, var(--muted-foreground) 88%, var(--foreground));
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.social-studio-wizard-step-search .ssw-search-filters-trigger:hover:not(:disabled),
+.social-studio-wizard-step-search .ssw-search-filters-trigger.is-open {
+  background: color-mix(in srgb, var(--muted) 46%, transparent);
+  color: var(--foreground);
+}
+
+.social-studio-wizard-step-search .ssw-search-filters-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  outline-offset: 1px;
+}
+
+.social-studio-wizard-step-search .ssw-search-filters-trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/*
+ * Popover Portal 挂在 document.body，不能写在 .social-studio-wizard-step-search 下。
+ */
+.ssw-search-filters-scrim {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.ssw-search-filters-popover__positioner {
+  z-index: 110;
+  outline: none;
+}
+
+.ssw-search-filters-popover {
+  box-sizing: border-box;
+  width: min(calc(100vw - 1.25rem), 21.5rem);
+  padding: 0.55rem 0.6rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background-color: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--foreground) 10%, transparent);
+  outline: none;
+  isolation: isolate;
+  animation: ssw-search-filters-popover-in 150ms ease-out both;
+}
+
+@keyframes ssw-search-filters-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ssw-search-filters-popover {
+    animation: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .ssw-search-filters-popover {
+    width: min(calc(100vw - 1.25rem), 32rem);
+  }
+}
+
+.ssw-search-filters-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.5rem;
+}
+
+@media (min-width: 520px) {
+  .ssw-search-filters-form {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.ssw-search-filters-form .wb-capture-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.ssw-search-filters-form .wb-capture-settings-field--limit {
+  grid-column: auto;
+}
+
+.ssw-search-filters-form .wb-capture-settings-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1.15;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+}
+
+.ssw-search-filters-form .wb-capture-settings-trigger {
+  height: 1.875rem;
+  min-height: 1.875rem;
+  padding-left: 0.45rem;
+  padding-right: 0.35rem;
+  border-radius: 0.5rem;
+  font-size: 0.6875rem;
+  background-color: var(--background);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: none;
+}
+
+.ssw-search-filters-form .wb-capture-settings-field--limit > .ssw-capture-limit {
+  gap: 0;
+  padding: 1px;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background-color: var(--background);
+}
+
+.ssw-search-filters-form .wb-capture-settings-field--limit .ssw-capture-limit button {
+  height: 1.75rem;
+  width: 1.75rem;
+  min-height: 1.75rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.75rem;
+}
+
+.ssw-search-filters-form .wb-capture-settings-field--limit .ssw-capture-limit button:hover {
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.ssw-search-filters-form .wb-capture-settings-field--limit .ssw-capture-limit input {
+  height: 1.75rem;
+  min-height: 1.75rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.6875rem;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet {
+  padding: 0.9rem 0.95rem 0.8rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--muted) 16%, var(--card)) 0%,
+    color-mix(in srgb, var(--card) 92%, var(--background)) 100%
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--background) 65%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--popover {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--popover .wb-capture-settings__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 520px) {
+  .social-studio-wizard-step-search .ssw-capture-settings__sheet--popover .wb-capture-settings__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact {
+  padding: 0.5rem 0.6rem 0.45rem;
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--muted) 14%, var(--card));
+  box-shadow: none;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings__grid {
+  gap: 0.4rem 0.45rem;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact.ssw-capture-settings__sheet--popover {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-field {
+  gap: 0.15rem;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-field--limit {
+  grid-column: auto;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-trigger {
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding-left: 0.4rem;
+  padding-right: 0.35rem;
+  border-radius: 0.4375rem;
+  font-size: 0.6875rem;
+  background: var(--background);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: none;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-field--limit > .ssw-capture-limit {
+  gap: 0;
+  padding: 1px;
+  border-radius: 0.4375rem;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: var(--background);
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-field--limit .ssw-capture-limit button {
+  height: 1.65rem;
+  width: 1.65rem;
+  min-height: 1.65rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.75rem;
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-field--limit .ssw-capture-limit button:hover {
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-capture-settings__sheet--compact .wb-capture-settings-field--limit .ssw-capture-limit input {
+  height: 1.65rem;
+  min-height: 1.65rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.6875rem;
+}
+
+/* 热搜灵感：与上方探测区一条顶线分区，不再套卡片 */
+.social-studio-wizard-step-search .ssw-hot-rank {
+  margin-top: 0.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.15rem 0;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  text-align: left;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__toggle:hover {
+  color: var(--primary);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__hint {
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__chevron {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__body {
+  padding-top: 0.5rem;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__pager-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.15rem 0.35rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  font-size: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__pager-btn:hover:not(:disabled) {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__pager-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .social-studio-wizard-step-search .ssw-hot-rank__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.75rem;
+  }
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.25rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__item:hover {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__rank {
+  flex-shrink: 0;
+  width: 1.25rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__rank--top {
+  color: #e11d48;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__item:hover .ssw-hot-rank__label {
+  color: var(--primary);
+}
+
+.social-studio-wizard-step-search .ssw-hot-rank__meta {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.social-studio-wizard-step-search .ssw-material-import {
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__toggle:hover {
+  color: var(--primary);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__count {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__link {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__link:hover {
+  text-decoration: underline;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__body {
+  margin-top: 0.5rem;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__empty {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__empty a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  margin-inline: 0.15rem;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__empty a:hover {
+  text-decoration: underline;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.25rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__item:hover {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__thumb {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.35rem;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__thumb--placeholder {
+  display: block;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__item-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__more {
+  margin: 0.35rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.social-studio-wizard-step-search .ssw-material-import__more a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.social-studio-wizard-step-search .ssw-material-import__more a:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-studio-wizard-step-search .ssw-mode-btn {
+    transition: none;
+  }
+}

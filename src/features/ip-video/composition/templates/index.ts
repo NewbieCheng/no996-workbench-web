@@ -1,0 +1,5 @@
+export { TalkTemplateLibrary } from './TalkTemplateLibrary'
+export type { TalkTemplateLibraryProps } from './TalkTemplateLibrary'
+export { TalkTemplateSaveDialog } from './TalkTemplateSaveDialog'
+export type { TalkTemplateSaveDialogProps } from './TalkTemplateSaveDialog'
+export type { TalkStyleTemplate, TemplateComposition, TemplateFrame, TemplateApplyOptions } from './model'

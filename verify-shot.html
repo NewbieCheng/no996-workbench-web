@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>镜头渲染验证（开发专用）</title>
+  </head>
+  <body>
+    <!--
+      开发专用的独立验证入口：不经过 React Router 与登录鉴权，
+      直接调用 dom-frame-renderer 把镜头渲染成 canvas。
+
+      生产构建不会包含这个文件（vite 默认只以 index.html 为入口），
+      因此线上不存在这个页面。
+    -->
+    <div id="verify-root"></div>
+    <script type="module" src="/src/features/video-factory/dev/verify-entry.tsx"></script>
+  </body>
+</html>

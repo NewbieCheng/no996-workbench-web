@@ -1,0 +1,219 @@
+.ai-edit-popover__positioner {
+  z-index: 80;
+  outline: none;
+}
+
+.ai-edit-popover {
+  box-sizing: border-box;
+  width: min(26.25rem, calc(100vw - 2rem));
+  max-height: min(32rem, calc(100dvh - 2rem));
+  overflow-y: auto;
+  padding: 1rem 1rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--background);
+  color: var(--popover-foreground, var(--foreground));
+  box-shadow: 0 0.625rem 2.25rem rgb(0 0 0 / 0.2), 0 0 0 1px color-mix(in srgb, var(--border) 75%, transparent);
+  outline: none;
+  animation: ai-edit-popover-enter 150ms ease-out both;
+}
+
+@keyframes ai-edit-popover-enter {
+  from { opacity: 0; transform: translateY(-0.375rem) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ai-edit-popover__trigger {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.ai-edit-popover__trigger:hover:not(:disabled) {
+  color: var(--foreground);
+}
+
+.ai-edit-popover--profile .ai-edit-popover__trigger {
+  width: 1.625rem;
+  height: 1.625rem;
+  min-width: 1.625rem;
+  min-height: 1.625rem;
+}
+
+.ai-edit-popover--profile .ai-edit-popover__trigger svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.ai-edit-popover--profile .ai-edit-popover__quick-prompt {
+  padding: 0.22rem 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+
+.ai-edit-popover--profile .ai-edit-popover__send {
+  width: 1.875rem;
+  height: 1.875rem;
+}
+
+.ai-edit-popover--profile-field {
+  z-index: 90;
+}
+
+.ai-edit-popover__context {
+  display: none;
+}
+
+.ai-edit-popover__context-value {
+  overflow: hidden;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-edit-popover__prompt-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.ai-edit-popover__prompt {
+  min-height: 3.25rem;
+  max-height: 8rem;
+  resize: vertical;
+  padding: 0.6rem 0.7rem 2.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--background);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  box-shadow: none;
+}
+
+.ai-edit-popover__prompt:focus-visible {
+  border-color: color-mix(in srgb, var(--foreground) 32%, var(--border));
+  outline: none;
+  box-shadow: none;
+}
+
+.ai-edit-popover__footer {
+  margin-top: 0.35rem;
+}
+
+.ai-edit-popover__controls {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  left: 0.45rem;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.ai-edit-popover__quick-prompts,
+.ai-edit-popover__result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ai-edit-popover__controls > * {
+  pointer-events: auto;
+}
+
+.ai-edit-popover__quick-prompts {
+  min-width: 0;
+  max-width: calc(100% - 2.5rem);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ai-edit-popover__quick-prompts::-webkit-scrollbar {
+  display: none;
+}
+
+.ai-edit-popover__quick-prompt {
+  flex: none;
+  padding: 0.32rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.ai-edit-popover__quick-prompt:hover,
+.ai-edit-popover__quick-prompt.is-active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  color: var(--primary);
+}
+
+.ai-edit-popover__quick-prompt:focus-visible,
+.ai-edit-popover__send:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.ai-edit-popover__quick-prompt:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ai-edit-popover__send {
+  flex: none;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 999px;
+}
+
+.ai-edit-popover__result {
+  margin: 0.65rem 0 0.25rem;
+  padding: 0.7rem 0.75rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+}
+
+.ai-edit-popover__result-label {
+  margin: 0 0 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.ai-edit-popover__result-text {
+  margin: 0;
+  max-height: 8rem;
+  overflow-y: auto;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ai-edit-popover__result-actions {
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.ai-edit-popover__error,
+.ai-edit-popover__loading {
+  margin: 0.45rem 0;
+  color: var(--destructive);
+  font-size: 0.78rem;
+}
+
+.ai-edit-popover__loading {
+  color: var(--muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-edit-popover { animation: none; }
+}

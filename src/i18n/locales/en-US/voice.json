@@ -1,0 +1,397 @@
+{
+  "page": {
+    "lead": "Write in the center, pick a voice and tune settings on the right. Use Clone to create your own voice.",
+    "viewTabsAria": "Voice studio views",
+    "views": {
+      "work": "Create",
+      "history": "History",
+      "voices": "Voices"
+    }
+  },
+  "dubMode": {
+    "tabsAria": "Dubbing mode",
+    "direct": "Quick dub",
+    "advanced": "Advanced dub"
+  },
+  "picker": {
+    "titleDefault": "Voice",
+    "titleSelect": "Choose voice",
+    "titleGlobal": "Global voice",
+    "listAria": "Voice list",
+    "cloneTitle": "Clone my voice",
+    "clone": "Clone",
+    "previewAria": "Preview {{name}}",
+    "tagMine": "My voice",
+    "tagPlatform": "Platform voice",
+    "manageMine": "Manage my voices",
+    "columnAria": "Choose voice"
+  },
+  "manuscript": {
+    "aria": "Dubbing script",
+    "placeholder": "Enter or upload a script to read aloud.",
+    "placeholderAdvanced": "Paste your full script here, or use Manuscript tools (bottom left) to import TXT, Markdown, or Word (.docx). AI will split it for narration and draft delivery notes per segment.",
+    "tools": "Manuscript tools",
+    "fillSample": "Insert sample",
+    "upload": "Upload script",
+    "indent": "Indent paragraphs",
+    "removeBlank": "Remove blank lines",
+    "stripMarkdown": "Strip # / Markdown",
+    "undo": "Undo",
+    "clear": "Clear script",
+    "parsing": "Parsing document…",
+    "charCountTitle": "Up to {{max}} characters per run",
+    "charCount": "{{current}} / {{max}} chars · ~{{duration}}"
+  },
+  "settings": {
+    "advancedAria": "Advanced settings",
+    "advancedTitle": "Advanced settings",
+    "expand": "Expand advanced settings",
+    "collapse": "Collapse advanced settings",
+    "expandShort": "Expand",
+    "collapseShort": "Collapse",
+    "toneBase": "Tone",
+    "rate": "Speed",
+    "volume": "Volume",
+    "pitch": "Pitch",
+    "toneSelectAria": "Tone preset",
+    "toneSelectPlaceholder": "Choose tone",
+    "customTonePlaceholder": "Describe custom delivery…",
+    "customToneAria": "Custom tone description",
+    "autoSynthesizeAfterPlan": "Synthesize after planning",
+    "ctaDirect": "Start dubbing",
+    "ctaAdvanced": "Start planning",
+    "ctaBusy": "Working…"
+  },
+  "cta": {
+    "startDub": "Start dubbing"
+  },
+  "demo": {
+    "sampleText": "Hi — welcome to today’s ops tip. I’ll walk you through one practical method in plain language. Let’s get started.",
+    "fillSample": "Insert sample script",
+    "fillKeynote": "Insert keynote sample",
+    "simulatePlan": "Simulate segment plan"
+  },
+  "preview": {
+    "sampleText": "Hello. This is a preview of the current voice.",
+    "playing": "Playing preview."
+  },
+  "toast": {
+    "voiceReady": "Voice “{{name}}” is ready. You can start dubbing.",
+    "cloneEnqueued": "Voice cloning was queued. Track progress in Tasks.",
+    "voiceDeleted": "Voice removed.",
+    "voiceRenamed": "Voice name updated.",
+    "voiceRenamedLocalOnly": "Saved on this browser only. The server rename API isn’t available yet; set the name again on other devices."
+  },
+  "error": {
+    "voiceUnavailable": "This voice isn’t available yet. Pick another or wait for approval.",
+    "manuscriptEmpty": "The script is empty or only formatting symbols. Enter readable text.",
+    "previewStale": "Preview audio expired or failed to load. Try again later.",
+    "previewListRefreshed": "{{message}} Voice list refreshed — pick again and preview.",
+    "voiceQuota": "You’ve reached the voice limit ({{max}}). Delete an old voice first."
+  },
+  "tag": {
+    "platform": "Platform voice"
+  },
+  "platformVoice": {
+    "longanlingxin": { "label": "Longan Lingxin (female)", "tag": "Knowledge sharing" },
+    "longanhuan_v3.6": { "label": "Longan Huan", "tag": "Tutorials" },
+    "longanlufeng": { "label": "Longan Lufeng (male)", "tag": "Commercial VO" },
+    "longanlingxi": { "label": "Longan Lingxi", "tag": "Storytelling" }
+  },
+  "tonePreset": {
+    "自然": "Natural",
+    "热情": "Warm",
+    "沉稳": "Calm",
+    "亲切": "Friendly",
+    "开心轻松": "Light & upbeat",
+    "新闻播报": "News anchor",
+    "自定义": "Custom"
+  },
+  "instructionPreset": {
+    "default": "Default",
+    "relaxed": "Light & relaxed",
+    "formal": "Formal",
+    "gentle": "Gentle",
+    "passionate": "Passionate",
+    "news": "News anchor"
+  },
+  "cloneStatus": {
+    "ready": "Ready",
+    "deploying": "In review",
+    "failed": "Rejected",
+    "processing": "Processing",
+    "readyDetail": "Ready for dubbing and preview",
+    "deployingDetail": "Platform review in progress",
+    "failedDetail": "Review failed — delete and try again",
+    "processingDetail": "Processing — refresh the list or wait"
+  },
+  "manage": {
+    "back": "Back to dubbing",
+    "title": "My voices",
+    "sub": "Preview, rename, or delete cloned voices here. Platform presets stay on the dubbing page.",
+    "quotaAria": "Voice quota",
+    "quotaUsed": "Used",
+    "quota": "Used <strong>{{quota}}</strong>",
+    "quotaCount": "{{count}} voices",
+    "refreshAria": "Refresh voice list",
+    "refresh": "Refresh",
+    "empty": "You don’t have a cloned voice yet.",
+    "startClone": "Clone a voice",
+    "createdAt": "Created {{time}}",
+    "preview": "Preview",
+    "previewing": "Previewing…",
+    "rename": "Rename",
+    "renameTitle": "Rename voice",
+    "renameBody": "Update the display name shown in dubbing, digital human, and other tools.",
+    "renamePlaceholder": "e.g. My host voice",
+    "confirmRename": "Save",
+    "renaming": "Saving…",
+    "delete": "Delete",
+    "deleteTitle": "Delete voice",
+    "deleteBody": "Delete “{{name}}”? This can’t be undone and credits won’t be refunded. Active dubbing jobs will fall back to the default voice.",
+    "cancel": "Cancel",
+    "confirmDelete": "Delete",
+    "deleting": "Deleting…"
+  },
+  "history": {
+    "title": "Generation history",
+    "sub": "Stored in this browser only. In-progress jobs are in the Tasks menu.",
+    "empty": "Finished audio appears here. Queue and synthesis progress live under Tasks.",
+    "kindAdvanced": "Advanced dub",
+    "kindDirect": "Quick dub",
+    "tone": "Tone {{label}}",
+    "rate": "Speed {{rate}}×",
+    "volume": "Volume {{volume}}",
+    "muted": "Muted",
+    "pitch": "Pitch {{pitch}}×",
+    "segments": "{{count}} segments",
+    "awaitingConfirm": "Awaiting confirm",
+    "copyUrl": "Copy URL",
+    "download": "Download",
+    "remove": "Remove",
+    "loadAudio": "Loading audio…",
+    "playbackFailed": "In-page playback failed — download or use the source link",
+    "generateFailed": "Generation failed",
+    "table": {
+      "preview": "Preview",
+      "manuscript": "Script",
+      "kind": "Type",
+      "params": "Settings",
+      "status": "Status",
+      "time": "Time",
+      "actions": "Actions"
+    }
+  },
+  "dock": {
+    "ariaLabel": "Dubbing settings"
+  },
+  "player": {
+    "play": "Play",
+    "pause": "Pause",
+    "defaultTitle": "Advanced dub output",
+    "meta": "{{count}} segments · WAV"
+  },
+  "taskStatus": {
+    "queued": "Queued",
+    "running": "Generating",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "succeeded": "Done"
+  },
+  "clone": {
+    "dialogTitle": "Voice cloning",
+    "dialogDesc": "Record or upload a sample to create a voice for dubbing.",
+    "dialogPricingAria": "Clone pricing",
+    "dialogPricingLabel": "Clone",
+    "pricingLoading": "Loading pricing…",
+    "benefits": {
+      "perkTitle": "What you get",
+      "perkLeadWithPrice": "~¥{{sale}} per creation · exclusive voice for 1 year",
+      "perkLead": "One creation — yours after approval",
+      "perks": [
+        "High-fidelity voice for hosting, explainers, and short-form VO",
+        "Stored on your account — pick it anytime in Voice studio",
+        "Tone controls and long-form synthesis for your workflow"
+      ]
+    },
+    "stepsAria": "Clone steps",
+    "stepLabels": ["Prepare sample", "Name & create"],
+    "step1Title": "Capture your voice",
+    "step2Title": "Name your voice",
+    "step1Lead": "Read a short script — 10–20 seconds is enough.",
+    "step2Lead": "Confirm you own the voice. Credits are charged when you submit for review.",
+    "shuffle": "Another script",
+    "auth": "This is my voice, or I have explicit permission from the owner.",
+    "recordAria": "{{action}}",
+    "recordStart": "Start recording",
+    "recordStop": "Stop recording",
+    "recordAgain": "Record again",
+    "recordPreparing": "Processing sample…",
+    "recording": "Recording",
+    "recordCta": "Tap to record",
+    "recordHintPreparing": "Browser recording will be saved as WAV",
+    "recordHintActive": "Tap again when you finish reading",
+    "guideSeconds": "10–20 sec recommended",
+    "guideSecondsValue": "{{sec}} sec",
+    "uploadInstead": "Upload audio instead",
+    "uploadFormats": "MP3, WAV, M4A",
+    "sampleAria": "Selected audio sample",
+    "sampleSelected": "Sample selected",
+    "removeSample": "Remove",
+    "previewSampleAria": "Preview sample",
+    "nameLabel": "Voice name",
+    "nameHint": "Pick a name you’ll recognize when dubbing.",
+    "namePlaceholder": "e.g. My host voice",
+    "suggestionsAria": "Name suggestions",
+    "billingAria": "Clone billing",
+    "billingLead": "This run will use",
+    "pointsUnit": "credits",
+    "approxYuan": "~¥{{yuan}}",
+    "noChargeOnFail": "No charge if creation fails",
+    "afterApprove": "Available for dubbing after approval",
+    "footerHint": "Record or upload a sample to continue.",
+    "cancel": "Cancel",
+    "next": "Next: name & create",
+    "prev": "Back",
+    "submit": "Create voice",
+    "submitting": "Submitting…",
+    "guideTitle": "Before you submit",
+    "guideItems": [
+      "The name is only for you — track review under Voices.",
+      "Name by use case (hosting, explainers) to find it faster.",
+      "Samples are used only for this clone — double-check the name before submitting."
+    ],
+    "nameSuggestions": ["My host voice", "Daily VO", "Product explainer"],
+    "recordFileName": "recording",
+    "scenes": {
+      "random": {
+        "label": "Random",
+        "text": "The hardest part of content ops isn’t ideas — it’s catching them in time. When something hooks you, don’t copy it yet: note why it works, then retell it with your own story."
+      },
+      "health": {
+        "label": "Wellness",
+        "text": "Start the morning with warm water, then move gently for ten minutes. Keep it up for a month and you’ll feel the difference."
+      },
+      "tips": {
+        "label": "How-to",
+        "text": "Here’s a simple productivity trick: rank today’s tasks by importance and finish only the top three first."
+      },
+      "local": {
+        "label": "Local life",
+        "text": "Looking for a quiet coffee spot this weekend? There’s a small shop behind this old street — great beans and a sunny window seat."
+      }
+    },
+    "error": {
+      "audioProcess": "Couldn’t process audio. Try MP3 or WAV.",
+      "fileEmpty": "Use a non-empty audio file under {{max}} MB.",
+      "fileFormat": "Use MP3, WAV, M4A, or a browser recording.",
+      "authRequired": "Check the voice authorization box before recording.",
+      "tooShort": "Recording too short — at least 5 seconds of clear speech.",
+      "micDenied": "Microphone blocked. Check browser permissions or upload a file."
+    }
+  },
+  "advanced": {
+    "defaultTitle": "Advanced dub script",
+    "workflowTitle": "Advanced dub flow",
+    "planTitle": "Advanced dub · Planning",
+    "ttsTitle": "Advanced dub · Segment synthesis",
+    "summary": "{{chars}} chars · Voice: ",
+    "chipVoice": "Voice: {{name}}",
+    "editCopy": "Edit script",
+    "planActive": "AI planning {{hint}}",
+    "stepLabels": ["Prepare script", "AI segments", "Review plan", "Synthesize", "Merge", "Done"],
+    "waitingConfirm": "Awaiting confirm",
+    "segmentTitle": "Segment {{index}}",
+    "aboutSeconds": "~{{sec}} sec",
+    "instructionGenerating": "Generating delivery notes…",
+    "naturalTone": "Natural delivery",
+    "headers": {
+      "plan": "Segment preview",
+      "confirm": "Review segments",
+      "tts": "Synthesis progress",
+      "done": "Segment previews"
+    },
+    "sub": {
+      "planWithBatch": "Planning · {{batch}} · segments appear as they’re generated",
+      "plan": "Planning segments…",
+      "confirm": "Edit text and delivery notes, then tap Start dubbing",
+      "segments": "{{count}} segments · ~{{duration}}"
+    },
+    "confirmTip": "Keep delivery notes under 100 characters (longer lines are trimmed at synthesis). Body text is checked against a ~3,500 character soft limit per segment. Changing voice affects synthesis only — tap Re-plan to refresh delivery notes.",
+    "manySegments": "Many segments may take longer — track progress under Tasks.",
+    "segmentTextPlaceholder": "Segment script (verify against source)",
+    "instructionPlaceholder": "Delivery: mood, pace, emphasis, pauses (e.g. calm authority, warm empathy)",
+    "instructionLabel": "Delivery notes",
+    "instructionOver": "Over 100 characters — will be trimmed",
+    "previewSegmentAria": "Preview this segment",
+    "statusDone": "Ready",
+    "statusRunning": "Synthesizing…",
+    "statusQueued": "Queued",
+    "replan": "Re-plan segments",
+    "startDub": "Start dubbing",
+    "newRun": "Start another",
+    "downloadWav": "Download WAV",
+    "downloadDemo": "Download",
+    "demoMergedAlert": "Demo merge complete",
+    "changeVoiceTitle": "Change voice",
+    "changeVoiceDesc": "Affects later synthesis only. Use Re-plan segments to refresh delivery notes for a new voice.",
+    "resumeTitle": "{{title}} (resume)",
+    "downloadBasename": "advanced-dub"
+  },
+  "workflow": {
+    "plannedBatch": "Planned {{count}} segments in this batch.",
+    "planning": "Generating segment plan…",
+    "merged": "Batches merged into the full plan.",
+    "merging": "Merging batches…",
+    "structuring": "Building segment structure…"
+  },
+  "flowStage": {
+    "ingest": {
+      "roleName": "Script prep",
+      "roleTag": "Local",
+      "principle": "Normalize long text, clean odd characters and blank lines, enforce per-segment limits.",
+      "headline": "Preparing script…"
+    },
+    "segment_planner": {
+      "roleName": "Segment planning",
+      "roleTag": "AI",
+      "principle": "Split for spoken structure (hook, pain points, offer, close) and draft delivery notes per segment.",
+      "headline": "AI is planning segments and delivery…"
+    },
+    "plan_review": {
+      "roleName": "Plan validation",
+      "roleTag": "Local",
+      "principle": "Validate segments; trim long delivery notes; split oversized body text at sentence boundaries.",
+      "headline": "Validating segment plan…"
+    },
+    "segment_tts": {
+      "roleName": "Segment synthesis",
+      "roleTag": "Speech",
+      "principle": "Synthesize audio per confirmed script and delivery parameters.",
+      "headline": "Synthesizing segments…"
+    },
+    "merge_audio": {
+      "roleName": "Merge",
+      "roleTag": "Audio",
+      "principle": "Concatenate segment audio into one WAV in the browser.",
+      "headline": "Merging final audio…"
+    },
+    "finalize": {
+      "roleName": "Finalize",
+      "roleTag": "Archive",
+      "principle": "Write metadata and per-segment preview index.",
+      "headline": "Advanced dub is ready!"
+    }
+  },
+  "rail": {
+    "sectionAria": "Voice",
+    "title": "Voice",
+    "current": "Current: {{name}}",
+    "select": "Choose a voice to dub",
+    "polling": " · Polling review",
+    "listAria": "Voice list",
+    "cloneCard": "Clone voice",
+    "cloneEta": "~1 min",
+    "refreshAria": "Refresh voice list"
+  }
+}

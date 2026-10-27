@@ -1,0 +1,1771 @@
+@import '../../../packages/ui/src/structured-document/structured-document.css';
+@import './script-lab-wizard.css';
+
+/* ===========================================================================
+   爆款脚本工作台（Script Lab）
+   ---------------------------------------------------------------------------
+   设计目标（2026-10-12 用户要求）：三页要有**可辨认的差异化**，不再是一堆相同的卡片。
+
+   - 视频脚本：亮色 + 橙色，竖屏手机预览（264×528）+ 分镜列表，圆角大、有胶片感。
+   - 直播脚本：深色「导播台」，青绿→紫，三栏 = 流程时间轴 / 主播提词面板 / 控场清单，
+     直角小圆角，与现实中的导播软件同构。
+   - 两者共用同一套类名与令牌，靠 [data-mode] 换肤 —— 引擎统一、皮肤分化。
+
+   色板一律从项目品牌令牌派生，不引入第三套色板。
+   --sl-display 是唯一可替换的展示字体令牌。
+   =========================================================================== */
+
+.script-lab {
+  --sl-display: 'Alibaba PuHuiTi', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+  --sl-radius: var(--radius, 1rem);
+  --sl-gap: 18px;
+  position: relative;
+  color: var(--foreground);
+}
+
+/* 外层仅提供脚本页主题变量，不再绘制额外卡片；卡片层级由具体内容组件负责。 */
+.script-lab > * {
+  position: relative;
+}
+
+/* ------------------------------ 视频模式（亮色橙） ------------------------------ */
+.script-lab[data-mode='video'] {
+  --sl-acc: var(--primary, #ff6400);
+  --sl-acc2: #ff9140;
+  --sl-onacc: #ffffff;
+  --sl-glow: rgba(255, 100, 0, 0.14);
+  --sl-surface: var(--card, #ffffff);
+  --sl-line: var(--border, #e6e6e6);
+  --sl-ink: var(--foreground);
+  --sl-mute: var(--muted-foreground);
+  --sl-hov: color-mix(in srgb, var(--primary) 5%, transparent);
+  --sl-box-radius: 20px;
+  --sl-btn-radius: 14px;
+}
+
+/* ------------------------------ 直播模式（主题跟随 + 导播台密度） ------------------------------ */
+/*
+ * 原先这里写死了一套深色（#111834 / #0c1126 / #2dd4bf），导致页面在浅色主题下
+ * 是一块突兀的黑板，用户切主题时只有它不变。
+ * 现在：颜色全部走全局主题令牌（浅色/深色都稳定），「导播台」的身份改由
+ * **密度与小圆角**承担 —— 直角、紧排、tabular-nums 的数字，比换色更持久。
+ * 青绿只作为状态色（运行中/成功/焦点），不再铺满整个面板。
+ */
+.script-lab[data-mode='live'] {
+  --sl-acc: #14a596;
+  --sl-acc2: #6e5cf0;
+  --sl-onacc: #ffffff;
+  --sl-glow: color-mix(in srgb, #14a596 16%, transparent);
+  --sl-surface: var(--card, #ffffff);
+  --sl-panel: var(--background, #ffffff);
+  --sl-line: var(--border, #e6e6e6);
+  --sl-ink: var(--foreground);
+  --sl-mute: var(--muted-foreground);
+  --sl-hov: color-mix(in srgb, var(--foreground) 5%, transparent);
+  --sl-box-radius: 8px;
+  --sl-btn-radius: 6px;
+  --sl-red: #d8404a;
+  color: var(--sl-ink);
+}
+
+/* 深色主题下把青绿提亮一档，保证在深底上仍有足够对比 */
+:root.dark .script-lab[data-mode='live'],
+:root[data-theme='dark'] .script-lab[data-mode='live'] {
+  --sl-acc: #2dd4bf;
+  --sl-glow: color-mix(in srgb, #2dd4bf 18%, transparent);
+  --sl-red: #ff5c72;
+}
+
+/* 外层页面承载各自的主题色与环境光，内容容器保持透明，避免重复套卡片。 */
+.wb-page-area.video-script-workbench-page {
+  --script-page-accent: #ff6400;
+  --wb-workspace-bg: color-mix(in srgb, var(--background) 96%, var(--script-page-accent));
+  --wb-ambient-glow: color-mix(in srgb, var(--script-page-accent) 16%, transparent);
+}
+
+.wb-page-area.live-script-workbench-page {
+  --script-page-accent: #14a596;
+  --wb-workspace-bg: color-mix(in srgb, var(--background) 96%, var(--script-page-accent));
+  --wb-ambient-glow: color-mix(in srgb, var(--script-page-accent) 16%, transparent);
+}
+
+.wb-page-area.video-script-workbench-page::before,
+.wb-page-area.live-script-workbench-page::before {
+  background: radial-gradient(closest-side, var(--wb-ambient-glow), transparent 72%);
+}
+
+:root.dark .wb-page-area.live-script-workbench-page,
+:root[data-theme='dark'] .wb-page-area.live-script-workbench-page {
+  --script-page-accent: #2dd4bf;
+}
+
+.wb-page-area.video-script-workbench-page .script-lab,
+.wb-page-area.live-script-workbench-page .script-lab {
+  background: transparent;
+}
+
+/* ------------------------------------ 首屏 ------------------------------------ */
+
+/* 唯一必填：产品名。整块做成「一个输入框」的强视觉，而不是一堆字段 */
+.sl-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border: 2px solid var(--sl-ink);
+  border-radius: var(--sl-box-radius);
+  background: var(--sl-surface);
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.script-lab[data-mode='live'] .sl-box {
+  border-color: var(--sl-acc);
+  box-shadow: 0 0 0 4px var(--sl-glow);
+}
+
+.sl-box:focus-within {
+  box-shadow: 0 0 0 4px var(--sl-glow);
+}
+
+.sl-box__tag {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--sl-hov);
+  color: var(--sl-mute);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.script-lab[data-mode='video'] .sl-box__tag {
+  background: var(--sl-acc);
+  color: var(--sl-onacc, #fff);
+}
+
+.script-lab[data-mode='live'] .sl-box__tag {
+  background: var(--sl-red, #d8404a);
+  color: #fff;
+}
+
+/* 直播中：小圆点呼吸，暗示「正在直播」而不是静态标签 */
+.script-lab[data-mode='live'] .sl-box__tag::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #fff;
+  vertical-align: 1px;
+  animation: sl-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes sl-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.sl-box__input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--sl-ink);
+  font-family: var(--sl-display);
+  font-size: 21px;
+  font-weight: 700;
+  outline: none;
+}
+
+.sl-box__input::placeholder {
+  color: var(--sl-mute);
+  font-weight: 400;
+}
+
+.sl-box__go {
+  flex: none;
+  padding: 14px 28px;
+  border: 0;
+  border-radius: var(--sl-btn-radius);
+  background: linear-gradient(90deg, var(--sl-acc), var(--sl-acc2));
+  color: var(--sl-onacc);
+  font: 700 15px inherit;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -12px var(--sl-acc);
+  transition: transform 140ms ease, box-shadow 200ms ease, opacity 200ms ease;
+}
+
+.sl-box__go:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px -12px var(--sl-acc);
+}
+
+.sl-box__go:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+/* 向导第 2 步：分组网格，标签在上、选项在下 */
+.sl-spec {
+  display: grid;
+  gap: 20px;
+}
+
+.sl-spec__lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--sl-mute);
+  max-width: 52ch;
+}
+
+.sl-spec__grid {
+  display: grid;
+  gap: 18px;
+}
+
+@media (min-width: 720px) {
+  .sl-spec__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px;
+  }
+}
+
+.sl-field-group {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.sl-field-group--span2 {
+  grid-column: 1 / -1;
+}
+
+.sl-field-group__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--sl-ink);
+}
+
+.sl-field-group__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--sl-mute);
+}
+
+.sl-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sl-struct-panel {
+  padding: 16px 18px;
+  border: 1px solid var(--sl-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sl-surface) 92%, var(--sl-hov));
+}
+
+.sl-input--boxed {
+  padding: 10px 12px;
+  border: 1.5px solid var(--sl-line);
+  border-radius: 10px;
+  border-bottom-width: 1.5px;
+  background: var(--sl-surface);
+}
+
+.sl-input--boxed:focus {
+  border-color: var(--sl-acc);
+}
+
+.sl-link--block {
+  justify-self: start;
+}
+
+.sl-struct__breakdown--inset {
+  margin-top: 0;
+}
+
+.sl-spec-summary {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--sl-hov);
+  border: 1px solid color-mix(in srgb, var(--sl-line) 70%, transparent);
+}
+
+.sl-spec-summary__title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-mute);
+}
+
+.sl-spec-summary__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--sl-mute);
+}
+
+.sl-spec-summary__list li {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.sl-spec-summary__list li > span {
+  font-size: 12px;
+  color: var(--sl-mute);
+}
+
+.sl-spec-summary__list b {
+  color: var(--sl-ink);
+  font-weight: 600;
+}
+
+.sl-spec-summary__ai,
+.sl-spec-summary__warn {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--sl-mute);
+}
+
+.sl-spec-summary__warn {
+  color: var(--sl-acc);
+  font-weight: 600;
+}
+
+.sl-form--wizard .sl-spec {
+  gap: 18px;
+}
+
+.sl-form--wizard .sl-spec-summary {
+  margin-top: 0;
+}
+
+/* 时长 / 目标 / 平台：一眼可见的基础选项，做成可点的小胶囊 */
+.sl-basic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 26px;
+  margin-top: 16px;
+}
+
+.sl-basic__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--sl-mute);
+}
+
+.sl-chip {
+  padding: 5px 14px;
+  border: 1.5px solid var(--sl-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sl-ink);
+  font: 500 13px inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.sl-chip:hover {
+  border-color: var(--sl-acc);
+}
+
+.sl-chip[aria-pressed='true'] {
+  border-color: var(--sl-ink);
+  background: var(--sl-ink);
+  color: var(--sl-panel, var(--background));
+  font-weight: 700;
+}
+
+.script-lab[data-mode='live'] .sl-chip[aria-pressed='true'] {
+  border-color: var(--sl-acc);
+  background: var(--sl-acc);
+  color: var(--sl-onacc);
+}
+
+/* 摘要行：告诉用户「将按什么生成」以及 AI 补全了什么 */
+.sl-sum {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--sl-mute);
+}
+
+.sl-sum b {
+  color: var(--sl-ink);
+  font-weight: 500;
+}
+
+.sl-sum__warn {
+  color: var(--sl-acc);
+  font-weight: 600;
+}
+
+.sl-sum b.sl-sum__warn {
+  color: var(--sl-acc);
+}
+
+/* 行内示例 + 重置 / 历史：都在同一行，不占独立按钮区 */
+.sl-exs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--sl-mute);
+}
+
+.sl-exs__spacer {
+  flex: 1;
+}
+
+.sl-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sl-acc);
+  font: 500 13px inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sl-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 结构：当前公式 + 自定义 + 结构拆解 */
+.sl-struct {
+  margin-top: 10px;
+}
+
+.sl-struct__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sl-mute);
+}
+
+.sl-struct__breakdown {
+  margin: 8px 0 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--sl-hov);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.sl-struct__breakdown > p {
+  margin: 0 0 8px;
+  color: var(--sl-mute);
+}
+
+/* 更多设置：默认折叠，按钮显示「已改 N 项」 */
+.sl-adv {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sl-line);
+}
+
+.sl-adv__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 22px 30px;
+  margin-top: 14px;
+}
+
+.sl-adv__group {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.sl-adv__group > h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sl-ink);
+}
+
+.sl-adv--wide {
+  grid-column: 1 / -1;
+}
+
+.sl-field {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--sl-mute);
+}
+
+.sl-field > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sl-field em {
+  font-style: normal;
+  color: var(--sl-acc);
+  font-weight: 700;
+}
+
+.sl-input,
+.sl-textarea {
+  width: 100%;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1.5px solid var(--sl-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sl-ink);
+  font: 14px inherit;
+  outline: none;
+}
+
+.sl-input:focus,
+.sl-textarea:focus {
+  border-color: var(--sl-acc);
+}
+
+.sl-textarea {
+  min-height: 54px;
+  resize: vertical;
+}
+
+.sl-range {
+  width: 100%;
+  accent-color: var(--sl-acc);
+}
+
+.sl-range__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--sl-mute);
+}
+
+/* --------------------------------- 六步进度条 --------------------------------- */
+/* 等待期的进度条已统一为共享的 WorkflowRunCard（src/components/agent），
+   原先这套 .sl-strip 与标题页各写一份、口径还不一致，现已删除。 */
+
+
+/* 纵向单列：输入在上、结果在下（分栏拖拽已删除）。
+   间距与标题页统一为 24px —— 三页的节奏应当是同一个人排的。 */
+.sl-stack {
+  display: grid;
+  gap: 28px;
+  align-content: start;
+}
+
+.sl-form {
+  display: block;
+}
+
+/*
+ * 向导模式：表单被拆进 InputWizard 的卡身，每个分块都可能是「本步第一块」。
+ * 那些原本用来跟上一块拉开距离的 margin-top / border-top 会变成顶部的空档与孤线，
+ * 这里统一收掉；块与块之间的间距交给卡身自己的 gap。
+ */
+.sl-form--wizard > * + * {
+  margin-top: 16px;
+}
+
+.sl-form--wizard > *:first-child,
+.sl-form--wizard .sl-basic,
+.sl-form--wizard .sl-spec,
+.sl-form--wizard .sl-struct,
+.sl-form--wizard .sl-adv {
+  margin-top: 0;
+}
+
+.sl-form--wizard .sl-adv {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.sl-form__group-hint {
+  font-size: 12px;
+  color: var(--sl-mute);
+}
+
+/* 键盘可达性：自定义按钮也要有焦点环（原生 Button 组件自带，这里手写） */
+.sl-box__go:focus-visible,
+.sl-chip:focus-visible,
+.sl-btn:focus-visible,
+.sl-link:focus-visible,
+.sl-phone__bar button:focus-visible,
+.sl-editable:focus-visible {
+  outline: 2px solid var(--sl-acc);
+  outline-offset: 2px;
+}
+
+.sl-input:focus-visible,
+.sl-textarea:focus-visible,
+.sl-range:focus-visible {
+  outline: 2px solid var(--sl-acc);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------- 结果区 ---------------------------------- */
+
+.sl-out {
+  display: grid;
+  gap: 20px;
+}
+
+/* 指标行：竖分割线，不堆卡片（同参考稿的 .ms） */
+.agent-metrics {
+  padding: 0;
+}
+
+.sl-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--sl-mute);
+}
+
+.sl-badges strong {
+  color: var(--sl-ink);
+}
+
+.sl-badge {
+  padding: 3px 9px;
+  border: 1px solid var(--sl-line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sl-mute);
+}
+
+.sl-badge--demo {
+  border-color: var(--sl-acc);
+  background: var(--sl-glow);
+  color: var(--sl-acc);
+}
+
+.sl-badge--warn {
+  border-color: #d97706;
+  color: #b45309;
+}
+
+.sl-badge--ok {
+  border-color: #059669;
+  color: #047857;
+}
+
+.script-lab[data-mode='live'] .sl-badge--warn {
+  border-color: #d97706;
+  color: #b45309;
+}
+
+.script-lab[data-mode='live'] .sl-badge--ok {
+  border-color: #059669;
+  color: #047857;
+}
+
+/* 成稿导出：与全站 ResultActions 对齐 */
+.script-lab .result-action-wrap {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sl-line);
+  background: none;
+}
+
+.script-lab .result-action-wrap .toolbar {
+  gap: 8px;
+}
+
+.sl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--sl-line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sl-ink);
+  font: 500 13px inherit;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.sl-btn:hover {
+  border-color: var(--sl-acc);
+  color: var(--sl-acc);
+}
+
+.sl-btn:active {
+  transform: scale(0.98);
+}
+
+.sl-btn--primary {
+  border-color: var(--sl-ink);
+  background: var(--sl-ink);
+  color: var(--sl-panel, var(--background));
+}
+
+.sl-btn--primary:hover {
+  color: var(--sl-panel, var(--background));
+  opacity: 0.88;
+}
+
+.sl-btn--sm {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* ------------------------------ 视频：手机 + 分镜 ------------------------------ */
+
+.sl-vid {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.sl-phone-wrap {
+  position: sticky;
+  top: 12px;
+  text-align: center;
+}
+
+.sl-phone {
+  position: relative;
+  width: 264px;
+  height: 528px;
+  margin: 0 auto 14px;
+  border: 7px solid #1b1b24;
+  border-radius: 40px;
+  background: linear-gradient(165deg, #1d1410, #5b2a17 62%, #ff6a1a);
+  overflow: hidden;
+  color: #fff;
+  text-align: left;
+  box-shadow: 0 34px 60px -30px rgba(255, 106, 26, 0.65);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px 16px;
+  box-sizing: border-box;
+}
+
+.sl-phone__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sl-phone__seg-tag {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.sl-phone__timecode {
+  font-family: monospace;
+  opacity: 0.82;
+}
+
+.sl-phone__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  mask-image: linear-gradient(to bottom, transparent, black 6px, black calc(100% - 6px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 6px, black calc(100% - 6px), transparent);
+}
+
+.sl-phone__body::-webkit-scrollbar {
+  display: none;
+}
+
+.sl-phone__cap {
+  margin: 0;
+  font-family: var(--sl-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.5;
+  word-break: break-word;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: font-size 0.2s ease;
+}
+
+.sl-phone__cap--medium {
+  font-size: 15.5px;
+  line-height: 1.52;
+}
+
+.sl-phone__cap--compact {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.sl-phone__hint {
+  flex-shrink: 0;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 11.5px;
+  line-height: 1.5;
+  max-height: 76px;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+.sl-phone__hint-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ff9a62;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.sl-phone__hint-text {
+  opacity: 0.94;
+}
+
+.sl-phone__bar {
+  flex-shrink: 0;
+  margin-top: 10px;
+  display: flex;
+  gap: 3px;
+  height: 4px;
+}
+
+.sl-phone__bar button {
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+
+.sl-phone__bar button[data-on] {
+  background: #fff;
+}
+
+.sl-phone__play {
+  margin-top: 8px;
+}
+
+.sl-phone__play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 160ms ease;
+}
+
+.sl-phone__play-btn--active {
+  background: var(--sl-acc);
+  border-color: var(--sl-acc);
+  color: #fff;
+}
+
+/* 分镜列表 */
+.sl-story {
+  display: grid;
+}
+
+.sl-story__row {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px 12px;
+  border-top: 1px solid var(--sl-line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.sl-story__row:hover,
+.sl-story__row[data-sel] {
+  background: var(--sl-hov);
+}
+
+.sl-story__row[data-sel] {
+  box-shadow: inset 3px 0 0 var(--sl-acc);
+}
+
+.sl-story__no b {
+  display: block;
+  font-family: var(--sl-num, inherit);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--sl-mute);
+}
+
+.sl-story__row[data-sel] .sl-story__no b {
+  color: var(--sl-acc);
+}
+
+.sl-story__no span {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-mute);
+}
+
+.sl-story__name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sl-story__purpose {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--sl-mute);
+}
+
+.sl-story__visual {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--sl-mute);
+}
+
+.sl-story__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* ------------------------------ 直播：导播台三栏 ------------------------------ */
+
+.sl-liv {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 270px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* 左：流程时间轴，块高按时长占比伸缩 */
+.sl-tl {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-left: 4px;
+}
+
+.sl-tl__list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+}
+
+.sl-tl__block {
+  position: relative;
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 74px;
+  margin: 0 0 0 8px;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 3px solid var(--sl-line);
+  border-radius: 0 8px 8px 0;
+  background: var(--sl-hov);
+  color: var(--sl-ink);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.sl-tl__block::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: -8px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--sl-line);
+  border-radius: 50%;
+  background: var(--sl-panel);
+}
+
+.sl-tl__block[data-sel] {
+  border-left-color: var(--sl-acc);
+  background: linear-gradient(90deg, var(--sl-glow), transparent);
+}
+
+.sl-tl__block[data-sel]::before {
+  border-color: var(--sl-acc);
+  background: var(--sl-acc);
+}
+
+.sl-tl__block b {
+  display: block;
+  font-size: 14px;
+}
+
+.sl-tl__block small {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-mute);
+}
+
+.sl-tl__nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.sl-liv__aside {
+  display: flex;
+  min-height: 0;
+}
+
+/* 中：主播提词面板 */
+.sl-pm {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  height: 100%;
+  padding: 22px 24px;
+  border: 1px solid var(--sl-line);
+  border-radius: 10px;
+  background: var(--sl-hov);
+}
+
+.sl-pm__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sl-pm__head {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--sl-mute);
+}
+
+.sl-pm__head b {
+  color: var(--sl-acc);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sl-pm__body {
+  font-family: var(--sl-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.sl-pm__note {
+  margin-top: 18px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--sl-mute);
+}
+
+.sl-pm__note b {
+  color: var(--sl-ink);
+  font-weight: 500;
+}
+
+.sl-pm__foot {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+/* 右：控场清单（可勾选，勾后划线变灰） */
+.sl-ck {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--sl-line);
+  border-radius: 10px;
+  background: var(--sl-hov);
+}
+
+.sl-ck__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sl-ck h5 {
+  flex-shrink: 0;
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.sl-ck label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 0;
+  border-top: 1px solid var(--sl-line);
+  font-size: 12.5px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.sl-ck__list label:first-child {
+  border-top: 0;
+}
+
+.sl-side-pager {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--sl-line);
+}
+
+.sl-side-pager__meta {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-mute);
+}
+
+.sl-side-pager__btn {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.sl-tl__pager {
+  margin-top: 8px;
+}
+
+.sl-ck input {
+  margin-top: 3px;
+  accent-color: var(--sl-acc);
+}
+
+.sl-ck small {
+  display: block;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-mute);
+}
+
+.sl-ck input:checked + span {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* 节点标签：按类型着色 */
+.sl-node {
+  padding: 1px 7px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.sl-node--互动 {
+  background: #14a596;
+}
+
+.sl-node--福利 {
+  background: #c58a00;
+}
+
+.sl-node--促单 {
+  background: #d8404a;
+}
+
+.sl-node--演示 {
+  background: #6e5cf0;
+}
+
+/* ------------------------------ 通用：可编辑口播 ------------------------------ */
+
+.sl-editable {
+  padding: 2px 6px;
+  margin: -2px -6px;
+  border-radius: 6px;
+  outline: none;
+  cursor: text;
+  transition: background 140ms ease, box-shadow 140ms ease;
+}
+
+.sl-story .sl-editable {
+  font-family: var(--sl-display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.sl-editable:hover {
+  box-shadow: 0 0 0 1px var(--sl-line);
+}
+
+.sl-editable:focus {
+  background: color-mix(in srgb, var(--sl-ink) 6%, transparent);
+  box-shadow: 0 0 0 2px var(--sl-acc);
+}
+
+.sl-editable[data-empty] {
+  color: var(--sl-mute);
+  font-weight: 400;
+}
+
+/* 评审意见与提示 */
+.sl-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--sl-mute);
+}
+
+.sl-note--warn {
+  color: var(--sl-red, #b45309);
+}
+
+.sl-note--flag {
+  padding: 8px 11px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--sl-red, #d97706) 12%, transparent);
+  color: var(--sl-red, #b45309);
+  line-height: 1.7;
+}
+
+/* 深色主题下把红色告警提亮，浅色下沿用 --sl-red 即可 */
+:root.dark .script-lab[data-mode='live'] .sl-note--flag,
+:root[data-theme='dark'] .script-lab[data-mode='live'] .sl-note--flag {
+  background: color-mix(in srgb, #ff5c72 16%, transparent);
+  color: #ff8a99;
+}
+
+.sl-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--sl-acc);
+}
+
+.sl-timechip {
+  padding: 2px 8px;
+  border: 1px solid var(--sl-line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-mute);
+}
+
+/* ---------------------------------- 过程折叠区 ---------------------------------- */
+
+/* 过程区：改为轻量流程横条 */
+.sl-flow-bar {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
+  margin-top: 14px;
+}
+
+.sl-flow-bar__info {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+.sl-how {
+  margin-top: 8px;
+}
+
+/* 需要修改的地方：一条条列，不折叠。原来这里固定深底深字，
+   在浅色主题下与整页割裂；现在改为跟随主题的警示底色。 */
+.sl-insp {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, #d97706 34%, transparent);
+  background: color-mix(in srgb, #d97706 8%, transparent);
+  color: var(--sl-ink);
+}
+
+.sl-insp__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 8px;
+  font-size: 12.5px;
+  color: var(--sl-mute);
+}
+
+.sl-insp__head b {
+  color: #b45309;
+}
+
+.sl-insp__text {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--sl-ink);
+}
+
+.sl-insp__text:last-child {
+  margin-bottom: 0;
+}
+
+/* -------------------------------- 提词器全屏 -------------------------------- */
+/* 提词器挂在 .script-lab 之外（Portal 到 document.body，fixed 覆盖全屏），
+   z-index 设为最高以彻底盖住顶栏和侧栏，避免任何层叠遮挡冲突。 */
+
+.sl-prompter {
+  --sl-display: 'Alibaba PuHuiTi', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  display: grid;
+  grid-template-rows: 60px minmax(0, 1fr) 44px;
+  background: #07090e;
+  color: #fff;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.sl-prompter__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  background: rgba(11, 14, 22, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 10;
+}
+
+.sl-prompter__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sl-prompter__badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  white-space: nowrap;
+}
+
+.sl-prompter__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.sl-prompter__sub {
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.sl-prompter__controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.sl-prompter__control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.sl-prompter__control-label {
+  font-weight: 500;
+}
+
+.sl-prompter__icon {
+  color: #64748b;
+}
+
+.sl-prompter__control input[type='range'] {
+  width: 90px;
+  accent-color: #2dd4bf;
+  cursor: pointer;
+}
+
+.sl-prompter__val {
+  font-family: monospace;
+  color: #2dd4bf;
+  font-weight: 600;
+  font-size: 12px;
+  min-width: 28px;
+}
+
+.sl-prompter__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sl-prompter__btn-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #2dd4bf;
+  color: #03211e;
+  border: 1px solid #2dd4bf;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.sl-prompter__btn-play:hover {
+  background: #5eead4;
+  border-color: #5eead4;
+  transform: translateY(-1px);
+}
+
+.sl-prompter__btn-play--active {
+  background: #f43f5e;
+  border-color: #f43f5e;
+  color: #fff;
+}
+
+.sl-prompter__btn-play--active:hover {
+  background: #fb7185;
+  border-color: #fb7185;
+}
+
+.sl-prompter__btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.sl-prompter__btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.sl-prompter__btn-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.sl-prompter__btn-close:hover {
+  background: rgba(239, 68, 68, 0.24);
+  color: #fff;
+}
+
+.sl-prompter__kbd {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 10px;
+  font-family: inherit;
+  color: #cbd5e1;
+}
+
+.sl-prompter__stage {
+  padding: 10vh 8vw 15vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.sl-prompter__segment {
+  margin-bottom: 3em;
+  padding-bottom: 1.5em;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.sl-prompter__seg-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  margin-bottom: 12px;
+  font-family: monospace;
+}
+
+.sl-prompter__seg-no {
+  color: #2dd4bf;
+  font-weight: 700;
+}
+
+.sl-prompter__seg-name {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.sl-prompter__seg-purpose {
+  color: #475569;
+}
+
+.sl-prompter__seg-spoken {
+  color: #f8fafc;
+  font-family: var(--sl-display);
+  font-weight: 700;
+  line-height: 1.85;
+  word-break: break-word;
+  letter-spacing: 0.5px;
+}
+
+.sl-prompter__seg-aside {
+  margin-top: 14px;
+  color: #94a3b8;
+  line-height: 1.6;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #f59e0b;
+}
+
+.sl-prompter__aside-tag {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.sl-prompter__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  background: rgba(11, 14, 22, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  color: #64748b;
+}
+
+.sl-prompter__shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sl-prompter__meta-info {
+  font-family: monospace;
+  font-size: 11.5px;
+}
+
+.sl-prompter .sl-btn {
+  border-color: #2b3358;
+  color: #fff;
+}
+
+/* 空态：独立占位卡，与上方 InputWizard 白卡拉开层次，避免读成同一张底栏 */
+.sl-lead {
+  margin: 0;
+  padding: 22px 24px;
+  border: 1px dashed color-mix(in srgb, var(--sl-line, var(--border)) 88%, var(--sl-acc, var(--primary)));
+  border-radius: var(--sl-box-radius, var(--sl-radius, var(--radius)));
+  background: var(--sl-surface, var(--card));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--sl-ink, var(--foreground)) 4%, transparent);
+}
+
+.sl-lead h3 {
+  margin: 0 0 6px;
+  font-family: var(--sl-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sl-lead p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--sl-mute);
+}
+
+/* ---------------------------------- 响应式 ---------------------------------- */
+
+@media (max-width: 1180px) {
+  .sl-liv {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+
+  .sl-liv__aside {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1059px) {
+  .sl-vid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sl-phone-wrap {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  .sl-liv {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sl-tl__list {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .sl-tl__block {
+    flex: 0 0 190px;
+    margin: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .sl-box {
+    flex-wrap: wrap;
+  }
+
+  .sl-box__go {
+    width: 100%;
+  }
+}
+
+/* --------------------------------- 暗色适配 --------------------------------- */
+/* 视频与直播两种模式现在都跟随全局明暗主题（直播靠密度与小圆角保持导播台感，
+   不再靠写死的深色）。下面只处理「必须靠具体颜色传递语义」的徽标。 */
+
+:root.dark .script-lab[data-mode='video'],
+:root[data-theme='dark'] .script-lab[data-mode='video'] {
+  --sl-acc2: #ff9c4d;
+}
+
+:root.dark .sl-badge--warn,
+:root[data-theme='dark'] .sl-badge--warn {
+  border-color: #e8a100;
+  color: #ffd166;
+}
+
+:root.dark .sl-badge--ok,
+:root[data-theme='dark'] .sl-badge--ok {
+  border-color: #19b8a6;
+  color: #2dd4bf;
+}
+
+/* 深色检视面板在两种主题下都是深色，因此文字色固定，不随主题翻转 */
+:root.dark .sl-note--warn,
+:root[data-theme='dark'] .sl-note--warn {
+  color: #ff8a99;
+}
+
+:root.dark .sl-editable:focus,
+:root[data-theme='dark'] .sl-editable:focus {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* 减少动效 */
+@media (prefers-reduced-motion: reduce) {
+  .script-lab *,
+  .sl-prompter * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,397 @@
+{
+  "page": {
+    "lead": "中间写稿，右侧选音色、调参数；点「克隆」可创建专属音色。",
+    "viewTabsAria": "配音页视图",
+    "views": {
+      "work": "创作",
+      "history": "历史",
+      "voices": "音色管理"
+    }
+  },
+  "dubMode": {
+    "tabsAria": "配音方式",
+    "direct": "初级配音",
+    "advanced": "高级配音"
+  },
+  "picker": {
+    "titleDefault": "音色",
+    "titleSelect": "音色选择",
+    "titleGlobal": "全局音色",
+    "listAria": "音色列表",
+    "cloneTitle": "克隆我的声音",
+    "clone": "克隆",
+    "previewAria": "试听 {{name}}",
+    "tagMine": "我的音色",
+    "tagPlatform": "平台音色",
+    "manageMine": "管理我的音色",
+    "columnAria": "音色选择"
+  },
+  "manuscript": {
+    "aria": "配音文稿",
+    "placeholder": "请在这里输入朗读文稿或上传文稿。",
+    "placeholderAdvanced": "请在此输入或粘贴整篇文稿；也可点击左下角「文稿工具」导入 TXT、Markdown、Word（.docx）。AI 将按口播结构智能拆段，并为每段生成专业的播读风格说明。",
+    "tools": "文稿工具",
+    "fillSample": "填入示例",
+    "upload": "上传文稿",
+    "indent": "自动缩进",
+    "removeBlank": "去除空行",
+    "stripMarkdown": "清理 # / Markdown 符号",
+    "undo": "撤销上一步",
+    "clear": "清空文稿",
+    "parsing": "正在解析文档…",
+    "charCountTitle": "单次最多 {{max}} 字",
+    "charCount": "{{current}} / {{max}} 字 · 约 {{duration}}"
+  },
+  "settings": {
+    "advancedAria": "高级设置",
+    "advancedTitle": "高级设置",
+    "expand": "展开高级设置",
+    "collapse": "收起高级设置",
+    "expandShort": "展开",
+    "collapseShort": "收起",
+    "toneBase": "语气底色",
+    "rate": "语速",
+    "volume": "音量",
+    "pitch": "音调",
+    "toneSelectAria": "语气底色预设",
+    "toneSelectPlaceholder": "选择语气",
+    "customTonePlaceholder": "输入自定义语气描述…",
+    "customToneAria": "自定义语气描述",
+    "autoSynthesizeAfterPlan": "拆段后自动合成",
+    "ctaDirect": "开始配音",
+    "ctaAdvanced": "开始拆段",
+    "ctaBusy": "处理中…"
+  },
+  "cta": {
+    "startDub": "开始配音"
+  },
+  "demo": {
+    "sampleText": "嗨，欢迎来到今天的运营分享。接下来我会用更好懂、更有画面感的方式，把一个实用方法讲清楚，咱们现在就开始吧。",
+    "fillSample": "填入示例文案",
+    "fillKeynote": "填入发布会示例",
+    "simulatePlan": "模拟拆段产出"
+  },
+  "preview": {
+    "sampleText": "你好，这是当前音色的试听效果。",
+    "playing": "正在播放试听。"
+  },
+  "toast": {
+    "voiceReady": "音色「{{name}}」已可用，可以开始配音。",
+    "cloneEnqueued": "声音克隆已加入后台任务，可在任务中心查看进度。",
+    "voiceDeleted": "已删除音色。",
+    "voiceRenamed": "音色名称已更新。",
+    "voiceRenamedLocalOnly": "名称已保存在本机浏览器；服务端重命名接口尚未上线，换设备后需重新设置。"
+  },
+  "error": {
+    "voiceUnavailable": "当前音色尚不可用，请换一个或等待审核通过。",
+    "manuscriptEmpty": "文稿为空或仅含格式符号，请输入可朗读的正文。",
+    "previewStale": "试听音频已失效或无法加载，请稍后再试。",
+    "previewListRefreshed": "{{message}} 已刷新音色列表，请重选后试听。",
+    "voiceQuota": "已达到人均音色上限（{{max}}），请先删除旧音色。"
+  },
+  "tag": {
+    "platform": "平台音色"
+  },
+  "platformVoice": {
+    "longanlingxin": { "label": "龙安灵心（女声）", "tag": "知识分享" },
+    "longanhuan_v3.6": { "label": "龙安欢", "tag": "教程课程" },
+    "longanlufeng": { "label": "龙安陆风（男声）", "tag": "商业口播" },
+    "longanlingxi": { "label": "龙安灵犀", "tag": "故事讲述" }
+  },
+  "tonePreset": {
+    "自然": "自然",
+    "热情": "热情",
+    "沉稳": "沉稳",
+    "亲切": "亲切",
+    "开心轻松": "开心轻松",
+    "新闻播报": "新闻播报",
+    "自定义": "自定义"
+  },
+  "instructionPreset": {
+    "default": "默认",
+    "relaxed": "开心轻松",
+    "formal": "严肃正式",
+    "gentle": "温柔舒缓",
+    "passionate": "热情感染",
+    "news": "新闻播报"
+  },
+  "cloneStatus": {
+    "ready": "可用",
+    "deploying": "审核中",
+    "failed": "未通过",
+    "processing": "处理中",
+    "readyDetail": "可用于配音与试听",
+    "deployingDetail": "平台审核中，通过后即可使用",
+    "failedDetail": "审核未通过，可删除后重新复刻",
+    "processingDetail": "正在处理，请稍候或刷新列表"
+  },
+  "manage": {
+    "back": "返回配音",
+    "title": "我的音色",
+    "sub": "在此试听、重命名或删除已复刻的音色。平台预设音色不在此列表，配音页可直接选用。",
+    "quotaAria": "音色数量",
+    "quotaUsed": "已用",
+    "quota": "已用 <strong>{{quota}}</strong>",
+    "quotaCount": "{{count}} 个",
+    "refreshAria": "刷新音色列表",
+    "refresh": "刷新",
+    "empty": "还没有自己的音色。",
+    "startClone": "去克隆声音",
+    "createdAt": "创建于 {{time}}",
+    "preview": "试听",
+    "previewing": "试听中…",
+    "rename": "重命名",
+    "renameTitle": "重命名音色",
+    "renameBody": "修改显示名称，配音页与数字人等处将同步显示新名称。",
+    "renamePlaceholder": "例如：我的主播音",
+    "confirmRename": "保存",
+    "renaming": "保存中…",
+    "delete": "删除",
+    "deleteTitle": "删除音色",
+    "deleteBody": "确定删除「{{name}}」？删除后无法恢复，已扣积分不会退回。若正在配音中使用该音色，删除后将自动切换到默认音色。",
+    "cancel": "取消",
+    "confirmDelete": "确认删除",
+    "deleting": "删除中…"
+  },
+  "history": {
+    "title": "生成历史",
+    "sub": "保存在本机浏览器；进行中的任务请打开顶栏「后台任务」。",
+    "empty": "生成完成后的语音会出现在这里。排队与合成进度请在顶栏「后台任务」查看。",
+    "kindAdvanced": "高级配音",
+    "kindDirect": "初级配音",
+    "tone": "语气 {{label}}",
+    "rate": "语速 {{rate}}×",
+    "volume": "音量 {{volume}}",
+    "muted": "静音",
+    "pitch": "音调 {{pitch}}×",
+    "segments": "{{count}} 段",
+    "awaitingConfirm": "待确认",
+    "copyUrl": "复制地址",
+    "download": "下载",
+    "remove": "删除",
+    "loadAudio": "加载音频…",
+    "playbackFailed": "页内试听失败，请用下载或原始链接",
+    "generateFailed": "生成失败",
+    "table": {
+      "preview": "试听",
+      "manuscript": "文稿",
+      "kind": "类型",
+      "params": "参数",
+      "status": "状态",
+      "time": "时间",
+      "actions": "操作"
+    }
+  },
+  "dock": {
+    "ariaLabel": "配音设置"
+  },
+  "player": {
+    "play": "播放",
+    "pause": "暂停",
+    "defaultTitle": "高阶配音成片",
+    "meta": "{{count}} 段 · WAV 成片"
+  },
+  "taskStatus": {
+    "queued": "排队中",
+    "running": "生成中",
+    "failed": "失败",
+    "cancelled": "已取消",
+    "succeeded": "已完成"
+  },
+  "clone": {
+    "dialogTitle": "声音克隆",
+    "dialogDesc": "录制或上传样本，创建专属音色用于配音。",
+    "dialogPricingAria": "克隆计费说明",
+    "dialogPricingLabel": "克隆",
+    "pricingLoading": "计费加载中…",
+    "benefits": {
+      "perkTitle": "克隆后你将获得",
+      "perkLeadWithPrice": "约 ¥{{sale}} 一次创建，1 年内拥有专属音色使用权",
+      "perkLead": "一次创建，审核通过后即可拥有专属音色",
+      "perks": [
+        "高清人声还原，口播、讲解与短视频旁白都更自然",
+        "音色保存在你的账号下，配音工作台随时选用",
+        "支持语气调节与长文本合成，配工作流更顺手"
+      ]
+    },
+    "stepsAria": "克隆步骤",
+    "stepLabels": ["准备样本", "命名并创建"],
+    "step1Title": "录入你的声音",
+    "step2Title": "给音色起个名字",
+    "step1Lead": "朗读一段文案，10–20 秒就够了。",
+    "step2Lead": "确认声音归你所有，创建后将扣除积分并开始审核。",
+    "shuffle": "换一段",
+    "auth": "这是我本人的声音，或已获得声音所有者的明确授权。",
+    "recordAria": "{{action}}",
+    "recordStart": "开始录音",
+    "recordStop": "结束录音",
+    "recordAgain": "重新录制!",
+    "recordPreparing": "正在处理样本…",
+    "recording": "录音中",
+    "recordCta": "点击开始录音",
+    "recordHintPreparing": "浏览器录音将自动转为 WAV",
+    "recordHintActive": "读完后再点一次结束",
+    "guideSeconds": "建议 10–20 秒",
+    "guideSecondsValue": "{{sec}} 秒",
+    "uploadInstead": "改为上传音频",
+    "uploadFormats": "支持 MP3、WAV、M4A",
+    "sampleAria": "已选音频样本",
+    "sampleSelected": "已选样本",
+    "removeSample": "移除",
+    "previewSampleAria": "试听样本",
+    "nameLabel": "音色名称",
+    "nameHint": "起一个好认的名字，配音时更容易选到它。",
+    "namePlaceholder": "例如：我的主播音",
+    "suggestionsAria": "名称建议",
+    "billingAria": "克隆扣费说明",
+    "billingLead": "本次将扣除",
+    "pointsUnit": "积分",
+    "approxYuan": "约 ¥{{yuan}}",
+    "noChargeOnFail": "创建失败不扣费",
+    "afterApprove": "审核通过后可用来配音",
+    "footerHint": "录制或上传样本后，才能进入下一步。",
+    "cancel": "取消",
+    "next": "下一步：命名并创建",
+    "prev": "上一步",
+    "submit": "创建音色",
+    "submitting": "提交中…",
+    "guideTitle": "创建前了解一下",
+    "guideItems": [
+      "名称只用于你自己辨认，提交后可在「音色管理」查看审核进度。",
+      "建议按用途起名（如口播、讲解），配音时更快找到对应音色。",
+      "样本仅用于本次克隆；确认名称无误后再点「创建音色」。"
+    ],
+    "nameSuggestions": ["我的主播音", "日常口播", "产品讲解"],
+    "recordFileName": "录音样本",
+    "scenes": {
+      "random": {
+        "label": "随机",
+        "text": "做运营最怕的不是没灵感，而是灵感来了没抓住。我的办法特别简单：刷到好选题先别急着抄，顺手记下它为什么吸引你，再换成自己的经历讲一遍。"
+      },
+      "health": {
+        "label": "大健康",
+        "text": "早上起床先喝一杯温水，再慢慢活动十分钟。这个小习惯坚持一个月，你会发现精神状态明显不一样。"
+      },
+      "tips": {
+        "label": "干货分享",
+        "text": "今天分享一个提高效率的方法：把一天的任务按重要程度排好序，只先做最重要的三件事。"
+      },
+      "local": {
+        "label": "本地生活",
+        "text": "周末想找个安静的地方喝咖啡？这条老街后面藏着一家小店，豆子新鲜，窗边的位置阳光特别好。"
+      }
+    },
+    "error": {
+      "audioProcess": "音频处理失败，请改用 MP3 或 WAV 上传。",
+      "fileEmpty": "请使用非空且不超过 {{max}}MB 的音频文件。",
+      "fileFormat": "请使用 MP3、WAV、M4A 或浏览器录音样本。",
+      "authRequired": "请先勾选「声音授权」确认框，再开始录音。",
+      "tooShort": "录音太短，请至少录满 5 秒清晰人声。",
+      "micDenied": "无法访问麦克风，请检查浏览器权限或改用上传文件。"
+    }
+  },
+  "advanced": {
+    "defaultTitle": "高阶配音文稿",
+    "workflowTitle": "高阶配音流程",
+    "planTitle": "高阶配音 · 方案规划",
+    "ttsTitle": "高阶配音 · 逐段配音",
+    "summary": "共 {{chars}} 字 · 音色：",
+    "chipVoice": "音色：{{name}}",
+    "editCopy": "修改文案",
+    "planActive": "AI 拆段 {{hint}}",
+    "stepLabels": ["整理文稿", "AI 拆段", "校验方案", "逐段配音", "拼接成片", "完成"],
+    "waitingConfirm": "等待确认",
+    "segmentTitle": "段落 {{index}}",
+    "aboutSeconds": "约 {{sec}} 秒",
+    "instructionGenerating": "播读风格生成中…",
+    "naturalTone": "自然语调",
+    "headers": {
+      "plan": "AI 拆段预览",
+      "confirm": "检查分段",
+      "tts": "合成进度",
+      "done": "分段试听"
+    },
+    "sub": {
+      "planWithBatch": "正在规划 · {{batch}} · 分段将随生成逐步出现",
+      "plan": "正在规划分段，请稍候…",
+      "confirm": "可调整各段正文与播读风格说明，确认后点击「开始配音」",
+      "segments": "共 {{count}} 段 · 约 {{duration}}"
+    },
+    "confirmTip": "播读风格说明建议不超过 100 字符（超长将橙色标注并在合成时截断）。段正文由系统按篇幅与单段约 3500 字软上限校验，避免合成失败。换音色仅影响合成，不重算语气；需重算请点「重新拆段」。",
+    "manySegments": "分段较多，合成耗时可能较长，可在顶栏「后台任务」查看进度。",
+    "segmentTextPlaceholder": "本段朗读正文（请核对与原文一致）",
+    "instructionPlaceholder": "播读风格：情绪、语速、重音与停顿（例：沉稳权威、亲和共情、句首加重、尾音略收）",
+    "instructionLabel": "播读风格说明",
+    "instructionOver": "超过 100 字符，将被截断",
+    "previewSegmentAria": "试听这一段",
+    "statusDone": "已生成",
+    "statusRunning": "合成中…",
+    "statusQueued": "排队中",
+    "replan": "重新拆段",
+    "startDub": "开始配音",
+    "newRun": "再做一条",
+    "downloadWav": "下载成片 WAV",
+    "downloadDemo": "下载成片",
+    "demoMergedAlert": "已在演示模式成片",
+    "changeVoiceTitle": "更换音色",
+    "changeVoiceDesc": "仅影响后续合成，不会自动重算各段语气；需要按新音色重新规划时请使用「重新拆段」。",
+    "resumeTitle": "{{title}}（续跑）",
+    "downloadBasename": "高阶配音"
+  },
+  "workflow": {
+    "plannedBatch": "本批已规划 {{count}} 段。",
+    "planning": "正在生成分段方案…",
+    "merged": "各批分段已合并为完整方案。",
+    "merging": "正在合并各批分段…",
+    "structuring": "分段结构生成中…"
+  },
+  "flowStage": {
+    "ingest": {
+      "roleName": "文稿整理",
+      "roleTag": "纯算法",
+      "principle": "规范化长文本，清理异常字符与空行，检查单段长度限制。",
+      "headline": "正在整理文稿…"
+    },
+    "segment_planner": {
+      "roleName": "分段策划",
+      "roleTag": "AI 分析",
+      "principle": "按口播/宣传逻辑（开场、痛点、卖点、福利、收尾等）拆分段落，并为每段生成自然语言语气指令。",
+      "headline": "AI 正在拆解段落并规划语气…"
+    },
+    "plan_review": {
+      "roleName": "方案校验",
+      "roleTag": "纯算法",
+      "principle": "校验分段完整性；语气说明超 100 字软截断；段正文超 3500 字在句边界再切，硬顶 10000。",
+      "headline": "正在校验分段方案…"
+    },
+    "segment_tts": {
+      "roleName": "逐段配音",
+      "roleTag": "语音服务",
+      "principle": "严格按确认后的文案与语气参数，分段调用语音模型合成高质音频。",
+      "headline": "正在逐段合成配音…"
+    },
+    "merge_audio": {
+      "roleName": "拼接成片",
+      "roleTag": "音频处理",
+      "principle": "解析多段音频 PCM 数据，在浏览器端顺序拼接为一条高保真 WAV 音频。",
+      "headline": "正在拼接完整成片…"
+    },
+    "finalize": {
+      "roleName": "成片定稿",
+      "roleTag": "产物归档",
+      "principle": "生成成片元数据与分段试听索引，完成任务归档。",
+      "headline": "高阶配音已就绪！"
+    }
+  },
+  "rail": {
+    "sectionAria": "音色",
+    "title": "音色",
+    "current": "当前：{{name}}",
+    "select": "选择要配音的音色",
+    "polling": " · 审核轮询中",
+    "listAria": "音色列表",
+    "cloneCard": "克隆声音",
+    "cloneEta": "约 1 分钟",
+    "refreshAria": "刷新音色列表"
+  }
+}

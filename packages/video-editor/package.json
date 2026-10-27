@@ -1,0 +1,37 @@
+{
+  "name": "@no996/video-editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Unified, reusable video editor core, render pipeline, and composable React panels.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./core": {
+      "types": "./src/core/index.ts",
+      "default": "./src/core/index.ts"
+    },
+    "./react": {
+      "types": "./src/react/index.ts",
+      "default": "./src/react/index.ts"
+    },
+    "./panels": {
+      "types": "./src/panels/index.ts",
+      "default": "./src/panels/index.ts"
+    },
+    "./styles.css": "./src/styles/index.css"
+  },
+  "peerDependencies": {
+    "@no996/ui": "*",
+    "lucide-react": "^1.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@no996/ui": {
+      "optional": true
+    }
+  }
+}

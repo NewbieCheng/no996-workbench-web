@@ -1,0 +1,5 @@
+export type StudioStageView = 'preview' | 'edit'
+export type SocialContentMode = 'article' | 'image_text'
+export type SocialStudioPlatform = 'wechat' | 'xhs'
+export type PreviewDevice = 'mobile' | 'pc'
+export type WechatLayoutView = 'web' | 'wechat'

@@ -1,0 +1,251 @@
+/* Local glass primitives: a CSS approximation for the web, not Apple's native material.
+   Keep the existing .glass-btn system independent from the public Glass* components. */
+.glass-btn {
+  --anim-time: 0.4s;
+  --anim-ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --gb-edge-shine: rgba(255, 255, 255, 0.32);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 9999px;
+  border-color: transparent !important;
+  transition: transform var(--anim-time) var(--anim-ease), box-shadow var(--anim-time) var(--anim-ease), background-color var(--anim-time) var(--anim-ease), opacity var(--anim-time) var(--anim-ease), --angle-1 0.5s var(--anim-ease);
+}
+.glass-btn:hover:not(:disabled) { --angle-1: -135deg; transform: scale(0.985); }
+.glass-btn:active:not(:disabled):not([aria-haspopup='true']) { --angle-1: -75deg; transform: scale(0.965) translateY(1px); }
+.glass-btn::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit; padding: 1px; box-sizing: border-box;
+  background: conic-gradient(from var(--angle-1) at 50% 50%, var(--gb-edge-shine) 0%, transparent 8% 42%, var(--gb-edge-shine) 50%, transparent 58% 92%, var(--gb-edge-shine) 100%), linear-gradient(180deg,var(--panel-edge-top,rgba(255,255,255,0.35)) 0%,transparent 12%,transparent 88%,var(--panel-edge-bottom,rgba(0,0,0,0.06)) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+  transition: all var(--anim-time) var(--anim-ease), --angle-1 0.5s ease;
+}
+.glass-btn::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(var(--angle-2),transparent 0%,rgba(255,255,255,0.04) 25%,var(--fg-15,rgba(255,255,255,0.35)) 44% 54%,transparent 68%);
+  background-size: 220% 220%; background-position: 0% 0%; opacity: 0.65;
+  transition: background-position calc(var(--anim-time) * 1.35) var(--anim-ease), --angle-2 calc(var(--anim-time) * 1.35) var(--anim-ease), opacity 0.3s ease;
+}
+.glass-btn:hover:not(:disabled)::after { --angle-2: -15deg; background-position: 75% 25%; opacity: 1; }
+.glass-btn:active:not(:disabled)::after { --angle-2: -55deg; background-position: 50% 15%; opacity: 0.85; }
+.glass-btn[class*="text-[var(--primary)]"], .glass-btn:where([data-variant="default"]) { --gb-edge-shine: color-mix(in srgb,var(--primary) 50%,rgba(255,255,255,0.75)); }
+.glass-btn[class*="hover:bg-[var(--fg-8)]"]::before, .glass-btn.variant-ghost::before { opacity: 0; }
+.glass-btn[class*="hover:bg-[var(--fg-8)]"]:hover:not(:disabled)::before, .glass-btn.variant-ghost:hover:not(:disabled)::before { opacity: 0.7; }
+.glass-btn[class*="text-destructive-foreground"] { --gb-edge-shine: rgba(255,200,200,0.55); }
+.glass-btn[class*="hover:border-[var(--fg-25)]"] { --gb-edge-shine: var(--panel-edge-top,rgba(255,255,255,0.35)); }
+
+/* Panel layers: material, non-interactive edge/glow, then readable content.
+   Generic catalog helper names are scoped to direct children of this primitive. */
+.glass-panel {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  border: 1px solid var(--panel-edge-mid, var(--border, #d4d4d8));
+  border-radius: var(--glass-panel-radius, 24px);
+  color: var(--foreground, #18181b);
+  background: var(--glass-fill, color-mix(in srgb, var(--background, #fff) 65%, transparent));
+  box-shadow: inset 0 1px 0 var(--glass-inner-top, #ffffff80), inset 0 -1px 0 var(--glass-inner-bot, #00000008), 0 12px 32px -16px var(--glass-shadow, #00000024);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
+}
+.glass-panel::before,
+.glass-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.glass-panel::before {
+  padding: 1px;
+  background: linear-gradient(150deg, var(--panel-edge-top, #ffffffb3), var(--panel-edge-mid, #0000000d) 48%, var(--panel-edge-bottom, #ffffff73));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.glass-panel::after {
+  background: radial-gradient(ellipse at var(--mx, 50%) var(--my, 0%), var(--panel-glow, #ffffff80), transparent 65%);
+  opacity: 0.45;
+  transition: opacity 180ms ease;
+}
+.glass-panel[data-glow='false']::after { display: none; }
+.glass-panel > :where(*) { position: relative; z-index: 1; }
+.glass-panel > .panel-body { padding: 24px; }
+.glass-panel > .panel-body > .panel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 16px;
+  border: 1px solid var(--panel-edge-top, #ffffffb3);
+  border-radius: 12px;
+  color: var(--primary, #ea580c);
+  background: color-mix(in srgb, var(--primary, #ea580c) 9%, var(--glass-fill, #ffffff99));
+  box-shadow: inset 0 1px 0 var(--glass-inner-top, #ffffff80);
+}
+
+/* The wrapper owns dimensions/variants; all short gb-* classes are scoped here. */
+.glass-button-wrap {
+  --glass-control-height: 40px;
+  --glass-control-padding: 20px;
+  --glass-control-font-size: 14px;
+  --glass-control-ink: var(--foreground, #18181b);
+  --glass-control-fill: var(--glass-fill, color-mix(in srgb, var(--background, #fff) 65%, transparent));
+  --glass-control-edge: var(--panel-edge-top, #ffffffb3);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  flex: 0 0 auto;
+  max-width: 100%;
+  border-radius: 9999px;
+  vertical-align: middle;
+  perspective: 600px;
+}
+.glass-button-wrap.gb-sm { --glass-control-height: 32px; --glass-control-padding: 14px; --glass-control-font-size: 12px; }
+.glass-button-wrap.gb-lg { --glass-control-height: 48px; --glass-control-padding: 28px; --glass-control-font-size: 16px; }
+.glass-button-wrap.gb-icon { --glass-control-padding: 0px; width: var(--glass-control-height); }
+.glass-button-wrap.gb-v-primary {
+  --glass-control-ink: var(--primary-foreground, #fff);
+  --glass-control-fill: var(--primary, #c2410c);
+  --glass-control-edge: color-mix(in srgb, var(--primary, #c2410c) 55%, var(--panel-edge-top, #fff));
+}
+.glass-button-wrap.gb-v-secondary {
+  --glass-control-ink: var(--secondary-foreground, var(--foreground, #18181b));
+  --glass-control-fill: color-mix(in srgb, var(--secondary, #e4e4e7) 75%, var(--glass-fill, #ffffff99));
+}
+.glass-button-wrap.gb-v-outline {
+  --glass-control-fill: color-mix(in srgb, var(--background, #fff) 20%, transparent);
+  --glass-control-edge: var(--border, #d4d4d8);
+}
+.glass-button-wrap.gb-v-ghost {
+  --glass-control-fill: transparent;
+  --glass-control-edge: transparent;
+}
+.glass-button-wrap.gb-v-destructive {
+  --glass-control-ink: var(--destructive, #b91c1c);
+  --glass-control-fill: color-mix(in srgb, var(--destructive, #b91c1c) 12%, var(--glass-fill, #ffffff99));
+  --glass-control-edge: color-mix(in srgb, var(--destructive, #b91c1c) 30%, var(--panel-edge-top, #fff));
+}
+.glass-button-wrap > .glass-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--glass-control-height);
+  padding: 0 var(--glass-control-padding);
+  border: 1px solid var(--glass-control-edge);
+  border-radius: inherit;
+  appearance: none;
+  color: var(--glass-control-ink);
+  background: var(--glass-control-fill);
+  box-shadow: inset 0 1px 0 var(--glass-inner-top, #ffffff80), inset 0 -1px 0 var(--glass-inner-bot, #00000008);
+  font-family: inherit;
+  font-size: var(--glass-control-font-size);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  backdrop-filter: blur(14px) saturate(145%);
+  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+.glass-button-wrap > .glass-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, var(--glass-inner-top, #ffffff80), transparent 48%, var(--glass-inner-bot, #00000008));
+  opacity: 0.45;
+}
+.glass-button-wrap > .glass-button > .glass-button-text {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.glass-button-wrap > .glass-button > .glass-button-text > svg { flex-shrink: 0; }
+.glass-button-wrap > .glass-button-shadow {
+  position: absolute;
+  inset: 5px 3px -3px;
+  z-index: 0;
+  border-radius: inherit;
+  box-shadow: 0 6px 14px -5px var(--glass-shadow, #00000033);
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.glass-button-wrap.gb-v-ghost > .glass-button { box-shadow: none; }
+.glass-button-wrap.gb-v-ghost > .glass-button::before,
+.glass-button-wrap.gb-v-ghost > .glass-button-shadow { opacity: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .glass-button-wrap > .glass-button:hover:not(:disabled) {
+    transform: translateY(-1px) rotateX(5deg);
+    box-shadow: inset 0 1px 0 var(--glass-inner-top, #ffffff80), inset 0 -1px 0 var(--glass-inner-bot, #00000008), 0 0 0 3px var(--fg-5, #0000000d);
+  }
+  .glass-button-wrap.gb-v-ghost > .glass-button:hover:not(:disabled) { background: var(--fg-8, #00000014); }
+}
+.glass-button-wrap > .glass-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
+.glass-button-wrap > .glass-button:focus-visible {
+  outline: 2px solid var(--ring, var(--primary, #ea580c));
+  outline-offset: 3px;
+}
+.glass-button-wrap > .glass-button:disabled { opacity: 0.45; cursor: not-allowed; }
+.glass-button-wrap > .glass-button[aria-busy='true'] { cursor: progress; opacity: 0.7; }
+.glass-button-wrap > .glass-button:disabled + .glass-button-shadow { opacity: 0.35; }
+
+.glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid var(--panel-edge-top, #ffffffb3);
+  border-radius: 9999px;
+  color: var(--foreground, #18181b);
+  background: var(--glass-fill, color-mix(in srgb, var(--background, #fff) 65%, transparent));
+  box-shadow: inset 0 1px 0 var(--glass-inner-top, #ffffff80), 0 2px 6px -3px var(--glass-shadow, #00000024);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  vertical-align: middle;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.glass-badge > .dot {
+  display: inline-block;
+  flex: 0 0 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary, currentColor);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, currentColor) 12%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-panel::after { background: radial-gradient(ellipse at 50% 0%, var(--panel-glow, #ffffff80), transparent 65%); }
+  .glass-panel::after,
+  .glass-button-wrap > .glass-button,
+  .glass-button-wrap > .glass-button-shadow { transition: none; }
+  .glass-button-wrap > .glass-button:hover:not(:disabled),
+  .glass-button-wrap > .glass-button:active:not(:disabled) { transform: none; }
+  .glass-button-wrap > .glass-button[aria-busy='true'] > .glass-button-text > svg { animation: none; }
+}
+
+/* Without backdrop blur, retain a legible semantic surface rather than clear glass. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-badge { background-color: var(--background, #fff); }
+  .glass-button-wrap { --glass-control-fill: var(--background, #fff); }
+  .glass-button-wrap.gb-v-primary { --glass-control-fill: var(--primary, #c2410c); }
+  .glass-button-wrap.gb-v-secondary { --glass-control-fill: var(--secondary, #e4e4e7); }
+  .glass-button-wrap.gb-v-destructive { --glass-control-fill: color-mix(in srgb, var(--destructive, #b91c1c) 12%, var(--background, #fff)); }
+}
+

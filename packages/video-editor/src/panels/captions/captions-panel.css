@@ -1,0 +1,269 @@
+.ve-captions-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 12px;
+  gap: 8px;
+  padding: 4px 12px 14px;
+}
+
+.ve-captions-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 22px;
+}
+
+.ve-captions-panel__title {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  min-width: 0;
+}
+
+.ve-captions-panel__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* 与工程属性「全局画布」同系：无描边胶囊 */
+.ve-captions-panel__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 85%, transparent);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.ve-captions-panel__pill:hover {
+  background: color-mix(in srgb, var(--muted) 100%, transparent);
+  color: var(--foreground);
+}
+
+.ve-captions-panel__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.ve-captions-panel__btn:hover {
+  background: color-mix(in oklab, var(--muted) 70%, transparent);
+  color: var(--foreground);
+}
+
+.ve-captions-panel__btn--primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+}
+
+.ve-captions-panel__btn--primary:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  filter: brightness(1.05);
+}
+
+/* 属性行布局：对齐检视器「标签左 / 控件右」 */
+.ve-captions-panel__tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--muted) 72%, var(--card));
+  flex-shrink: 0;
+}
+
+.ve-captions-panel__field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 26px;
+}
+
+.ve-captions-panel__field-label {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.ve-captions-panel__select-trigger {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  width: 100%;
+  height: 26px !important;
+  min-height: 26px;
+  padding-left: 8px;
+  padding-right: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--foreground);
+  background: var(--card);
+  border: none !important;
+  border-radius: 6px;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ve-captions-panel__select-trigger:focus,
+.ve-captions-panel__select-trigger:focus-visible,
+.ve-captions-panel__select-trigger[data-popup-open] {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ve-captions-panel__segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--card);
+}
+
+.ve-captions-panel__segment-btn {
+  min-width: 48px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.ve-captions-panel__segment-btn:hover {
+  background: color-mix(in oklab, var(--muted) 65%, transparent);
+  color: var(--foreground);
+}
+
+.ve-captions-panel__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ve-captions-panel__empty-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.ve-captions-panel__empty {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.55;
+  padding: 16px 12px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+
+.ve-captions-panel__cue {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 9px;
+  background: color-mix(in oklab, var(--muted) 45%, var(--card));
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.ve-captions-panel__cue:hover {
+  background: color-mix(in oklab, var(--muted) 62%, var(--card));
+}
+
+.ve-captions-panel__cue[data-current='true'] {
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+.ve-captions-panel__cue-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+
+.ve-captions-panel__cue-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ve-captions-panel__cue-btn {
+  padding: 1px 6px;
+  font-size: 9px;
+  border-radius: 4px;
+  border: none;
+  background: color-mix(in oklab, var(--muted) 80%, transparent);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.ve-captions-panel__cue-input {
+  width: 100%;
+  background: var(--card);
+  border: none;
+  color: var(--foreground);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  outline: none;
+  transition: box-shadow 120ms ease;
+}
+
+.ve-captions-panel__cue-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 18%, transparent);
+}
+
+.ve-captions-panel__estimated {
+  margin-left: 6px;
+  color: #eab308;
+}

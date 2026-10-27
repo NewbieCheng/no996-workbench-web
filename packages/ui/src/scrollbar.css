@@ -1,0 +1,110 @@
+/* @no996/ui — unified slim scrollbar (native overflow + ScrollArea).
+ * Width 4px (half of legacy 8px). Drag via native thumb or Base UI ScrollArea. */
+
+:root {
+  --no996-scrollbar-width: 4px;
+  --no996-scrollbar-radius: 999px;
+  --no996-scrollbar-thumb: color-mix(in srgb, var(--foreground) 22%, transparent);
+  --no996-scrollbar-thumb-hover: color-mix(in srgb, var(--foreground) 38%, transparent);
+  --no996-scrollbar-thumb-active: color-mix(in srgb, var(--foreground) 48%, transparent);
+  --no996-scrollbar-track: transparent;
+
+  /* DSH port aliases — elevated surfaces may rebind thumb to l2 pair */
+  --dsh-scrollbar-width: var(--no996-scrollbar-width);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l1, var(--no996-scrollbar-thumb));
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l1, var(--no996-scrollbar-thumb-hover));
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  :root,
+  :root *,
+  body,
+  body * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--dsh-scrollbar-thumb) var(--no996-scrollbar-track);
+  }
+}
+
+::-webkit-scrollbar {
+  width: var(--no996-scrollbar-width);
+  height: var(--no996-scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--no996-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: var(--no996-scrollbar-radius);
+  background: var(--dsh-scrollbar-thumb);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dsh-scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--no996-scrollbar-thumb-active);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Opt-in wrapper for overflow containers (same tokens as global). */
+.no996-scrollbar {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dsh-scrollbar-thumb) var(--no996-scrollbar-track);
+}
+
+/* Hide scrollbar while keeping scroll (sidebars, horizontal strips). */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Base UI ScrollArea — custom draggable thumb, matches native slim bar. */
+[data-slot='scroll-area-scrollbar'] {
+  display: flex;
+  touch-action: none;
+  user-select: none;
+  padding: 1px;
+  transition: opacity 0.15s ease;
+}
+
+[data-slot='scroll-area-scrollbar'][data-orientation='vertical'] {
+  width: var(--no996-scrollbar-width);
+  height: 100%;
+  border-left: 1px solid transparent;
+}
+
+[data-slot='scroll-area-scrollbar'][data-orientation='horizontal'] {
+  height: var(--no996-scrollbar-width);
+  flex-direction: column;
+  border-top: 1px solid transparent;
+}
+
+[data-slot='scroll-area-thumb'] {
+  position: relative;
+  flex: 1;
+  border-radius: var(--no996-scrollbar-radius);
+  background: var(--dsh-scrollbar-thumb);
+  transition: background-color 0.15s ease;
+}
+
+[data-slot='scroll-area']:hover [data-slot='scroll-area-thumb'],
+[data-slot='scroll-area-scrollbar']:hover [data-slot='scroll-area-thumb'] {
+  background: var(--dsh-scrollbar-thumb-hover);
+}
+
+[data-slot='scroll-area-scrollbar'][data-dragging] [data-slot='scroll-area-thumb'] {
+  background: var(--no996-scrollbar-thumb-active);
+}

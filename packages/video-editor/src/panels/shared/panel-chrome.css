@@ -1,0 +1,278 @@
+/* 右栏面板：空态图标、底部提示、布局预设（浅色） */
+
+.ve-panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  padding: 4px 12px 20px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.ve-panel-empty > .ve-panel-empty__icon {
+  margin-top: 16px;
+}
+
+.ve-panel-empty__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--muted) 78%, var(--card));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in oklab, var(--primary) 70%, var(--muted-foreground));
+  flex-shrink: 0;
+}
+
+.ve-panel-empty__icon--lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+}
+
+.ve-panel-empty__title {
+  font-weight: 600;
+  color: var(--foreground);
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.ve-panel-empty__desc {
+  font-size: 11px;
+  max-width: 220px;
+  line-height: 1.55;
+  color: var(--muted-foreground);
+}
+
+.ve-panel-hint {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 8px 10px;
+  background: color-mix(in oklab, var(--muted) 58%, var(--card));
+  border-radius: 8px;
+  text-align: left;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.ve-panel-hint__icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: color-mix(in oklab, var(--primary) 70%, var(--muted-foreground));
+}
+
+.ve-panel-hint--inline {
+  margin-top: 4px;
+  padding: 8px;
+  text-align: left;
+}
+
+.ve-layout-presets__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.ve-layout-preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 3px 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--foreground);
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.ve-layout-preset-btn:hover {
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--border));
+  background: color-mix(in oklab, var(--muted) 35%, var(--card));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.ve-layout-preset-btn__frame {
+  width: 38px;
+  height: 22px;
+  background: color-mix(in oklab, var(--muted) 55%, var(--card));
+  border: 1px solid color-mix(in oklab, var(--border) 92%, transparent);
+  border-radius: 4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ve-layout-preset-btn__label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ve-layout-preset-fill {
+  background: color-mix(in srgb, var(--primary) 52%, transparent);
+}
+
+.ve-aspect-lock-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.ve-aspect-lock-btn[data-locked='true'] {
+  background: color-mix(in oklab, var(--primary) 14%, var(--card));
+  border: 1px solid color-mix(in oklab, var(--primary) 38%, var(--border));
+  color: var(--primary);
+}
+
+.ve-aspect-lock-btn[data-locked='false'] {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.ve-inspector-icon-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  color: var(--foreground);
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.ve-inspector-icon-btn[data-active='true'] {
+  background: color-mix(in oklab, var(--primary) 14%, var(--card));
+  border: 1px solid color-mix(in oklab, var(--primary) 38%, var(--border));
+  color: var(--primary);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent);
+}
+
+.ve-inspector-icon-btn:not([data-active='true']) {
+  background: color-mix(in oklab, var(--muted) 70%, var(--card));
+  border: 1px solid transparent;
+  color: var(--muted-foreground);
+}
+
+.ve-inspector-icon-btn:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--primary) 32%, var(--border));
+  color: var(--foreground);
+}
+
+.ve-segment-btn {
+  flex: 1;
+  padding: 2px 0;
+  font-size: 10px;
+  font-weight: 400;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    font-weight 120ms ease;
+}
+
+.ve-segment-btn[data-active='true'] {
+  font-weight: 600;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.ve-layout-preset-btn[data-active='true'] {
+  border-color: color-mix(in oklab, var(--primary) 42%, var(--border));
+  background: color-mix(in oklab, var(--primary) 12%, var(--card));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent);
+}
+
+.ve-frame-position__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 108px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.ve-frame-position__grid[data-disabled='true'] {
+  opacity: 0.45;
+}
+
+.ve-frame-position__grid[data-disabled='true'] .ve-frame-position__cell {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.ve-frame-position__cell {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 22px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in oklab, var(--border) 92%, transparent);
+  background: color-mix(in oklab, var(--muted) 55%, var(--card));
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.ve-frame-position__cell[data-active='true'] {
+  background: color-mix(in oklab, var(--primary) 52%, transparent);
+  border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
+.ve-frame-position__cell:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+}

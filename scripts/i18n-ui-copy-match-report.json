@@ -1,0 +1,717 @@
+{
+  "scannedUnique": 178,
+  "scannedLocations": 189,
+  "matchedUnique": 36,
+  "missingUnique": 0,
+  "matched": [
+    {
+      "source": "必须出现的词",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.mustWords",
+          "en": "Terms to include"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 460,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "编辑",
+      "choices": [
+        {
+          "namespace": "common",
+          "key": "edit",
+          "en": "Edit"
+        },
+        {
+          "namespace": "persona",
+          "key": "preview.editProfile",
+          "en": "Edit"
+        },
+        {
+          "namespace": "socialPublish",
+          "key": "studioViewEdit",
+          "en": "Edit"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 135,
+          "type": "jsx-text"
+        },
+        {
+          "file": "src/features/social-studio/SocialStudioShell.tsx",
+          "line": 113,
+          "type": "jsx-attribute",
+          "attribute": "aria-label"
+        }
+      ]
+    },
+    {
+      "source": "产品一句话介绍",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.intro",
+          "en": "Product in one sentence"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 360,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "词表与合规",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.words",
+          "en": "Required and restricted terms"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 458,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "导出",
+      "choices": [
+        {
+          "namespace": "common",
+          "key": "excel.export",
+          "en": "Export"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 162,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "电脑",
+      "choices": [
+        {
+          "namespace": "socialPublish",
+          "key": "studioDevicePcShort",
+          "en": "Desktop"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 152,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "发布平台",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "platformHeading",
+          "en": "Platform"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 226,
+          "type": "jsx-attribute",
+          "attribute": "aria-label"
+        }
+      ]
+    },
+    {
+      "source": "风格",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.style",
+          "en": "Style"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 402,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "复制",
+      "choices": [
+        {
+          "namespace": "workbench",
+          "key": "titlesCopyBtn",
+          "en": "Copy"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/VideoResult.tsx",
+          "line": 147,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "复制排版",
+      "choices": [
+        {
+          "namespace": "socialPublish",
+          "key": "copyLayout",
+          "en": "Copy layout"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 162,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "公众号",
+      "choices": [
+        {
+          "namespace": "socialPublish",
+          "key": "phoneWechat",
+          "en": "WeChat"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 118,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "核心卖点",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.sellingPoints",
+          "en": "Key selling points"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 380,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "互动节点数",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.interactionCountAria",
+          "en": "Number of interaction prompts"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 436,
+          "type": "jsx-text"
+        },
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 444,
+          "type": "jsx-attribute",
+          "attribute": "aria-label"
+        }
+      ]
+    },
+    {
+      "source": "结构",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.structure",
+          "en": "Structure"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 244,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "禁用词",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.bannedWords",
+          "en": "Terms to avoid"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 470,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "例如：儿童保温杯",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.productPlaceholder",
+          "en": "e.g. insulated bottle for kids"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 166,
+          "type": "jsx-attribute",
+          "attribute": "placeholder"
+        }
+      ]
+    },
+    {
+      "source": "例如：一键自动清洗，适合租房和办公室",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.introPlaceholder",
+          "en": "e.g. one-tap cleaning for rental homes and offices"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 365,
+          "type": "jsx-attribute",
+          "attribute": "placeholder"
+        }
+      ]
+    },
+    {
+      "source": "例如：自动清洗、一个月保修",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.mustWordsPlaceholder",
+          "en": "e.g. easy cleaning, one-month warranty"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 465,
+          "type": "jsx-attribute",
+          "attribute": "placeholder"
+        }
+      ]
+    },
+    {
+      "source": "目标",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.goal",
+          "en": "Goal"
+        },
+        {
+          "namespace": "scriptLab",
+          "key": "previewRail.goal",
+          "en": "Goal"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 212,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "目标人群",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.audience",
+          "en": "Target audience"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 370,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "内容",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.content",
+          "en": "Content"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 358,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "平台",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.platform",
+          "en": "Platform"
+        },
+        {
+          "namespace": "scriptLab",
+          "key": "previewRail.platform",
+          "en": "Platform"
+        },
+        {
+          "namespace": "workbench",
+          "key": "titlesPlatformLabel",
+          "en": "Platform"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 227,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "强促单",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.strong",
+          "en": "Direct offer"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 420,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "时长",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.duration",
+          "en": "Duration"
+        },
+        {
+          "namespace": "scriptLab",
+          "key": "previewRail.duration",
+          "en": "Duration"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 198,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "试试：",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.tryExample",
+          "en": "Try an example:"
+        },
+        {
+          "namespace": "workbench",
+          "key": "titlesExamplesLead",
+          "en": "Try: "
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 315,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "手机",
+      "choices": [
+        {
+          "namespace": "socialPublish",
+          "key": "studioDeviceMobileShort",
+          "en": "Phone"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 152,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "小红书",
+      "choices": [
+        {
+          "namespace": "extension",
+          "key": "platformXiaohongshu",
+          "en": "Xiaohongshu"
+        },
+        {
+          "namespace": "scriptLab",
+          "key": "platform.xiaohongshu",
+          "en": "Xiaohongshu"
+        },
+        {
+          "namespace": "socialPublish",
+          "key": "phoneXhs",
+          "en": "Xiaohongshu"
+        },
+        {
+          "namespace": "socialPublish",
+          "key": "channelXhs",
+          "en": "Xiaohongshu"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 119,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "选填",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.optional",
+          "en": "Optional"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 499,
+          "type": "jsx-attribute",
+          "attribute": "placeholder"
+        }
+      ]
+    },
+    {
+      "source": "移除",
+      "choices": [
+        {
+          "namespace": "socialPublish",
+          "key": "studioRemoveImage",
+          "en": "Remove"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioPrototypePage.tsx",
+          "line": 146,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "用户痛点",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.pain",
+          "en": "Customer pain points"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 390,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "与内置违禁词合并，例如：最好、第一",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.bannedWordsPlaceholder",
+          "en": "Combined with built-in restricted terms, e.g. best, number one"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 475,
+          "type": "jsx-attribute",
+          "attribute": "placeholder"
+        }
+      ]
+    },
+    {
+      "source": "预览",
+      "choices": [
+        {
+          "namespace": "persona",
+          "key": "preview.viewMode",
+          "en": "Preview"
+        },
+        {
+          "namespace": "socialPublish",
+          "key": "studioViewPreview",
+          "en": "Preview"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/social-studio/SocialStudioShell.tsx",
+          "line": 108,
+          "type": "jsx-attribute",
+          "attribute": "aria-label"
+        }
+      ]
+    },
+    {
+      "source": "粘贴一段你自己表现好的脚本",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.ownReferencePlaceholder",
+          "en": "Paste one of your own successful scripts"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 489,
+          "type": "jsx-attribute",
+          "attribute": "placeholder"
+        }
+      ]
+    },
+    {
+      "source": "重置",
+      "choices": [
+        {
+          "namespace": "common",
+          "key": "reset",
+          "en": "Reset"
+        },
+        {
+          "namespace": "scriptLab",
+          "key": "form.reset",
+          "en": "Reset"
+        },
+        {
+          "namespace": "workbench",
+          "key": "titlesFormReset",
+          "en": "Reset"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 324,
+          "type": "jsx-text"
+        }
+      ]
+    },
+    {
+      "source": "转化强度",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.conversionStrength",
+          "en": "Sales intensity"
+        },
+        {
+          "namespace": "scriptLab",
+          "key": "previewRail.conversion",
+          "en": "Sales intensity"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 405,
+          "type": "jsx-text"
+        },
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 414,
+          "type": "jsx-attribute",
+          "attribute": "aria-label"
+        }
+      ]
+    },
+    {
+      "source": "自定义",
+      "choices": [
+        {
+          "namespace": "scriptLab",
+          "key": "form.custom",
+          "en": "Custom"
+        }
+      ],
+      "locations": [
+        {
+          "file": "src/features/script-lab/components/ScriptForm.tsx",
+          "line": 261,
+          "type": "jsx-text"
+        }
+      ]
+    }
+  ],
+  "missing": []
+}
