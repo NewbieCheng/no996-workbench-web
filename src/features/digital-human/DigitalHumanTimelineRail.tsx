@@ -49,6 +49,8 @@ type DigitalHumanTimelineRailProps = {
   onUpdateProject: (updater: (previous: DigitalHumanProject) => DigitalHumanProject) => void
   onSelectSegment: (segmentId: string) => void
   onOpenTaskHistory: () => void
+  onConcatFullVideo?: () => void
+  isConcatenating?: boolean
 }
 
 export function DigitalHumanTimelineRail({
@@ -60,6 +62,8 @@ export function DigitalHumanTimelineRail({
   onUpdateProject,
   onSelectSegment,
   onOpenTaskHistory,
+  onConcatFullVideo,
+  isConcatenating,
 }: DigitalHumanTimelineRailProps) {
   const { t } = useTranslation('digitalHuman')
   const [collapsed, setCollapsed] = useState(readTimelineCollapsed)
@@ -158,6 +162,25 @@ export function DigitalHumanTimelineRail({
           </div>
         </div>
         <div className="dh-timeline-rail__actions">
+          {onConcatFullVideo && readySegmentsCount >= 2 ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                    disabled={!!busy || isConcatenating}
+                    onClick={onConcatFullVideo}
+                  >
+                    <Film size={13} />
+                    <span>{isConcatenating ? '拼接中...' : '合并成片'}</span>
+                  </Button>
+                }
+              />
+              <TooltipContent side="top">将所有已就绪段落拼接为完整视频（浏览器本地合成）</TooltipContent>
+            </Tooltip>
+          ) : null}
           {renderHistoryButton()}
           <Tooltip>
             <TooltipTrigger
@@ -205,7 +228,7 @@ export function DigitalHumanTimelineRail({
           const current = activeDigitalHumanVersion(item)
           const isSelected = item.id === selectedSegmentId
           const hasAudio = Boolean(current?.audio || current?.audioUrl)
-          const isReadyVideo = Boolean(current?.videoUrl || current?.videoBlob)
+          const isReadyVideo = Boolean(current?.sourceVideoUrl || current?.videoUrl || current?.videoBlob)
           const hasText = Boolean(item.text.trim())
           const isDragOver = dragOverId === item.id && draggingId !== item.id
 

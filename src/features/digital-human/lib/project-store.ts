@@ -9,6 +9,7 @@ export type DigitalHumanVersion = {
   voiceId?: string
   voiceLabel?: string
   videoUrl?: string
+  sourceVideoUrl?: string
   videoBlob?: Blob
   taskId?: string
   localTaskId?: string
@@ -43,6 +44,7 @@ export type DigitalHumanProject = {
   videoExtension?: boolean
   authorized?: boolean
   voiceId?: string
+  mergedVideoBlob?: Blob
   segments: DigitalHumanSegment[]
 }
 const DB = 'no996-workbench-digital-human'
@@ -59,7 +61,7 @@ function openDatabase(): Promise<IDBDatabase> {
   })
 }
 export function digitalHumanProjectBytes(project: DigitalHumanProject): number {
-  return (project.source?.file.size ?? 0) + (project.reference?.file.size ?? 0) + project.segments.reduce((sum, segment) => sum + segment.versions.reduce((n, version) => n + (version.audio?.size ?? 0) + (version.videoBlob?.size ?? 0), 0), 0)
+  return (project.source?.file.size ?? 0) + (project.reference?.file.size ?? 0) + (project.mergedVideoBlob?.size ?? 0) + project.segments.reduce((sum, segment) => sum + segment.versions.reduce((n, version) => n + (version.audio?.size ?? 0) + (version.videoBlob?.size ?? 0), 0), 0)
 }
 export async function listDigitalHumanProjects(owner: number): Promise<DigitalHumanProject[]> {
   const db = await openDatabase()
@@ -135,6 +137,7 @@ export function isDigitalHumanProjectShell(project: DigitalHumanProject): boolea
         !version.audio &&
         !version.audioUrl?.trim() &&
         !version.videoUrl &&
+        !version.sourceVideoUrl &&
         !version.videoBlob,
     )
   })
@@ -180,8 +183,30 @@ export function createDigitalHumanProject(ownerUserId: number, name: string): Di
     segments: [{ id: crypto.randomUUID(), text: '', versions: [] }]
   }
 }
+export const DIGITAL_HUMAN_SCRIPT_LIMIT = 350
+
 export function splitDigitalHumanScript(text: string): DigitalHumanSegment[] {
-  return text.trim().split(/\n\s*\n/).map(value => value.trim()).filter(Boolean).map(value => ({ id: crypto.randomUUID(), text: value, versions: [] }))
+  const parts: string[] = []
+  for (const paragraph of text.trim().split(/\n\s*\n/).map(value => value.trim()).filter(Boolean)) {
+    let remaining = Array.from(paragraph)
+    while (remaining.length > DIGITAL_HUMAN_SCRIPT_LIMIT) {
+      const window = remaining.slice(0, DIGITAL_HUMAN_SCRIPT_LIMIT)
+      let cut = -1
+      for (let i = window.length - 1; i >= 0; i--) {
+        if (/[。！？!?；;\n]/u.test(window[i])) { cut = i + 1; break }
+      }
+      if (cut < 0) {
+        for (let i = window.length - 1; i >= 0; i--) {
+          if (/[，,、：:]/u.test(window[i])) { cut = i + 1; break }
+        }
+      }
+      if (cut < 0) cut = DIGITAL_HUMAN_SCRIPT_LIMIT
+      parts.push(remaining.slice(0, cut).join(''))
+      remaining = remaining.slice(cut)
+    }
+    if (remaining.length) parts.push(remaining.join(''))
+  }
+  return parts.map(value => ({ id: crypto.randomUUID(), text: value, versions: [] }))
 }
 export function activeDigitalHumanVersion(segment: DigitalHumanSegment): DigitalHumanVersion | undefined {
   return segment.versions.find(version => version.id === segment.activeVersionId) ?? [...segment.versions].reverse().find(version => version.text === segment.text)
@@ -198,7 +223,7 @@ const BUSY_VERSION_STATUSES = new Set([
 ])
 
 function versionHasResultVideo(version: DigitalHumanVersion): boolean {
-  return Boolean(version.videoUrl || version.videoBlob)
+  return Boolean(version.sourceVideoUrl || version.videoUrl || version.videoBlob)
 }
 
 function versionIsBusy(version: DigitalHumanVersion): boolean {
@@ -241,6 +266,7 @@ export function applyImportedAudioToSegment(
       localTaskId: undefined,
       clientRequestId: undefined,
       videoUrl: undefined,
+      sourceVideoUrl: undefined,
       videoBlob: undefined,
       error: undefined,
       submissionUncertain: undefined,

@@ -24,6 +24,14 @@ test('paragraph splitting preserves every non-empty paragraph', () => {
   assert.equal(segments[0].text, 'First sentence.\nContinued.')
   assert.equal(new Set(segments.map(item => item.id)).size, 3)
 })
+test('long scripts split at punctuation and hard limits without losing characters', () => {
+  const text = `${'甲'.repeat(200)}。${'😀'.repeat(400)}！尾声`
+  const segments = splitDigitalHumanScript(text)
+  assert.equal(segments.map(segment => segment.text).join(''), text)
+  assert.ok(segments.every(segment => Array.from(segment.text).length <= 350))
+  assert.equal(segments[0].text, `${'甲'.repeat(200)}。`)
+})
+
 test('default project names increment as 口播项目N', () => {
   assert.equal(nextDigitalHumanProjectName([]), '口播项目1')
   assert.equal(nextDigitalHumanProjectName([{ name: '' }]), '口播项目2')

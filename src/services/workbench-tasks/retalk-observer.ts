@@ -47,7 +47,7 @@ export class RetalkTaskObserver {
     return { job, payload }
   }
   private async save(job: WorkbenchTaskRecord, payload: DigitalHumanRetalkPayload, task: RetalkTask) {
-    const { source_url: _temporarySource, ...result } = task
+    const result = { ...task, source_url: task.source_url ?? payload.result?.source_url, video_url: task.video_url ?? payload.result?.video_url }
     const phase = task.status === 'QUEUED' ? 'queued' : 'active'
     const next = { ...payload, taskId: task.task_id, status: task.status, result, submissionUncertain: false, lastCheckedAt: Date.now(), observationError: undefined,
       observationPhase: phase as 'queued' | 'active', observationStartedAt: payload.observationPhase === phase ? payload.observationStartedAt ?? Date.now() : Date.now() }

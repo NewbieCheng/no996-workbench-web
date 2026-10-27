@@ -61,7 +61,7 @@ import type { DigitalHumanRetalkPayload, VoiceTtsPayload, WorkbenchTaskRecord } 
 import type { RetalkTask } from '../../api/video-retalk'
 import { useAuth } from '../../auth/AuthContext'
 import { apiErrorMessage } from '../../api/client'
-import { resolveMediaUrl, isMediaUrlExpired, markMediaUrlExpired } from '../../api/media'
+import { resolveMediaUrl } from '../../api/media'
 import { demoPlatformVoices, isWorkbenchAiDemoMode } from '../../api/workbench-ai'
 import { resolveTtsSynthesisConfig } from '../../api/models'
 import { listVoices } from '../../api/voice-clone'
@@ -80,6 +80,7 @@ import {
   isDigitalHumanProjectShell,
   isDigitalHumanPortraitAuthorized,
   splitDigitalHumanScript,
+  DIGITAL_HUMAN_SCRIPT_LIMIT,
   type DigitalHumanSegment,
   type DigitalHumanVersion
 } from './lib/project-store'
@@ -111,6 +112,7 @@ import {
   resolveScriptDurationDisplay,
 } from './lib/script-duration'
 import { MonitorStudioVideoPlayer, type MonitorVideoToolbar } from './MonitorStudioVideoPlayer'
+import { concatVideoBlobs, type ConcatSegmentItem } from './lib/video-concat'
 import './digital-human.css'
 
 /** 根据台词字数估算配音所需积分（1-100字 = 1积分，每超100字 +1积分） */
@@ -306,6 +308,7 @@ function StudioAudioPlayer({
 function MediaPlayer({
   blob,
   url,
+  sourceVideoUrl,
   kind,
   label,
   loop = false,
@@ -314,6 +317,7 @@ function MediaPlayer({
 }: {
   blob?: Blob
   url?: string
+  sourceVideoUrl?: string
   kind: 'video' | 'audio'
   label: string
   loop?: boolean
@@ -321,10 +325,11 @@ function MediaPlayer({
   endAction?: ReactNode
 }) {
   const localUrl = useBlobUrl(blob)
-  const src = url ? resolveMediaUrl(url) : localUrl
-  if (!src) return null
+  const src = url ? resolveMediaUrl(url) : ''
+  const source = sourceVideoUrl ? resolveMediaUrl(sourceVideoUrl) : ''
+  if (!src && !source && !localUrl) return null
   return kind === 'video' ? (
-    <MonitorStudioVideoPlayer src={src} label={label} loop={loop} toolbar={videoToolbar} />
+    <MonitorStudioVideoPlayer sourceVideoUrl={source} videoUrl={src} localVideoUrl={localUrl} label={label} loop={loop} toolbar={videoToolbar} />
   ) : (
     <StudioAudioPlayer blob={blob} url={url} label={label} endAction={endAction} />
   )
@@ -710,7 +715,7 @@ export default function DigitalHumanPage() {
   const readySegmentsCount =
     project?.segments.filter(item => {
       const v = activeDigitalHumanVersion(item)
-      return v?.videoUrl || v?.videoBlob
+      return v?.sourceVideoUrl || v?.videoUrl || v?.videoBlob
     }).length ?? 0
 
   const hasSourceVideo = Boolean(project?.source || project?.sourceUrl?.trim())
@@ -732,33 +737,11 @@ export default function DigitalHumanPage() {
       return
     }
     const url = resolveMediaUrl(version.videoUrl)
-    if (isMediaUrlExpired(version.videoUrl) || isMediaUrlExpired(url)) {
-      if (segment?.id && version?.id) {
-        patchVersion(segment.id, version.id, {
-          status: 'expired',
-          videoUrl: undefined,
-          error: t('expired'),
-        })
-      }
-      return
-    }
-
     let alive = true
     void fetch(url, { method: 'HEAD' })
       .then(res => {
         if (!alive) return
-        if (res.status === 404 || res.status === 410) {
-          markMediaUrlExpired(version.videoUrl!)
-          markMediaUrlExpired(url)
-          if (segment?.id && version?.id) {
-            patchVersion(segment.id, version.id, {
-              status: 'expired',
-              videoUrl: undefined,
-              error: t('expired'),
-            })
-          }
-          return
-        }
+        if (!res.ok) return
         const raw = res.headers.get('content-length')
         if (!raw) return
         const bytes = Number(raw)
@@ -1175,6 +1158,10 @@ export default function DigitalHumanPage() {
       toastWarning('请先在上方输入需要朗读的台词文稿。')
       return
     }
+    if (countScriptCharacters(segment.text) > DIGITAL_HUMAN_SCRIPT_LIMIT) {
+      toastWarning('单段台词不能超过 350 字，请先使用台词工具拆分长文。')
+      return
+    }
     if (demo) {
       toastInfo('演示模式：已模拟配音生成流程。')
       return
@@ -1290,16 +1277,20 @@ export default function DigitalHumanPage() {
         snapshot.uploadedSource?.sourceId === snapshot.source?.id && snapshot.uploadedSource?.expiresAt > Date.now()
           ? snapshot.uploadedSource.url
           : ''
-      const video =
-        publicVideo ||
-        cached ||
-        (snapshot.source
-          ? await uploadLipsyncAsset(
-              new File([snapshot.source.file], snapshot.source.name, { type: snapshot.source.file.type }),
-              'video',
-              uploadOptions
-            )
-          : '')
+      let video = publicVideo || cached
+      if (!video && snapshot.source) {
+        try {
+          video = await uploadLipsyncAsset(
+            new File([snapshot.source.file], snapshot.source.name, { type: snapshot.source.file.type }),
+            'video',
+            uploadOptions,
+          )
+        } catch (e) {
+          if (signal.aborted || (e instanceof DOMException && e.name === 'AbortError')) throw e
+          setError('底模视频上传失败，请检查网络后重试。')
+          throw new Error('底模视频上传失败，请检查网络后重试。')
+        }
+      }
       if (!video) {
         toastWarning(t('sourceRequired'))
         return
@@ -1344,6 +1335,7 @@ export default function DigitalHumanPage() {
         clientRequestId: `web-${crypto.randomUUID()}`,
         sourceName: snapshot.source?.name ?? snapshot.sourceUrl,
         videoUrl: undefined,
+        sourceVideoUrl: undefined,
         videoBlob: undefined,
         taskId: undefined,
         localTaskId: undefined,
@@ -1444,20 +1436,122 @@ export default function DigitalHumanPage() {
   async function downloadVersion() {
     if (!version) return
     await run(t('downloading'), async signal => {
-      let blob = version.videoBlob
-      if (!blob && version.videoUrl) {
-        const response = await fetch(resolveMediaUrl(version.videoUrl), { signal })
-        if (response.status === 404 || response.status === 410) throw new Error(t('expired'))
-        if (!response.ok) throw new Error(t('downloadFailed'))
-        blob = await response.blob()
+      let blob: Blob | undefined
+      for (const candidate of [version.sourceVideoUrl, version.videoUrl]) {
+        if (!candidate || blob) continue
+        try {
+          const response = await fetch(resolveMediaUrl(candidate), { signal })
+          if (response.ok) blob = await response.blob()
+        } catch (e) {
+          if (signal.aborted) throw e
+        }
       }
-      if (!blob) throw new Error(t('downloadFailed'))
+      blob ??= version.videoBlob
+      if (!blob) throw new Error('成片暂时无法下载，请检查网络或稍后重试。')
       const metadata = await readDigitalHumanMedia(blob, 'video', signal)
       if (!metadata.width || !metadata.height) throw new Error(t('downloadFailed'))
       const extension = blob.type.includes('webm') ? 'webm' : 'mp4'
       const url = URL.createObjectURL(blob)
       downloadUrl(url, `${project?.name || 'digital-human'}-${selectedId || segment?.id}.${extension}`)
       window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+    })
+  }
+
+  const isConcatenating = busy === '视频拼接中'
+
+  async function handleBatchGenerateAll() {
+    if (!project || busy || pending) return
+    if (!isDigitalHumanPortraitAuthorized(project)) {
+      toastWarning('请先勾选左侧监视器下方的肖像合规授权。')
+      return
+    }
+    if (!(project.source || project.sourceUrl?.trim())) {
+      toastWarning('尚未绑定人物底模原视频，请先在左侧上传或导入底模。')
+      return
+    }
+    const unvoiced = project.segments.filter(s => {
+      const v = activeDigitalHumanVersion(s)
+      return s.text.trim() && (!v?.audio && !v?.audioUrl)
+    })
+    const unrendered = project.segments.filter(s => {
+      const v = activeDigitalHumanVersion(s)
+      return s.text.trim() && !v?.videoUrl && !v?.sourceVideoUrl && !v?.videoBlob
+    })
+    if (!unrendered.length && !unvoiced.length) {
+      toastInfo('所有段落均已就绪成片，可直接点击时间轴「合并成片」导出。')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `即将顺序生成整篇文稿（共 ${project.segments.length} 段），这将按各段字数与时长消耗账户配音和数字人合成额度。确认继续？`
+    )
+    if (!confirmed) return
+
+    for (let i = 0; i < project.segments.length; i++) {
+      const targetSeg = project.segments[i]
+      if (!targetSeg.text.trim()) continue
+      setSelectedId(targetSeg.id)
+      const currentVersion = activeDigitalHumanVersion(targetSeg)
+      if (currentVersion?.sourceVideoUrl || currentVersion?.videoUrl || currentVersion?.videoBlob) {
+        continue
+      }
+      if (!currentVersion?.audio && !currentVersion?.audioUrl) {
+        toastInfo(`正在为第 ${i + 1}/${project.segments.length} 段生成配音...`)
+        await generateAudio()
+        toastInfo(`第 ${i + 1} 段配音已加入队列，可在任务列表中查看进度。`)
+        break // 遵循串行任务安全：交由全局任务观察器有序推动，避免瞬时并发冲撞
+      } else {
+        toastInfo(`正在为第 ${i + 1}/${project.segments.length} 段提交口型渲染...`)
+        await generateRetalk()
+        break
+      }
+    }
+  }
+
+  async function handleConcatFullVideo() {
+    if (!project || busy) return
+    const readyItems: ConcatSegmentItem[] = []
+    await run('视频拼接中', async signal => {
+      // setConcatProgress
+      for (let i = 0; i < project.segments.length; i++) {
+        const seg = project.segments[i]
+        const v = activeDigitalHumanVersion(seg)
+        let blob = v?.videoBlob
+        if (!blob && (v?.sourceVideoUrl || v?.videoUrl)) {
+          for (const cand of [v.sourceVideoUrl, v.videoUrl]) {
+            if (!cand || blob) continue
+            try {
+              const res = await fetch(resolveMediaUrl(cand), { signal })
+              if (res.ok) blob = await res.blob()
+            } catch {
+              // ignore
+            }
+          }
+        }
+        if (!blob) {
+          throw new Error(`第 ${i + 1} 段成片未能拉取到视频数据，请先确保所有段落已就绪成片。`)
+        }
+        const meta = await readDigitalHumanMedia(blob, 'video', signal)
+        readyItems.push({
+          id: seg.id,
+          blob,
+          duration: meta.duration || 10,
+          width: meta.width || 1080,
+          height: meta.height || 1920,
+        })
+      }
+
+      toastInfo('正在浏览器本机无缝拼接全部段落，合成期间请保持页面打开...')
+      const mergedBlob = await concatVideoBlobs(readyItems, {
+        signal,
+        onProgress: undefined,
+      })
+
+      const extension = mergedBlob.type.includes('webm') ? 'webm' : 'mp4'
+      const url = URL.createObjectURL(mergedBlob)
+      downloadUrl(url, `${project.name || 'digital-human'}-full-merged.${extension}`)
+      window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+      toastSuccess('多段视频已成功拼接并开始下载！')
     })
   }
 
@@ -1876,10 +1970,11 @@ export default function DigitalHumanPage() {
                             </div>
                           </div>
                         )
-                      ) : (version?.videoUrl || version?.videoBlob) && version?.status !== 'expired' ? (
+                      ) : (version?.sourceVideoUrl || version?.videoUrl || version?.videoBlob) ? (
                         <MediaPlayer
                           blob={version.videoBlob}
                           url={version.videoUrl}
+                          sourceVideoUrl={version.sourceVideoUrl}
                           kind="video"
                           label={t('result')}
                           videoToolbar={{
@@ -1912,6 +2007,7 @@ export default function DigitalHumanPage() {
                                   status: 'draft',
                                   error: undefined,
                                   videoUrl: undefined,
+                                  sourceVideoUrl: undefined,
                                   videoBlob: undefined,
                                 })
                               }
@@ -1991,7 +2087,7 @@ export default function DigitalHumanPage() {
                   >
                     <div className="dh-monitor-dock__footer">
                       <div className="dh-monitor-dock__meta">
-                        {preview !== 'source' && version && (version.videoUrl || version.videoBlob) ? (
+                        {preview !== 'source' && version && (version.sourceVideoUrl || version.videoUrl || version.videoBlob) ? (
                           <p className="dh-monitor-dock__caption">
                             <span className="truncate" title={t('result')}>
                               {version.sourceName?.trim() || t('result')}
@@ -2099,12 +2195,36 @@ export default function DigitalHumanPage() {
                         <Textarea
                           ref={scriptTextareaRef}
                           className="dh-script-textarea focus-visible:border-transparent focus-visible:ring-0"
-                          maxLength={10000}
                           value={segment.text}
                           disabled={!!busy}
-                          onChange={event =>
-                            changeSegment(previous => ({ ...previous, text: event.target.value, activeVersionId: undefined }))
-                          }
+                          onPaste={event => {
+                            const pasted = event.clipboardData.getData('text/plain')
+                            const input = event.currentTarget
+                            const combined = input.value.slice(0, input.selectionStart) + pasted + input.value.slice(input.selectionEnd)
+                            if (countScriptCharacters(combined) <= DIGITAL_HUMAN_SCRIPT_LIMIT) return
+                            event.preventDefault()
+                            if (pending) {
+                              toastWarning('当前段落正在生成，请完成后再拆分长文。')
+                              return
+                            }
+                            const parts = splitDigitalHumanScript(combined)
+                            if (!parts.length) return
+                            update(previous => ({
+                              ...previous,
+                              segments: previous.segments.flatMap(item => item.id === segment.id
+                                ? [{ ...item, text: parts[0].text, activeVersionId: undefined }, ...parts.slice(1)]
+                                : [item]),
+                            }))
+                            toastInfo(`长文已拆分为 ${parts.length} 段，可逐段编辑和排序。`)
+                          }}
+                          onChange={event => {
+                            const text = event.target.value
+                            if (countScriptCharacters(text) > DIGITAL_HUMAN_SCRIPT_LIMIT && countScriptCharacters(text) > countScriptCharacters(segment.text)) {
+                              toastWarning('单段最多 350 字，长文可直接粘贴后自动拆分。')
+                              return
+                            }
+                            changeSegment(previous => ({ ...previous, text, activeVersionId: undefined }))
+                          }}
                           placeholder={t('scriptPlaceholder')}
                         />
                         {segmentHasDubAudio && !scriptDubDockCollapsed ? (
@@ -2279,7 +2399,7 @@ export default function DigitalHumanPage() {
                                     导入官方示例（底模+配音+台词）
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    disabled={!segment.text.includes('\n\n')}
+                                    disabled={!segment.text.trim() || (countScriptCharacters(segment.text) <= DIGITAL_HUMAN_SCRIPT_LIMIT && !/\n\s*\n/.test(segment.text)) || !!busy || pending}
                                     onClick={() => {
                                       const parts = splitDigitalHumanScript(segment.text)
                                       update(previous => ({
@@ -2304,6 +2424,15 @@ export default function DigitalHumanPage() {
                                     <FolderOpen size={14} className="mr-2" />
                                     从脚本创作历史导入
                                   </DropdownMenuItem>
+                                  {project.segments.length > 1 ? (
+                                    <DropdownMenuItem
+                                      disabled={!!busy || pending}
+                                      onClick={() => void handleBatchGenerateAll()}
+                                    >
+                                      <Sparkles size={14} className="mr-2 text-primary" />
+                                      一键顺序生成整篇（配音与口型）
+                                    </DropdownMenuItem>
+                                  ) : null}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </DigitalHumanPersonaChipShell>
@@ -2419,11 +2548,13 @@ export default function DigitalHumanPage() {
               busy={busy}
               statusLabel={statusLabel}
               onUpdateProject={update}
+              onConcatFullVideo={handleConcatFullVideo}
+              isConcatenating={isConcatenating}
               onSelectSegment={id => {
                 setSelectedId(id)
                 const selected = project.segments.find(item => item.id === id)
                 const selectedVersion = selected ? activeDigitalHumanVersion(selected) : undefined
-                setPreview(selectedVersion && !selectedVersion.resultCleared && (selectedVersion.videoUrl || selectedVersion.videoBlob || ACTIVE.includes(selectedVersion.status ?? '')) ? 'result' : 'source')
+                setPreview(selectedVersion && !selectedVersion.resultCleared && (selectedVersion.sourceVideoUrl || selectedVersion.videoUrl || selectedVersion.videoBlob || ACTIVE.includes(selectedVersion.status ?? '')) ? 'result' : 'source')
                 focusScriptEditor()
               }}
               onOpenTaskHistory={() => setPageView('history')}

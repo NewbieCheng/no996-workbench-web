@@ -87,7 +87,7 @@ test('retalk transport uses registered routes, resolved lipsync model, abort sig
   await assert.rejects(submitRetalk({ video: 'blob:local', audio: 'oss://audio', client_request_id: 'stable' }), /公网 URL/)
 })
 
-test('accepted remote task releases submission and persists status without source_url', async () => {
+test('accepted remote task persists status and source_url', async () => {
   installLocks()
   const f = fixture()
   let count = 0
@@ -99,7 +99,11 @@ test('accepted remote task releases submission and persists status without sourc
   assert.equal(f.job.status, 'running')
   assert.equal(f.payload.taskId, 'rt_one')
   assert.equal(f.payload.status, 'QUEUED')
-  assert.equal(f.payload.result.source_url, undefined)
+  assert.equal(f.payload.result.source_url, 'temporary')
+  globalThis.__retalkMock.get = async () => ({ task_id: 'rt_one', status: 'SUCCEEDED', video_url: '/media/video.mp4', created_at: 'now' })
+  await observer.refresh('local')
+  assert.equal(f.payload.result.source_url, 'temporary')
+  assert.equal(f.payload.result.video_url, '/media/video.mp4')
   observer.dispose()
 })
 

@@ -20,25 +20,46 @@ function formatSec(s: number) {
   return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
 }
 
-export function MonitorStudioVideoPlayer({
-  src,
+type MonitorStudioVideoPlayerProps = {
+  /** Legacy single-source callers can continue to use src. */
+  src?: string
+  sourceVideoUrl?: string
+  videoUrl?: string
+  localVideoUrl?: string
+  label: string
+  loop?: boolean
+  toolbar?: MonitorVideoToolbar
+}
+
+import { resolveFallbackSources } from './lib/video-sources'
+export { resolveFallbackSources } from './lib/video-sources'
+
+export function MonitorStudioVideoPlayer({ src, sourceVideoUrl, videoUrl, localVideoUrl, ...props }: MonitorStudioVideoPlayerProps) {
+  const sources = resolveFallbackSources({ src, sourceVideoUrl, videoUrl, localVideoUrl })
+  return <MonitorStudioVideoPlayerContent key={JSON.stringify(sources)} sources={sources} {...props} />
+}
+
+function MonitorStudioVideoPlayerContent({
+  sources,
   label,
   loop = false,
   toolbar,
 }: {
-  src: string
+  sources: string[]
   label: string
   loop?: boolean
   toolbar?: MonitorVideoToolbar
 }) {
+  const [sourceIndex, setSourceIndex] = useState(0)
+  const src = sources[sourceIndex]
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [totalDuration, setTotalDuration] = useState(0)
   const [muted, setMuted] = useState(false)
   const [controlsOpen, setControlsOpen] = useState(false)
-  const [loadError, setLoadError] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(!src)
+  const [loading, setLoading] = useState(Boolean(src))
 
   const syncDurationFromVideo = () => {
     const el = videoRef.current
@@ -48,8 +69,8 @@ export function MonitorStudioVideoPlayer({
   }
 
   useEffect(() => {
-    setLoadError(false)
-    setLoading(true)
+    setLoadError(!src)
+    setLoading(Boolean(src))
     setPlaying(false)
     setCurrentTime(0)
     setTotalDuration(0)
@@ -102,7 +123,10 @@ export function MonitorStudioVideoPlayer({
           preload="auto"
           loop={loop}
           onClick={togglePlay}
-          onError={() => { setLoading(false); setLoadError(true) }}
+          onError={() => {
+            if (sourceIndex + 1 < sources.length) setSourceIndex(sourceIndex + 1)
+            else { setLoading(false); setLoadError(true) }
+          }}
           onWaiting={() => setLoading(true)}
           onTimeUpdate={() => {
             const el = videoRef.current
@@ -143,10 +167,10 @@ export function MonitorStudioVideoPlayer({
             }}
           >
             <span style={{ color: '#ef4444', fontWeight: 600, marginBottom: 4 }}>
-              视频加载失败
+              资源暂时无法播放
             </span>
             <span style={{ fontSize: 11, color: '#9ca3af' }}>
-              媒体资源可能已超过保留期（默认留存7天）或已被清理
+              所有已知成片来源加载未果（可能网络异常或资源已失效），请检查网络或稍后刷新
             </span>
           </div>
         )}
@@ -252,6 +276,23 @@ export function MonitorStudioVideoPlayer({
             {toolbar.hintOpen ? (
               <div className="dh-monitor-video__hint-popover" role="tooltip" onClick={e => e.stopPropagation()}>
                 {toolbar.retentionHint}
+                {sources.length > 0 && (
+                  <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.15)', fontSize: 10, wordBreak: 'break-all' }}>
+                    <p style={{ opacity: 0.8, marginBottom: 2 }}>历史备份地址（点击复制）：</p>
+                    {sources.map((item, idx) => (
+                      <div
+                        key={item}
+                        style={{ cursor: 'pointer', color: '#60a5fa', textDecoration: 'underline', marginBottom: 2 }}
+                        onClick={() => {
+                          void navigator.clipboard.writeText(item)
+                        }}
+                        title="点击复制原始媒体链接"
+                      >
+                        [来源 {idx + 1}] {item.startsWith('blob:') ? '本机缓存视频' : item.split('?')[0]}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
           </div>

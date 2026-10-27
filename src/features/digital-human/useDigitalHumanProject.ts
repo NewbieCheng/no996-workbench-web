@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { apiErrorMessage } from '../../api/client'
-import { resolveMediaUrl, markMediaUrlExpired } from '../../api/media'
+import { resolveMediaUrl } from '../../api/media'
 import { useWorkbenchTaskActions, useWorkbenchTasks, type DigitalHumanRetalkPayload } from '../../services/workbench-tasks'
 import { readDigitalHumanMedia, validateDigitalHumanDuration } from './lib/media'
 import {
@@ -56,19 +56,13 @@ export function useDigitalHumanProject(initialId: string | null) {
         try {
           const response = await fetch(resolveMediaUrl(url), { signal: controller.signal })
           const currentVersion = () => latest.current?.id === project.id && owner.current === userId && latest.current.segments.find(s => s.id === segment.id)?.versions.find(v => v.id === version.id)
-          if (response.status === 404 || response.status === 410) {
-            const current = currentVersion()
-            if (current && current.videoUrl === url && !current.videoBlob && !current.resultCleared) {
-              markMediaUrlExpired(url)
-              patchVersion(segment.id, version.id, { status: 'expired', videoUrl: undefined, error: '成片地址已失效，请刷新任务确认。' })
-            }
-          } else if (response.ok) {
+          if (response.ok) {
             const blob = await response.blob()
             const current = currentVersion()
             if (!controller.signal.aborted && current && current.videoUrl === url && !current.videoBlob && !current.resultCleared) patchVersion(segment.id, version.id, { videoBlob: blob })
           }
-        } catch (error) {
-          if (!controller.signal.aborted) console.warn('成片本地缓存失败，可继续尝试在线播放。', error)
+        } catch {
+          if (!controller.signal.aborted) console.warn('成片本地缓存失败，可继续尝试在线播放。')
         } finally {
           if (downloads.current.get(key) === controller) downloads.current.delete(key)
         }
@@ -151,6 +145,8 @@ export function useDigitalHumanProject(initialId: string | null) {
               taskId: remote?.task_id ?? raw?.taskId ?? version.taskId,
               localTaskId: retalkTask.id,
               videoUrl,
+              sourceVideoUrl:
+                (remote as { source_url?: string } | undefined)?.source_url ?? version.sourceVideoUrl,
               pointsCharged: remote?.points_charged ?? version.pointsCharged,
               error: isFinished ? undefined : (retalkTask.errorMessage || raw?.observationError || remote?.error),
               submissionUncertain: raw?.submissionUncertain,
