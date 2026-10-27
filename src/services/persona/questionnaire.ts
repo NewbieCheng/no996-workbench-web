@@ -106,8 +106,12 @@ export function normalizeQuestionnaire(form: PersonaFormData | null | undefined)
   next.shareWillingness = readEnum(src, 'shareWillingness', SHARE_WILLINGNESS)
   next.accountGoals = readGoals(src)
 
-  if (!next.occupation.trim() && (next.role.trim() || next.industry.trim())) {
+  if (!next.occupation.trim() && next.role.trim() && next.industry.trim() && next.role.trim() !== next.industry.trim()) {
     next.occupation = [next.role, next.industry].filter((part) => part.trim()).join(' · ')
+  } else if (!next.occupation.trim() && next.role.trim()) {
+    next.occupation = next.role.trim()
+  } else if (!next.occupation.trim() && next.industry.trim()) {
+    next.occupation = next.industry.trim()
   }
   if (!next.audiences.trim() && next.targetClients?.trim()) next.audiences = next.targetClients
   if (!next.clientSituations.trim() && next.clientPainPoints?.trim()) {
@@ -120,7 +124,9 @@ export function normalizeQuestionnaire(form: PersonaFormData | null | undefined)
     if (!next.keyword2.trim()) next.keyword2 = words[1] ?? ''
     if (!next.keyword3.trim()) next.keyword3 = words[2] ?? ''
   }
-  if (!next.publicName.trim()) next.publicName = readString(src, 'name')
+  if (!next.publicName.trim() && !('publicName' in src)) {
+    next.publicName = readString(src, 'name')
+  }
   return syncLegacyProjection(next)
 }
 
@@ -180,7 +186,7 @@ export function syncLegacyProjection(form: PersonaQuestionnaire): PersonaQuestio
   const keywords = [form.keyword1, form.keyword2, form.keyword3].map((item) => item.trim()).filter(Boolean)
   return {
     ...form,
-    role: form.role.trim() || form.occupation.trim() || form.publicName.trim(),
+    role: form.role.trim() || form.occupation.trim(),
     industry: form.industry.trim() || form.occupation.trim(),
     primaryBusiness: form.primaryBusiness.trim() || form.products.trim(),
     targetClients: form.targetClients?.trim() || form.audiences.trim(),
@@ -204,6 +210,25 @@ export function projectLegacyUserForm(form: PersonaFormData | null | undefined):
     desiredImage: q.desiredImage,
     additionalInfo: q.additionalInfo,
   }
+}
+
+/** 简易版 7 字段一键继承到高级版 25 项问卷 */
+export function inheritSimpleToAdvanced(
+  simpleForm: Partial<UserProfileFormData> | null | undefined,
+  existingAdvanced?: Partial<PersonaQuestionnaire> | null,
+): PersonaQuestionnaire {
+  const normalizedSimple = normalizeQuestionnaire(simpleForm as PersonaFormData)
+  if (!existingAdvanced) return normalizedSimple
+  const result = { ...existingAdvanced } as PersonaQuestionnaire
+  for (const key of STRING_KEYS) {
+    const existingValue = result[key]
+    const simpleValue = normalizedSimple[key]
+    if (typeof existingValue !== 'string' || typeof simpleValue !== 'string') continue
+    if (!existingValue.trim() && simpleValue.trim()) {
+      result[key] = simpleValue as never
+    }
+  }
+  return normalizeQuestionnaire(result)
 }
 
 export function isQuestionnaireEmpty(form: PersonaQuestionnaire): boolean {

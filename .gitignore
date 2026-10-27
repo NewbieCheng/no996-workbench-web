@@ -27,6 +27,8 @@ deploy/artifact.sha256
 .verify/digital-human-*.tsx
 .verify/digital-human-*.html
 .verify/ip-video-*.txt
+# 整目录的核验批次（截图、构建快照、一次性检查脚本）同样不入库。
+.verify/*/
 
 # Editor directories and files
 .vscode/*

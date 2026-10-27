@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, CircleOff, UserCheck } from 'lucide-react'
+import { ChevronDown, CircleOff, Plus, UserCheck } from 'lucide-react'
 import { getActivePersona, listPersonas, type PersonaRecord, type SavedPersona } from '../../services/persona'
 
 /**
@@ -114,14 +114,27 @@ export function PersonaBinding({ options, value, onChange }: PersonaBindingProps
                       name: p.name,
                       summary: p.summary || p.name,
                       content: p.content,
+                      mode: 'mode' in p ? p.mode : undefined,
                     }
                     if (!controlled) setLocalBound(next)
                     onChange(next)
                     setOpen(false)
                   }}
                 >
-                  <span className="persona-injection__item-name">
-                    {p.name.length > 6 ? `${p.name.slice(0, 5)}…` : p.name}
+                  <span className="persona-injection__item-name-row">
+                    <span className="persona-injection__item-name">
+                      {p.name.length > 6 ? `${p.name.slice(0, 5)}…` : p.name}
+                    </span>
+                    {('mode' in p && p.mode === 'advanced') ? (
+                      <span className="persona-injection__badge persona-injection__badge--advanced" title="高级版">
+                        <Plus className="size-2.5 shrink-0" aria-hidden="true" />
+                        <span>高级版</span>
+                      </span>
+                    ) : (
+                      <span className="persona-injection__badge persona-injection__badge--simple" title="简易版">
+                        简易版
+                      </span>
+                    )}
                   </span>
                 </button>
               ))}

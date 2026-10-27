@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { UserCheck } from 'lucide-react'
+import { Plus, UserCheck } from 'lucide-react'
 import {
   listPersonaOptions,
   personaInjectionParts,
@@ -50,6 +50,7 @@ function toOption(record: PersonaRecord): SavedPersona {
     content: record.content,
     id: record.id,
     hint: personaMenuHint(record),
+    mode: record.mode ?? 'simple',
   }
 }
 
@@ -66,8 +67,13 @@ export function usePersonaInjection(): PersonaInjectionState {
         const { records: found, activeId } = await listPersonaOptions()
         if (!alive) return
         setRecords(found)
-        // 默认选中启用档；没有启用档就选最近更新的一档（仓储已倒序）
-        setSelectedId(activeId)
+        // 消费端默认引用简易版（低 Token 且满足快速运行后续流程）；优先找生效的简易版，支持自主切换为高级版
+        let targetId = activeId
+        if (!targetId && found.length > 0) {
+          const simpleRecord = found.find((r) => r.isActive && r.mode !== 'advanced') || found.find((r) => r.mode !== 'advanced')
+          targetId = (simpleRecord || found[0])?.id ?? null
+        }
+        setSelectedId(targetId)
       } catch {
         /* 人设是可选增强：读取失败不影响生成，只是不注入 */
       } finally {
@@ -215,7 +221,19 @@ export function PersonaInjectionToggle({ state, className }: PersonaInjectionTog
                     setOpen(false)
                   }}
                 >
-                  <span className="persona-injection__item-name">{p.name}</span>
+                  <span className="persona-injection__item-name-row">
+                    <span className="persona-injection__item-name">{p.name}</span>
+                    {p.mode === 'advanced' ? (
+                      <span className="persona-injection__badge persona-injection__badge--advanced" title="高级版">
+                        <Plus className="size-2.5 shrink-0" aria-hidden="true" />
+                        <span>高级版</span>
+                      </span>
+                    ) : (
+                      <span className="persona-injection__badge persona-injection__badge--simple" title="简易版">
+                        简易版
+                      </span>
+                    )}
+                  </span>
                   {p.hint ? <span className="persona-injection__item-hint">{p.hint}</span> : null}
                 </button>
               ))}

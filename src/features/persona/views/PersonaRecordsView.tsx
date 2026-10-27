@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@no996/ui/card'
 import { DataTable, type DataColumn } from '@no996/ui/data-table'
 import { IconActionButton } from '@no996/ui/IconActionButton'
 import { Input } from '@no996/ui/input'
-import { CheckIcon, EyeIcon, PencilIcon, StarIcon, XIcon } from 'lucide-react'
+import { CheckIcon, EyeIcon, PencilIcon, Plus, StarIcon, XIcon } from 'lucide-react'
 import { PACKAGING_LABELS } from '../lib/account-card'
 import { normalizeQuestionnaire } from '../../../services/persona/questionnaire'
 import type { PersonaRecord } from '../../../services/persona'
@@ -32,6 +32,22 @@ function displaySummary(record: PersonaRecord, fallback: string): string {
 function displayName(record: PersonaRecord): string {
   const q = normalizeQuestionnaire(record.formData)
   return q.publicName.trim() || record.name
+}
+
+function renderModeBadge(mode?: 'simple' | 'advanced') {
+  if (mode === 'advanced') {
+    return (
+      <Badge variant="default" className="persona-badge--advanced shrink-0 inline-flex items-center gap-1 font-medium">
+        <Plus className="size-3 shrink-0" aria-hidden="true" />
+        <span>高级版</span>
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="persona-badge--simple shrink-0 text-muted-foreground font-normal">
+      简易版
+    </Badge>
+  )
 }
 
 export function PersonaRecordsView({
@@ -164,6 +180,7 @@ export function PersonaRecordsView({
           return (
             <span className="persona-records__name-cell">
               <span className="truncate">{record.name}</span>
+              {renderModeBadge(record.mode)}
               {record.isActive ? (
                 <Badge variant="secondary" className="shrink-0">{t('recordsDefault')}</Badge>
               ) : null}
@@ -203,6 +220,7 @@ export function PersonaRecordsView({
       <Card key={record.id} className="persona-record-card">
         <CardHeader className="persona-record-card__header">
           <div className="persona-record-card__badges">
+            {renderModeBadge(record.mode)}
             {record.isActive ? <Badge>{t('recordsDefault')}</Badge> : null}
             <span>{new Date(record.updatedAt).toLocaleDateString()}</span>
           </div>

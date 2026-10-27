@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  inheritSimpleToAdvanced,
   isQuestionnaireEmpty,
   missingRequiredQuestionnaireKeys,
   normalizeQuestionnaire,
@@ -87,4 +88,54 @@ test('required keys include paid status and three keywords', () => {
   assert.ok(missing.includes('paidStatus'))
   assert.ok(missing.includes('keyword3'))
   assert.ok(missing.includes('accountGoals'))
+})
+
+test('inheritSimpleToAdvanced inherits seven fields into questionnaire without overriding existing values', () => {
+  const simple = {
+    industry: '心理咨询',
+    role: '心理咨询师',
+    primaryBusiness: '一对一个案咨询',
+    targetClients: '职场焦虑人群',
+    clientPainPoints: '情绪内耗严重',
+    desiredImage: '温暖、专业、治愈',
+    additionalInfo: '10年咨询经验',
+  }
+  const inherited = inheritSimpleToAdvanced(simple)
+  assert.equal(inherited.industry, '心理咨询')
+  assert.equal(inherited.role, '心理咨询师')
+  assert.equal(inherited.occupation, '心理咨询师 · 心理咨询')
+  assert.equal(inherited.products, '一对一个案咨询')
+  assert.equal(inherited.audiences, '职场焦虑人群')
+  assert.equal(inherited.clientSituations, '情绪内耗严重')
+  assert.equal(inherited.keyword1, '温暖')
+  assert.equal(inherited.keyword2, '专业')
+  assert.equal(inherited.keyword3, '治愈')
+
+  // 保留已填写字段
+  const existing = {
+    ...EMPTY_QUESTIONNAIRE,
+    publicName: '张老师',
+    occupation: '资深督导',
+  }
+  const merged = inheritSimpleToAdvanced(simple, existing)
+  assert.equal(merged.publicName, '张老师')
+  assert.equal(merged.occupation, '资深督导')
+  assert.equal(merged.products, '一对一个案咨询')
+})
+
+test('typing publicName does not pollute occupation and allows clearing', () => {
+  const form = normalizeQuestionnaire({
+    ...EMPTY_QUESTIONNAIRE,
+    publicName: '222222',
+  })
+  assert.equal(form.publicName, '222222')
+  assert.equal(form.occupation, '', 'occupation must remain empty when only publicName is set')
+  assert.equal(form.role, '', 'role must remain empty when only publicName is set')
+
+  // 清空 publicName 也能正常保持为空，不会被 name 重填或删不干净
+  const cleared = normalizeQuestionnaire({
+    ...form,
+    publicName: '',
+  })
+  assert.equal(cleared.publicName, '', 'clearing publicName should leave it empty')
 })

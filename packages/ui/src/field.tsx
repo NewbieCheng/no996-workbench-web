@@ -115,11 +115,11 @@ function FieldLabel({
       {...props}
     >
       {required ? (
-        <span className="inline-flex min-w-0 flex-wrap items-baseline gap-0">
+        <span className="inline">
           {children}
           <span
             data-slot="field-required"
-            className="text-destructive ms-0.5 text-[0.7em] font-semibold leading-none translate-y-[-0.12em]"
+            className="text-destructive ms-0.5 inline-block text-[0.7em] font-semibold leading-none translate-y-[-0.12em]"
             aria-hidden="true"
           >
             *

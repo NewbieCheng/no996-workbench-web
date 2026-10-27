@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChevronDownIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@no996/ui/button'
@@ -107,6 +107,7 @@ export function PersonaQuestionnaireView({
 }: Props) {
   const { t } = useTranslation('persona')
   const [form, setForm] = useState<PersonaQuestionnaire>(() => normalizeQuestionnaire(initialData))
+  const lastEmittedRef = useRef<PersonaQuestionnaire | null>(null)
   const [active, setActive] = useState(Math.min(Math.max(initialStep, 0), 3))
   const [errors, setErrors] = useState<Partial<Record<keyof PersonaQuestionnaire, string>>>({})
   const [attachments, setAttachments] = useState<Record<AttachmentSlot, AttachmentUploaderItem[]>>({
@@ -117,6 +118,8 @@ export function PersonaQuestionnaireView({
   })
 
   useEffect(() => {
+    // 忽略组件自身刚发出的状态回传，避免输入打字时被重置覆盖、删不干净
+    if (lastEmittedRef.current && initialData === lastEmittedRef.current) return
     setForm(normalizeQuestionnaire(initialData))
   }, [initialData])
 
@@ -136,6 +139,7 @@ export function PersonaQuestionnaireView({
     if (!import.meta.env.DEV) return
     void import('../dev/dev-fixtures.ts').then(({ DEV_QUESTIONNAIRE_FIXTURE }) => {
       const next = normalizeQuestionnaire(DEV_QUESTIONNAIRE_FIXTURE)
+      lastEmittedRef.current = next
       setForm(next)
       onFormChange?.(next)
     })
@@ -143,7 +147,8 @@ export function PersonaQuestionnaireView({
 
   function patch<K extends keyof PersonaQuestionnaire>(key: K, value: PersonaQuestionnaire[K]) {
     setForm((prev) => {
-      const next = syncLegacyProjection({ ...prev, [key]: value })
+      const next = { ...prev, [key]: value }
+      lastEmittedRef.current = next
       onFormChange?.(next)
       return next
     })
@@ -228,7 +233,8 @@ export function PersonaQuestionnaireView({
       goOnLastStepOnly
       onGo={() => {
         if (!validateAll()) return
-        onSubmit(form, [...attachments.resume, ...attachments.cases, ...attachments.proof, ...attachments.products])
+        const prepared = syncLegacyProjection(form)
+        onSubmit(prepared, [...attachments.resume, ...attachments.cases, ...attachments.proof, ...attachments.products])
       }}
       backLabel={t('form.back')}
       nextLabel={t('form.next')}
@@ -240,7 +246,7 @@ export function PersonaQuestionnaireView({
               {t('form.collapse')}
             </Button>
           ) : null}
-          <Button type="button" variant="outline" size="sm" onClick={() => onSaveDraft(form)}>
+          <Button type="button" variant="outline" size="sm" onClick={() => onSaveDraft(syncLegacyProjection(form))}>
             {t('questionnaire.saveDraft')}
           </Button>
           {import.meta.env.DEV ? (

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@no996/ui/button'
 import { ColumnDivider } from '@no996/ui/column-divider'
-import { SparklesIcon } from 'lucide-react'
+import { Plus, SparklesIcon } from 'lucide-react'
 import { WorkbenchPageViewTabs, type WorkbenchPageView } from '../../components/WorkbenchPageViewTabs'
 import {
   Notice,
@@ -17,11 +17,14 @@ import { PERSONA_FLOW_ID, PERSONA_STAGES } from './agent/persona-flow'
 import {
   createPersona,
   EMPTY_QUESTIONNAIRE,
+  inheritSimpleToAdvanced,
   listPersonas,
   normalizeQuestionnaire,
+  projectLegacyUserForm,
   renamePersona,
   setActivePersona,
   upsertPersona,
+  type PersonaMode,
   type PersonaQuestionnaire,
   type PersonaRecord,
 } from '../../services/persona'
@@ -34,6 +37,7 @@ import {
   useWorkbenchTasks,
   type PersonaGeneratePayload,
 } from '../../services/workbench-tasks'
+import { ProfileFormView } from './views/ProfileFormView'
 import { PersonaQuestionnaireView } from './views/PersonaQuestionnaireView'
 import { PersonaWorkspacePreview } from './views/PersonaWorkspacePreview'
 import { PersonaSelectView } from './views/PersonaSelectView'
@@ -74,6 +78,7 @@ export default function PersonaPage() {
   const selectedIdRef = useRef<string | null>(null)
   selectedIdRef.current = selected?.id ?? null
   const [personaRecords, setPersonaRecords] = useState<PersonaRecord[]>([])
+  const [personaMode, setPersonaMode] = useState<PersonaMode>('simple')
   const [phase, setPhase] = useState<Phase>('questionnaire')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -144,6 +149,7 @@ export default function PersonaPage() {
     setUserForm(pick.formData && 'occupation' in pick.formData
       ? normalizeQuestionnaire(pick.formData)
       : questionnaireFromLegacyContent(pick.formData, pick.legacyContent ?? pick.content))
+    setPersonaMode(pick.mode ?? (pick.candidatesMarkdown ? 'advanced' : 'simple'))
     setPhase(phaseOf(pick))
     setPreviewCollapsed(false)
     setQuestionnaireStep(pick.questionnaireStep ?? 0)
@@ -169,6 +175,7 @@ export default function PersonaPage() {
     setFeedback('')
     setSelected(null)
     setUserForm({ ...EMPTY_QUESTIONNAIRE })
+    setPersonaMode('simple')
     setPhase('questionnaire')
     setFormCollapsed(false)
     setPreviewCollapsed(false)
@@ -213,11 +220,12 @@ export default function PersonaPage() {
   }, [personaTasks, refresh, selected, traceTaskId, t])
 
   async function persistDraft(formData: PersonaQuestionnaire, extra: Partial<PersonaRecord> = {}) {
-    const target = selected ?? (await createPersona(KIND, formData.publicName.trim() || t('defaultName')))
+    const target = selected ?? (await createPersona(KIND, formData.publicName.trim() || formData.role.trim() || t('defaultName')))
     const saved = await upsertPersona({
       ...target,
       ...extra,
-      name: formData.publicName.trim() || target.name,
+      name: formData.publicName.trim() || formData.role.trim() || target.name,
+      mode: extra.mode ?? target.mode ?? personaMode,
       formData,
       draftSavedAt: new Date().toISOString(),
       questionnaireStep: extra.questionnaireStep ?? target.questionnaireStep,
@@ -227,11 +235,15 @@ export default function PersonaPage() {
     return saved
   }
 
-  async function enqueueGeneration(formData: PersonaQuestionnaire, attachmentItems?: AttachmentUploaderItem[]) {
+  async function enqueueGeneration(
+    formData: PersonaQuestionnaire,
+    attachmentItems?: AttachmentUploaderItem[],
+    mode: PersonaMode = personaMode,
+  ) {
     setError('')
     setFeedback('')
     try {
-      const persisted = await persistDraft(formData, { questionnaireStep })
+      const persisted = await persistDraft(formData, { questionnaireStep, mode })
       const chatAttachments = attachmentItems?.length
         ? await prepareAttachmentsFromItems(attachmentItems)
         : undefined
@@ -249,6 +261,27 @@ export default function PersonaPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : t('errorGenerateFailed'))
     }
+  }
+
+  const handleSwitchMode = (nextMode: PersonaMode) => {
+    if (nextMode === personaMode) return
+    if (nextMode === 'advanced') {
+      const simple = projectLegacyUserForm(userForm)
+      const hasSimpleContent = Object.values(simple).some((v) => Boolean(v?.trim()))
+      if (hasSimpleContent) {
+        const inherited = inheritSimpleToAdvanced(simple, userForm)
+        setUserForm(inherited)
+        setFeedback('已将简易版填写内容继承至高级版')
+      }
+    }
+    setPersonaMode(nextMode)
+  }
+
+  const handleInheritFromSimple = () => {
+    const simple = projectLegacyUserForm(userForm)
+    const inherited = inheritSimpleToAdvanced(simple, userForm)
+    setUserForm(inherited)
+    setFeedback('已将简易版数据同步继承至高级版')
   }
 
   async function retryTraceGeneration() {
@@ -561,29 +594,99 @@ export default function PersonaPage() {
 
             <div className="persona-workspace__main">
               {showQuestionnaire ? (
-                <PersonaQuestionnaireView
-                  key={selected?.id ?? 'new-persona'}
-                  initialData={userForm}
-                  initialStep={questionnaireStep}
-                  submitBusy={personaBusy || busy}
-                  onFormChange={setUserForm}
-                  onStepChange={setQuestionnaireStep}
-                  canCollapse={Boolean(selected)}
-                  onCollapse={() => {
-                    setFormCollapsed(true)
-                    setPhase(phaseOf(selected))
-                  }}
-                  onSaveDraft={(data) => {
-                    setUserForm(data)
-                    void persistDraft(data, { questionnaireStep: questionnaireStep })
-                      .then(() => setFeedback(t('questionnaire.draftSaved')))
-                      .catch((e) => setError(e instanceof Error ? e.message : t('errorSaveFailed')))
-                  }}
-                  onSubmit={(data, items) => {
-                    setUserForm(data)
-                    void enqueueGeneration(data, items)
-                  }}
-                />
+                <div className="persona-form-container">
+                  <div className="persona-mode-tabs">
+                    <div className="persona-mode-toggle" role="tablist" aria-label="人设模式选择">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={personaMode === 'simple'}
+                        className={`persona-mode-toggle__item ${personaMode === 'simple' ? 'persona-mode-toggle__item--active' : ''}`}
+                        onClick={() => handleSwitchMode('simple')}
+                      >
+                        简易版
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={personaMode === 'advanced'}
+                        className={`persona-mode-toggle__item persona-mode-toggle__item--advanced ${personaMode === 'advanced' ? 'persona-mode-toggle__item--active' : ''}`}
+                        onClick={() => handleSwitchMode('advanced')}
+                      >
+                        <Plus className="size-3 shrink-0" aria-hidden="true" />
+                        <span>高级版</span>
+                      </button>
+                    </div>
+                    {personaMode === 'advanced' ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        className="persona-inherit-btn"
+                        onClick={handleInheritFromSimple}
+                        title="将简易版中填写的行业、身份、核心业务等继承到高级问卷"
+                      >
+                        从简易版继承数据
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  {personaMode === 'simple' ? (
+                    <ProfileFormView
+                      key={`simple-${selected?.id ?? 'new-persona'}`}
+                      isConfigured={Boolean(selected)}
+                      initialData={projectLegacyUserForm(userForm)}
+                      submitBusy={personaBusy || busy}
+                      onFormChange={(simpleData) => {
+                        setUserForm((prev) => ({
+                          ...prev,
+                          ...simpleData,
+                        }))
+                      }}
+                      canCollapse={Boolean(selected)}
+                      onToggleCollapse={() => {
+                        setFormCollapsed(true)
+                        setPhase(phaseOf(selected))
+                      }}
+                      onSaveDraft={(simpleData) => {
+                        const full = normalizeQuestionnaire(simpleData)
+                        setUserForm(full)
+                        void persistDraft(full, { mode: 'simple' })
+                          .then(() => setFeedback(t('questionnaire.draftSaved')))
+                          .catch((e) => setError(e instanceof Error ? e.message : t('errorSaveFailed')))
+                      }}
+                      onSubmit={(simpleData, items) => {
+                        const full = normalizeQuestionnaire(simpleData)
+                        setUserForm(full)
+                        void enqueueGeneration(full, items, 'simple')
+                      }}
+                    />
+                  ) : (
+                    <PersonaQuestionnaireView
+                      key={`advanced-${selected?.id ?? 'new-persona'}`}
+                      initialData={userForm}
+                      initialStep={questionnaireStep}
+                      submitBusy={personaBusy || busy}
+                      onFormChange={setUserForm}
+                      onStepChange={setQuestionnaireStep}
+                      canCollapse={Boolean(selected)}
+                      onCollapse={() => {
+                        setFormCollapsed(true)
+                        setPhase(phaseOf(selected))
+                      }}
+                      onSaveDraft={(data) => {
+                        setUserForm(data)
+                        void persistDraft(data, { questionnaireStep: questionnaireStep, mode: 'advanced' })
+                          .then(() => setFeedback(t('questionnaire.draftSaved')))
+                          .catch((e) => setError(e instanceof Error ? e.message : t('errorSaveFailed')))
+                      }}
+                      onSubmit={(data, items) => {
+                        setUserForm(data)
+                        void enqueueGeneration(data, items, 'advanced')
+                      }}
+                    />
+                  )}
+                </div>
               ) : null}
 
               {showSelect ? (
@@ -605,6 +708,10 @@ export default function PersonaPage() {
                 <PersonaMainProfileView
                   markdown={selected?.content || ''}
                   legacyContent={selected?.legacyContent}
+                  personaName={userForm.publicName.trim() || selected?.name}
+                  selectedPositioning={selected?.selectedPositioning}
+                  selectedPackaging={selected?.selectedPackaging}
+                  summary={selected?.summary}
                   isDefault={Boolean(selected?.isActive)}
                   lastSavedAt={selected?.updatedAt}
                   usedMock={tracePayload?.usedMock}

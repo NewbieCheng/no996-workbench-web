@@ -23,6 +23,7 @@ export type {
   PackagingId,
   PaidClientStatus,
   PersonaFormData,
+  PersonaMode,
   PersonaQuestionnaire,
   PersonaRecord,
   PositioningId,
@@ -40,6 +41,7 @@ export {
   summarizeFromContent,
 } from './types'
 export {
+  inheritSimpleToAdvanced,
   isCompanyFormData,
   isQuestionnaireEmpty,
   missingRequiredQuestionnaireKeys,

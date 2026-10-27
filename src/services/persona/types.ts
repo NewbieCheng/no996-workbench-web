@@ -1,4 +1,5 @@
 export type ProfileKind = 'user' | 'company'
+export type PersonaMode = 'simple' | 'advanced'
 
 export type PaidClientStatus = 'yes' | 'none' | 'unsure' | ''
 export type CitePermission = 'public' | 'anonymous' | 'private' | ''
@@ -69,6 +70,7 @@ export type PersonaFormData = PersonaQuestionnaire | CompanyProfileFormData | Us
 export type PersonaRecord = {
   id: string
   kind: ProfileKind
+  mode?: PersonaMode
   name: string
   summary: string
   content: string
@@ -98,6 +100,8 @@ export type SavedPersona = {
   id?: string
   /** 菜单里那一行提示（定位卡片摘要优先） */
   hint?: string
+  /** 模式：简易版或高级版 */
+  mode?: PersonaMode
 }
 
 export const EMPTY_USER_FORM: UserProfileFormData = {

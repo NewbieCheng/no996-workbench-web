@@ -256,6 +256,36 @@
   font-size: 14px;
 }
 
+.persona-injection__item-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.persona-injection__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  border-radius: 4px;
+}
+
+.persona-injection__badge--simple {
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  color: var(--muted-foreground);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.persona-injection__badge--advanced {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  font-weight: 500;
+}
+
 .persona-injection__item-hint {
   color: var(--sl-mute, var(--muted-foreground));
   font-size: 11px;
