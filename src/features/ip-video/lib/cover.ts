@@ -51,13 +51,24 @@ export async function composePhotoCover(photo: Blob, style: CoverStyle, text: st
   return paintCover(photoCoverProject(style, text), photo, width, height)
 }
 export const TALK_COVER_SIZE = 1080
+export type TalkCoverRatio = '1:1' | '3:4' | '9:16'
 
-/** A true 1:1 cover design. It must not reuse the 9:16 canvas and squash it. */
-export function createTalkCoverProject(input: { lookId: string; title: string }): TemplateProject {
+export const TALK_COVER_RATIO_SIZE: Record<TalkCoverRatio, { width: number; height: number; aiSize: string }> = {
+  '1:1': { width: 1080, height: 1080, aiSize: '1024x1024' },
+  '3:4': { width: 1080, height: 1440, aiSize: '1024x1365' },
+  '9:16': { width: 1080, height: 1920, aiSize: '1024x1792' },
+}
+
+/** Cover design at the chosen ratio. Never squash a mismatched canvas. */
+export function createTalkCoverProject(input: { lookId: string; title: string; ratio?: TalkCoverRatio }): TemplateProject {
+  const ratio = input.ratio ?? '3:4'
+  const { width, height } = TALK_COVER_RATIO_SIZE[ratio]
   const project = photoCoverProject(input.lookId, input.title)
-  const design = { width: TALK_COVER_SIZE, height: TALK_COVER_SIZE }
+  const design = { width, height }
   const palette = templatePalette(project.templateId)
   const hasPanel = ['life', 'poster', 'career'].includes(project.templateId)
+  const titleTop = Math.round(height * 0.3)
+  const titleHeight = Math.round(height * 0.42)
   return {
     ...project,
     design,
@@ -65,17 +76,17 @@ export function createTalkCoverProject(input: { lookId: string; title: string })
     captions: [],
     title: {
       ...project.title,
-      x: 90,
-      y: 330,
-      width: 900,
-      height: 460,
-      size: 96,
+      x: Math.round(width * 0.083),
+      y: titleTop,
+      width: Math.round(width * 0.833),
+      height: titleHeight,
+      size: ratio === '1:1' ? 96 : ratio === '3:4' ? 88 : 80,
       align: 'center',
       background: hasPanel ? palette.panel : '',
       enabled: Boolean(input.title.trim()),
     },
-    subtitle: { ...project.subtitle, x: 90, y: 830, width: 900, height: 160, enabled: false },
-    photo: { x: 0, y: 0, width: TALK_COVER_SIZE, height: TALK_COVER_SIZE, focalX: .5, focalY: .5 },
+    subtitle: { ...project.subtitle, x: Math.round(width * 0.083), y: Math.round(height * 0.77), width: Math.round(width * 0.833), height: Math.round(height * 0.12), enabled: false },
+    photo: { x: 0, y: 0, width, height, focalX: .5, focalY: .5 },
   }
 }
 
@@ -95,8 +106,11 @@ export async function composeTalkCoverSquare(input: {
   title: string
   photo?: Blob
   cropMode?: 'cover' | 'contain'
+  ratio?: TalkCoverRatio
 }): Promise<Blob> {
-  return paintCover(createTalkCoverProject(input), input.photo, TALK_COVER_SIZE, TALK_COVER_SIZE, input.cropMode ?? 'cover')
+  const ratio = input.ratio ?? '3:4'
+  const { width, height } = TALK_COVER_RATIO_SIZE[ratio]
+  return paintCover(createTalkCoverProject({ ...input, ratio }), input.photo, width, height, input.cropMode ?? 'cover')
 }
 export function coverTemplateFor(style: CoverStyle): IPVideoTemplate {
   const template = IP_VIDEO_TEMPLATES.find(item => item.id === (style === 'pink' ? 'poster' : style)) ?? IP_VIDEO_TEMPLATES[0]

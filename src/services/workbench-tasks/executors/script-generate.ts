@@ -50,6 +50,7 @@ export async function executeScriptGenerate(
 
   const result = await runScriptFlow({
     config: payload.config,
+    chatAttachments: payload.chatAttachments,
     clients,
     sink,
     signal,
@@ -60,6 +61,9 @@ export async function executeScriptGenerate(
   })
 
   await repo.patchPayload(job.payloadId, result)
+  // 硬校验未通过不再丢稿：任务算成功，但必须把「还有几处要改」写进 meta，
+  // 否则任务中心只会显示「已完成」，用户会以为全部合规。
+  const pendingHits = result.hardCheck?.hits ?? []
   await repo.patchJob(job.id, {
     status: 'succeeded',
     finishedAt: Date.now(),
@@ -72,6 +76,9 @@ export async function executeScriptGenerate(
       fallback: result.fallback ? '1' : '0',
       usedMock: result.usedMock ? '1' : '0',
       retention: String(result.rounds?.at(-1)?.averageRetention ?? ''),
+      hardCheck: pendingHits.length ? '1' : '0',
+      hardCheckCount: String(pendingHits.length),
+      hardCheckLabels: pendingHits.map((hit) => hit.label).slice(0, 3).join('、'),
     },
   })
 }

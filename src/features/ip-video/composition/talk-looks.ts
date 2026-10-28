@@ -30,7 +30,7 @@ function look(id: TalkLookId, captionPresetId: string, composition: TalkComposit
 
 /** Eight finished-video looks. Captions, canvas and framing only — no media, audio, or unregistered shots. */
 export const TALK_LOOKS: readonly TalkLook[] = [
-  look('scroll', 'relay', 'full', 'calm'),
+  look('scroll', 'ink', 'full', 'calm'),
   look('poster', 'bold', 'full', 'lively'),
   look('call', 'headline', 'pip', 'normal'),
   look('career', 'editorial', 'side', 'calm'),

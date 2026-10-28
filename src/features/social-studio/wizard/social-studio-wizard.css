@@ -151,6 +151,190 @@
   background: color-mix(in srgb, var(--card) 55%, transparent);
 }
 
+/* 小红书：未连接扩展时的常驻提醒 */
+.social-studio-wizard-step-search .ssw-extension-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 0.85rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  background:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--primary) 9%, var(--card)) 0%,
+      color-mix(in srgb, var(--card) 90%, var(--background)) 55%,
+      var(--card) 100%
+    );
+}
+
+.social-studio-wizard-step-search .ssw-extension-banner__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.55rem;
+  flex-shrink: 0;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.social-studio-wizard-step-search .ssw-extension-banner__body {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.social-studio-wizard-step-search .ssw-extension-banner__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+.social-studio-wizard-step-search .ssw-extension-banner__desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--muted-foreground) 94%, var(--foreground));
+}
+
+.social-studio-wizard-step-search .ssw-extension-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+/*
+ * 公众号链接导入帮助：Portal 挂在 document.body，不能写在
+ * .social-studio-wizard-step-search 下。
+ */
+.ssw-wechat-link-help__positioner {
+  z-index: 110;
+  outline: none;
+}
+
+.ssw-wechat-link-help {
+  box-sizing: border-box;
+  width: min(calc(100vw - 1.25rem), 21.5rem);
+  padding: 0.75rem 0.8rem 0.7rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background-color: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--foreground) 10%, transparent);
+  outline: none;
+  isolation: isolate;
+  animation: ssw-wechat-link-help-in 150ms ease-out both;
+}
+
+@keyframes ssw-wechat-link-help-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ssw-wechat-link-help {
+    animation: none;
+  }
+}
+
+.ssw-wechat-link-help__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.ssw-wechat-link-help__steps {
+  margin: 0.45rem 0 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, var(--foreground));
+}
+
+.ssw-wechat-link-help__steps strong {
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+.ssw-wechat-link-help__examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.ssw-wechat-link-help__examples-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.ssw-wechat-link-help__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ssw-wechat-link-help__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.32rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--muted) 35%, var(--background));
+  color: var(--foreground);
+  font-size: 0.6875rem;
+  font-weight: 550;
+  line-height: 1.3;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.ssw-wechat-link-help__chip:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--background));
+  color: var(--primary);
+}
+
+.ssw-wechat-link-help__chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ssw-wechat-link-help__chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ssw-wechat-link-help__chip {
+    transition: none;
+  }
+}
+
 .social-studio-wizard-step-search .ssw-body {
   width: 100%;
 }

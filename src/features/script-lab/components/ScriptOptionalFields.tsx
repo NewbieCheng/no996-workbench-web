@@ -1,7 +1,8 @@
-import { useRef, useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { type ScriptConfig, type ScriptMode } from '../agent/types'
+import { materialsForPurpose } from '../agent/purposes'
 import {
   polishScriptOptionalField,
   type ScriptOptionalFieldId,
@@ -18,6 +19,8 @@ export type ScriptOptionalFieldsProps = {
   mode: ScriptMode
   config: ScriptConfig
   onChange: (patch: Partial<ScriptConfig>) => void
+  /** 参考资料上传（页面持有状态，这里只负责版位） */
+  attachmentSlot?: ReactNode
 }
 
 function FieldBadge({ filled, emptyLabel }: { filled: boolean; emptyLabel: string }) {
@@ -40,6 +43,7 @@ export function ScriptOptionalFields({
   mode,
   config,
   onChange,
+  attachmentSlot,
 }: ScriptOptionalFieldsProps) {
   const { t } = useTranslation('scriptLab')
   const intenDesc = [t('form.softHint'), t('form.balanceHint'), t('form.strongHint')]
@@ -228,6 +232,58 @@ export function ScriptOptionalFields({
         </div>
       </div>
 
+      {/* 按创作目的收集的关键事实：这些是模型不能替你编的内容 */}
+      {isVideo && config.purpose ? (
+        <div className="sl-wiz-blk">
+          <div className="sl-wiz-blk__head">
+            <h3>{t('materials.heading')}</h3>
+            <span>{t('materials.hint')}</span>
+          </div>
+          <div className="sl-wiz-fgrid">
+            {materialsForPurpose(config.purpose).map((field) => {
+              const value = config.materials?.[field.key] ?? ''
+              return (
+                <label
+                  key={field.key}
+                  className={`sl-wiz-fld${field.multiline ? ' sl-wiz-fld--full' : ''}`}
+                >
+                  <span className="sl-wiz-fld__label">
+                    {field.label}
+                    {field.required ? <em className="sl-wiz-fld__req" aria-hidden="true">*</em> : null}
+                    <FieldBadge
+                      filled={Boolean(value.trim())}
+                      emptyLabel={field.required ? t('materials.required') : t('form.notRequired')}
+                    />
+                  </span>
+                  {field.multiline ? (
+                    <textarea
+                      className="sl-wiz-txt"
+                      rows={3}
+                      maxLength={field.maxLength ?? 600}
+                      value={value}
+                      placeholder={field.placeholder}
+                      onChange={(e) =>
+                        onChange({ materials: { ...(config.materials ?? {}), [field.key]: e.target.value } })
+                      }
+                    />
+                  ) : (
+                    <input
+                      className="sl-wiz-inp"
+                      maxLength={field.maxLength ?? 80}
+                      value={value}
+                      placeholder={field.placeholder}
+                      onChange={(e) =>
+                        onChange({ materials: { ...(config.materials ?? {}), [field.key]: e.target.value } })
+                      }
+                    />
+                  )}
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="sl-wiz-blk">
         <div className="sl-wiz-blk__head">
           <h3>{t('form.style')}</h3>
@@ -363,6 +419,7 @@ export function ScriptOptionalFields({
             />
           </label>
         </div>
+        {attachmentSlot ? <div className="sl-wiz-ref__attachments">{attachmentSlot}</div> : null}
       </details>
     </div>
   )

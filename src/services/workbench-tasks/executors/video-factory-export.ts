@@ -81,14 +81,13 @@ export async function executeVideoFactoryExport(
 
     checkCancelled()
 
-    const buf = await blob.arrayBuffer()
-    await repo.putBlob({ id: job.id, mime: blob.type || 'video/mp4', data: buf })
+    await repo.putBlob({ id: job.id, mime: blob.type || 'video/mp4', data: blob })
     await repo.patchPayload(job.payloadId, { ...payload, fileName })
     await repo.patchJob(job.id, {
       status: 'succeeded',
       finishedAt: Date.now(),
       blobId: job.id,
-      audioByteLength: buf.byteLength,
+      audioByteLength: blob.size,
       meta: {
         progress: '100',
         stage: '导出完成',
@@ -96,7 +95,7 @@ export async function executeVideoFactoryExport(
         source: payload.source,
         composition: payload.composition === 'offline' ? 'offline' : 'preview',
         fileName,
-        byteLength: String(buf.byteLength),
+        byteLength: String(blob.size),
       },
     })
     await repo.pruneForUser(job.ownerUserId)

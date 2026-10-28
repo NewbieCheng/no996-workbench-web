@@ -8,6 +8,7 @@
  */
 import type { LibraryHit, ScriptConfig, ScriptGoal, ScriptMode } from './types.ts'
 import { resolveSegmentPurpose } from './semantic-rules.ts'
+import { purposeOfStructure, structureById, type PurposeStructure } from './purposes/index.ts'
 
 export type LibraryProvider = {
   search(query: {
@@ -16,14 +17,13 @@ export type LibraryProvider = {
     durationSec: number
     /** 用户自定义结构（命中时优先级最高） */
     customStructure?: string
+    /** 四类目的的结构 id（视频） */
+    presetId?: string
   }): LibraryHit[]
 }
 
-/** 兜底公式键：无法识别目标时用它，避免返回空结构 */
-const FALLBACK_GOAL: ScriptGoal = '获客'
-
-/** 视频：按目标选公式，各段 share 之和为 1 */
-const VIDEO_FORMULAS: Record<ScriptGoal, LibraryHit> = {
+/** 视频：按目标选公式，各段 share 之和为 1（旧目标只服务历史任务与兜底） */
+const VIDEO_FORMULAS: Partial<Record<ScriptGoal, LibraryHit>> = {
   获客: {
     id: 'video-acquisition',
     formulaName: '痛点场景 + 身份共情 + 干货解法 + 留资引导',
@@ -73,8 +73,11 @@ const LIVE_FORMULA: LibraryHit = {
   ],
 }
 
-/** 视频公式拆解说明（结构行展开体用） */
-export const VIDEO_STRUCTURE_DESC: Record<ScriptGoal, string> = {
+/** 旧目标全部缺失时的兜底（新视频任务不会走到这里） */
+const FALLBACK_VIDEO_HIT = VIDEO_FORMULAS['获客'] as LibraryHit
+
+/** 视频公式拆解说明（结构行展开体用，旧目标保留） */
+export const VIDEO_STRUCTURE_DESC: Partial<Record<ScriptGoal, string>> = {
   获客: '从具体生活痛点切入，给出干货解法，引导评论领取或咨询。',
   流量: '以生活日常或反常识切入，靠冲突反转引发完播与评论。',
   成交: '以真实生活场景与实际使用过程切入，用可核验证据展现产品价值，给出与目标一致的行动。',
@@ -91,7 +94,18 @@ export const LIVE_CHAPTER_PURPOSES = LIVE_FORMULA.segments.map((s) => ({
 
 /** 视频三种目标对应的公式名（结构行按钮文案） */
 export function videoFormulaName(goal: ScriptGoal): string {
-  return VIDEO_FORMULAS[goal]?.formulaName ?? VIDEO_FORMULAS[FALLBACK_GOAL].formulaName
+  return VIDEO_FORMULAS[goal]?.formulaName ?? FALLBACK_VIDEO_HIT.formulaName
+}
+
+/** 把四类目的结构定义转成宿主锁定用的 LibraryHit（段名/职责/占比全部来自 Skill 定义） */
+export function hitFromPurposeStructure(structure: PurposeStructure): LibraryHit {
+  const purpose = purposeOfStructure(structure.id)
+  return {
+    id: structure.id,
+    formulaName: structure.name,
+    source: `内置脚本库 · ${purpose?.label ?? '叙事结构'}`,
+    segments: structure.segments.map((segment) => ({ ...segment })),
+  }
 }
 
 export type StructurePresetOption = {
@@ -208,8 +222,11 @@ export function structureCustomText(config: {
       const livePreset = livePresetById(structure.presetId)
       if (livePreset) return livePreset.segmentLabels.join(' + ')
     }
+    // 四类目的的 16 个结构：返回定义里的段名，供预览与提示词使用
+    const purposeStructure = structureById(structure.presetId)
+    if (purposeStructure) return purposeStructure.segments.map((segment) => segment.name).join(' + ')
     if (structure.presetId === 'goal-auto' && mode === 'video') {
-      return VIDEO_FORMULAS[goal]?.formulaName ?? VIDEO_FORMULAS[FALLBACK_GOAL].formulaName
+      return VIDEO_FORMULAS[goal]?.formulaName ?? FALLBACK_VIDEO_HIT.formulaName
     }
     const preset = presetById(structure.presetId)
     if (preset) return preset.segmentLabels.join(' + ')
@@ -218,49 +235,98 @@ export function structureCustomText(config: {
 }
 
 /**
- * 内置检索：按模式与目标返回结构。
- * 用户自定义结构优先；返回结果始终带有 libraryIds，保证可追溯。
+ * 内置检索：按模式、目的与结构返回结构定义。
+ * 用户选定的内置结构优先（段名/职责/占比全部由宿主锁定），其次是自定义分段。
  */
 export const builtinLibraryProvider: LibraryProvider = {
-  search({ mode, goal, customStructure }) {
-    if (customStructure?.trim()) {
-      const names = customStructure
-        .split(/[+＋,，、→>-]+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-      const maxSegments = mode === 'live' ? 10 : 7
-      if (names.length >= 2 && names.length <= maxSegments) {
-        // 预设结构被展开成自定义字符串后，仍复用其份额与来源标签。
-        const matchedPreset = [...VIDEO_STRUCTURE_PRESETS, ...LIVE_STRUCTURE_PRESETS].find(
-          (p) => p.segmentLabels.join(' + ') === customStructure.trim(),
-        )
-        const total = names.length
-        const segments = names.map((name, i) => {
-          const semantic = resolveSegmentPurpose(name, i, total, mode)
-          const presetShare = matchedPreset?.shares?.[i]
-          return {
-            name,
-            purpose: semantic.purpose,
-            share: presetShare ?? semantic.share,
-          }
-        })
-        const shareSum = segments.reduce((sum, segment) => sum + segment.share, 0)
+  search({ mode, goal, presetId, customStructure }) {
+    if (mode === 'live') {
+      if (customStructure?.trim()) {
+        const names = splitStructureNames(customStructure)
+        if (names.length >= 2 && names.length <= 10) return [customHit(names, 'live', customStructure)]
+      }
+      const livePreset = presetId ? livePresetById(presetId) : undefined
+      if (livePreset) {
         return [
           {
-            id: 'custom-structure',
-            formulaName: customStructure.trim(),
-            source: matchedPreset ? '内置脚本库 · ' + matchedPreset.label : '用户自定义结构',
-            segments: shareSum > 0
-              ? segments.map((segment) => ({ ...segment, share: segment.share / shareSum }))
-              : segments.map((segment) => ({ ...segment, share: 1 / segments.length })),
+            ...LIVE_FORMULA,
+            id: livePreset.id,
+            formulaName: livePreset.label,
+            segments: LIVE_FORMULA.segments.map((segment, index) => ({
+              ...segment,
+              name: livePreset.segmentLabels[index] ?? segment.name,
+              share: livePreset.shares?.[index] ?? segment.share,
+            })),
           },
         ]
       }
+      return [LIVE_FORMULA]
     }
-    if (mode === 'live') return [LIVE_FORMULA]
-    const hit = VIDEO_FORMULAS[goal] ?? VIDEO_FORMULAS[FALLBACK_GOAL]
+
+    // 视频：用户选定的结构优先（本轮的核心约束：模型不再选结构）
+    const purposeStructure = structureById(presetId)
+    if (purposeStructure) return [hitFromPurposeStructure(purposeStructure)]
+
+    const legacyPreset = presetId ? presetById(presetId) : undefined
+    if (legacyPreset) {
+      const total = legacyPreset.segmentLabels.length
+      const segments = legacyPreset.segmentLabels.map((name, index) => {
+        const semantic = resolveSegmentPurpose(name, index, total, 'video')
+        return {
+          name,
+          purpose: semantic.purpose,
+          share: legacyPreset.shares?.[index] ?? semantic.share,
+        }
+      })
+      return [
+        {
+          id: legacyPreset.id,
+          formulaName: legacyPreset.label,
+          source: '内置脚本库 · ' + legacyPreset.label,
+          segments,
+        },
+      ]
+    }
+
+    if (customStructure?.trim()) {
+      const names = splitStructureNames(customStructure)
+      if (names.length >= 2 && names.length <= 7) return [customHit(names, 'video', customStructure)]
+    }
+
+    const hit = VIDEO_FORMULAS[goal] ?? FALLBACK_VIDEO_HIT
     return [hit]
   },
+}
+
+function splitStructureNames(text: string): string[] {
+  return text
+    .split(/[+＋,，、→>-]+/)
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+}
+
+function customHit(names: string[], mode: ScriptMode, text: string): LibraryHit {
+  const matchedPreset = [...VIDEO_STRUCTURE_PRESETS, ...LIVE_STRUCTURE_PRESETS].find(
+    (preset) => preset.segmentLabels.join(' + ') === text.trim(),
+  )
+  const total = names.length
+  const segments = names.map((name, index) => {
+    const semantic = resolveSegmentPurpose(name, index, total, mode)
+    return {
+      name,
+      purpose: semantic.purpose,
+      share: matchedPreset?.shares?.[index] ?? semantic.share,
+    }
+  })
+  const shareSum = segments.reduce((sum, segment) => sum + segment.share, 0)
+  return {
+    id: 'custom-structure',
+    formulaName: text.trim(),
+    source: matchedPreset ? '内置脚本库 · ' + matchedPreset.label : '用户自定义结构',
+    segments: shareSum > 0
+      ? segments.map((segment) => ({ ...segment, share: segment.share / shareSum }))
+      : segments.map((segment) => ({ ...segment, share: 1 / segments.length })),
+  }
 }
 
 /** 当前生效的检索实现（后端就绪后在此替换） */

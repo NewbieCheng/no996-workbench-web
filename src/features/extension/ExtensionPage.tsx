@@ -32,6 +32,11 @@ import { Notice, Page, WorkbenchToolPageHeaderTools, WorkbenchPageChromeActions 
 import { Tabs, TabsList, TabsTrigger } from '@no996/ui/tabs'
 import { useAuth } from '../../auth/AuthContext'
 import { extensionClient } from '../../services/extension/extension-client'
+import {
+  EXTENSION_PRODUCT_VERSION_LABEL,
+  REQUIRED_EXTENSION_VERSION,
+  isExtensionOutdated,
+} from '../../services/extension/extension-version'
 import type {
   WorkbenchBridgeAccountSummary,
   WorkbenchBridgePlatformId,
@@ -364,6 +369,8 @@ export default function ExtensionPage() {
   }
 
   const isConnected = Boolean(status?.connected)
+  const installedVersion = status?.extensionVersion?.trim() || ''
+  const needsExtensionUpdate = isConnected && isExtensionOutdated(installedVersion)
 
   return (
     <Page
@@ -405,6 +412,9 @@ export default function ExtensionPage() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          {tab === 'materials' && userId != null && (
+            <ExtensionMaterialImport key={userId} userId={userId} onRefresh={refreshMaterials} />
+          )}
         </WorkbenchToolPageHeaderTools>
       }
       actions={
@@ -570,7 +580,9 @@ export default function ExtensionPage() {
 
               <h3 className="text-base font-semibold text-foreground">{t('extension:productName')}</h3>
               <p className="text-[11px] text-muted-foreground mt-0.5 mb-1">
-                {status?.extensionVersion ? `v${status.extensionVersion}` : t('extension:productVersion')}
+                {installedVersion
+                  ? `v${installedVersion}`
+                  : t('extension:productVersion', { defaultValue: `${EXTENSION_PRODUCT_VERSION_LABEL} 工作台版` })}
               </p>
               <div className="text-[11px] px-3 py-1 rounded-full bg-muted text-muted-foreground mb-6">
                 {t('extension:browserSupport')}
@@ -583,10 +595,21 @@ export default function ExtensionPage() {
                 </div>
 
                 {isConnected ? (
-                  <div className="w-full py-2.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-semibold flex items-center justify-center gap-1.5">
-                    <CheckCircle2 size={16} />{' '}
-                    {t('extension:connectedBadge', { version: status?.extensionVersion || '3.7.4' })}
-                  </div>
+                  needsExtensionUpdate ? (
+                    <div className="w-full py-2.5 px-3 rounded-lg bg-amber-500/10 border border-amber-500/40 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-1.5 text-center">
+                      <AlertCircle size={16} className="shrink-0" />
+                      {t('extension:updateRequiredBadge', {
+                        current: installedVersion,
+                        required: REQUIRED_EXTENSION_VERSION,
+                        defaultValue: `当前 v{{current}}，请更新到 v{{required}}`,
+                      })}
+                    </div>
+                  ) : (
+                    <div className="w-full py-2.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-semibold flex items-center justify-center gap-1.5">
+                      <CheckCircle2 size={16} />{' '}
+                      {t('extension:connectedBadge', { version: installedVersion })}
+                    </div>
+                  )
                 ) : (
                   <Button
                     variant="outline"
@@ -598,17 +621,45 @@ export default function ExtensionPage() {
                   </Button>
                 )}
 
+                {!isConnected ? (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {t('extension:detectWaitHint', {
+                      defaultValue: '刚安装或重新加载扩展后，请稍候自动探测；若仍未连接，再刷新本页。',
+                    })}
+                  </p>
+                ) : null}
+
+                {needsExtensionUpdate ? (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left space-y-2">
+                    <p className="text-[11px] text-amber-900 dark:text-amber-100 leading-relaxed">
+                      {t('extension:updateRequiredBody', {
+                        current: installedVersion,
+                        required: REQUIRED_EXTENSION_VERSION,
+                        defaultValue:
+                          '已检测到插件 v{{current}}，工作台需要 v{{required}} 及以上。请下载新安装包，在 chrome://extensions 中移除旧版后重新加载，无需刷新本页即可再次探测。',
+                      })}
+                    </p>
+                  </div>
+                ) : null}
+
                 <a
                   href="/downloads/zhiyuan-extension.zip"
                   download="zhiyuan-extension.zip"
                   className="block w-full"
                 >
                   <Button
-                    variant={isConnected ? 'outline' : 'default'}
+                    variant={needsExtensionUpdate ? 'default' : isConnected ? 'outline' : 'default'}
                     className="w-full gap-2 shadow-xs font-medium"
                   >
                     <Download size={15} />
-                    {isConnected ? t('extension:redownloadZip') : t('extension:downloadZip')}
+                    {needsExtensionUpdate
+                      ? t('extension:downloadUpdateZip', {
+                          version: REQUIRED_EXTENSION_VERSION,
+                          defaultValue: `下载 v{{version}} 安装包`,
+                        })
+                      : isConnected
+                        ? t('extension:redownloadZip')
+                        : t('extension:downloadZip')}
                   </Button>
                 </a>
               </div>
@@ -626,16 +677,38 @@ export default function ExtensionPage() {
             {isConnected && !showTutorialOverride ? (
               <div className="space-y-6">
                 <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
-                  <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
-                    <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
-                      <CheckCircle2 size={24} />
+                  <div
+                    className={`flex items-center gap-3 p-4 rounded-xl border ${
+                      needsExtensionUpdate
+                        ? 'border-amber-500/40 bg-amber-500/5'
+                        : 'border-emerald-500/30 bg-emerald-500/5'
+                    }`}
+                  >
+                    <div
+                      className={`p-2.5 rounded-lg shrink-0 ${
+                        needsExtensionUpdate
+                          ? 'bg-amber-500/10 text-amber-700'
+                          : 'bg-emerald-500/10 text-emerald-600'
+                      }`}
+                    >
+                      {needsExtensionUpdate ? <AlertCircle size={24} /> : <CheckCircle2 size={24} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm text-foreground">
-                        {t('extension:connectedTitle', { version: status?.extensionVersion })}
+                        {needsExtensionUpdate
+                          ? t('extension:updateRequiredTitle', {
+                              current: installedVersion,
+                              required: REQUIRED_EXTENSION_VERSION,
+                              defaultValue: '插件版本过低 (v{{current}} → v{{required}})',
+                            })
+                          : t('extension:connectedTitle', { version: installedVersion })}
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        {t('extension:connectedHint')}
+                        {needsExtensionUpdate
+                          ? t('extension:updateRequiredHint', {
+                              defaultValue: '可查看账号状态，但关键词抓取等能力请先更新插件后再用。',
+                            })
+                          : t('extension:connectedHint')}
                       </div>
                     </div>
                     <Button variant="outline" size="sm" onClick={refreshAll} className="gap-1.5 shrink-0">
@@ -810,6 +883,7 @@ export default function ExtensionPage() {
         <ExtensionCapturePanel
           userId={userId}
           isConnected={isConnected}
+          extensionVersion={installedVersion}
           mode={captureSubMode}
           accounts={accounts}
           onConnectAccount={handleConnect}
@@ -821,8 +895,6 @@ export default function ExtensionPage() {
 
       {/* Tab 3: 本机纯素材资产库（多维分类与高颜值自媒体网格） */}
       {tab === 'materials' && (
-        <div className="space-y-4">
-        {userId != null && <ExtensionMaterialImport key={userId} userId={userId} onRefresh={refreshMaterials} />}
         <ExtensionMaterialLibraryPanel
           materials={materials}
           userId={userId}
@@ -835,7 +907,6 @@ export default function ExtensionPage() {
           onDeleteIds={handleDeleteMaterials}
           platformLabel={(platformId) => platformLabel(platformId, (k) => t(`extension:${k}`))}
         />
-        </div>
       )}
     </Page>
   )

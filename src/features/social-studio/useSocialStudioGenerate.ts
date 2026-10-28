@@ -154,7 +154,9 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
       const sessionItem = session?.items?.[0] ?? null
 
       const chatAttachments = options.attachmentItems?.length
-        ? await prepareAttachmentsFromItems(options.attachmentItems)
+        ? await prepareAttachmentsFromItems(options.attachmentItems, {
+            onNotice: (message) => notifyOperationWarning(message, { raw: true }),
+          })
         : undefined
 
       const clients = createAgentClients()

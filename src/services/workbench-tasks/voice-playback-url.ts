@@ -26,9 +26,12 @@ export async function resolveVoicePlaybackUrl(
 
   if (task.blobId) {
     const blob = await repo.getBlob(task.blobId)
-    if (blob?.data && blob.data.byteLength > 0) {
-      const mime = blob.mime || sniffAudioMime(blob.data)
-      return URL.createObjectURL(new Blob([blob.data], { type: mime }))
+    if (blob?.data) {
+      const data = blob.data instanceof Blob ? await blob.data.arrayBuffer() : blob.data
+      if (data.byteLength > 0) {
+        const mime = blob.mime || sniffAudioMime(data)
+        return URL.createObjectURL(new Blob([data], { type: mime }))
+      }
     }
   }
 

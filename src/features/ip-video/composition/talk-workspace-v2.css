@@ -746,26 +746,25 @@
 .ipt-edit-step__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ipt-edit-step__head > div:first-child { display: grid; gap: 4px; }
 .ipt-edit-step__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ipt-edit-grid { display: grid; grid-template-columns: 168px minmax(0, 1fr) 12px var(--ipt-inspector-width, 420px); align-items: stretch; gap: 12px; min-width: 0; }
-.ipt-object-rail, .ipt-inspector { min-width: 0; background: var(--card, var(--background)); border: 1px solid var(--border); border-radius: 14px; }
-.ipt-object-rail { padding: 10px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100dvh - 230px); overflow: auto; position: sticky; top: 12px; }
-.ipt-object-rail__group { display: grid; gap: 2px; }
-.ipt-object-rail__group-head { display: flex; align-items: center; gap: 7px; width: 100%; padding: 7px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--muted-foreground); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
-.ipt-object-rail__group-head:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); color: var(--foreground); }
-.ipt-object-rail__group-head[aria-pressed='true'] { background: color-mix(in srgb, var(--primary) 9%, transparent); color: var(--primary); font-weight: 650; }
-.ipt-object-rail__group-head small { margin-left: auto; font-size: 11px; opacity: .7; }
-.ipt-object-rail__item { display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 8px 6px 30px; border: 0; border-radius: 7px; background: transparent; color: var(--muted-foreground); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
-.ipt-object-rail__item:hover { background: color-mix(in srgb, var(--muted) 48%, transparent); color: var(--foreground); }
-.ipt-object-rail__item[aria-pressed='true'] { color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
-.ipt-object-rail__item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ipt-object-rail__item small { margin-left: auto; color: var(--muted-foreground); font-size: 10.5px; }
-.ipt-object-rail__actions { display: flex; flex-direction: column; align-items: stretch; gap: 1px; margin-top: 4px; }
-.ipt-object-rail__actions button { justify-content: flex-start; font-size: 12px; }
-.ipt-inspector { display: flex; flex-direction: column; min-height: 500px; max-height: calc(100dvh - 220px); overflow: hidden; }
+.ipt-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8px var(--ipt-inspector-width, 50%);
+  align-items: stretch;
+  gap: 0;
+  column-gap: 0;
+  min-width: 0;
+}
+.ipt-edit-grid > .ipt-inspector-divider {
+  width: 8px;
+  margin: 0;
+}
+.ipt-inspector { min-width: 0; background: var(--card, var(--background)); border: 1px solid var(--border); border-radius: 14px; display: flex; flex-direction: column; min-height: 500px; max-height: calc(100dvh - 220px); overflow: hidden; }
 .ipt-inspector__tabs { display: flex; align-items: center; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--border); }
 .ipt-inspector__tabs button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px 8px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted-foreground); font: inherit; font-size: 12.5px; cursor: pointer; }
-.ipt-inspector__tabs button[aria-selected='true'] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 650; }
-.ipt-inspector__body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 14px 14px 18px; display: flex; flex-direction: column; gap: 14px; }
+.ipt-inspector__tabs button[aria-selected='true'],
+.ipt-inspector__tabs button.on { color: var(--primary); border-bottom-color: var(--primary); font-weight: 650; }
+.ipt-inspector__count { margin-left: 2px; font-size: 10.5px; opacity: .72; font-variant-numeric: tabular-nums; }
+.ipt-inspector__body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 12px; background: var(--card); }
 .ipt-edit-center { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .ipt-edit-center .ipt-stage-wrap { min-height: 420px; }
 .ipt-edit-timeline { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card, var(--background)); }
@@ -799,10 +798,9 @@
   .ipt-workspace--v2 .ipt-flow-layout { grid-template-columns: minmax(0, 1fr); }
   .ipt-workspace--v2 .ipt-flow-preview { position: static; min-height: 380px; }
   .ipt-workspace--v2 .ipt-flow-divider { display: none; }
-  .ipt-edit-grid { grid-template-columns: 148px minmax(0, 1fr); }
+  .ipt-edit-grid { grid-template-columns: minmax(0, 1fr); }
   .ipt-inspector-divider { display: none; }
   .ipt-inspector { grid-column: 1 / -1; max-height: none; min-height: 0; position: static; }
-  .ipt-object-rail { max-height: none; position: static; }
 }
 @media (max-width: 860px) {
   .ipt-workspace--v2 .ipt-pipeline { flex-wrap: wrap; }
@@ -810,8 +808,6 @@
   .ipt-pipeline__advanced span { display: none; }
   .ipt-edit-grid { grid-template-columns: minmax(0, 1fr); }
   .ipt-inspector-divider { display: none; }
-  .ipt-object-rail { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
-  .ipt-object-rail__group { flex: 1 1 140px; }
   .ipt-cover-panel { grid-template-columns: minmax(0, 1fr); }
   .ipt-cover-preview { max-width: 280px; }
 }
@@ -827,3 +823,151 @@
 }
 .ipt-ai-image-form { display: grid; gap: 14px; }
 .ipt-ai-image-form .ipt-advanced-row [data-slot='select-trigger'] { min-width: 190px; }
+
+/* Usability: one surface, blockers, checklist, voice mini, cover studio */
+.ipt-step-blocker {
+  margin: -4px 0 0;
+  padding: 8px 2px 0;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+  line-height: 1.55;
+  border-top: 0;
+}
+.ipt-direction-chip {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--background));
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ipt-drop--quiet {
+  border-style: dashed;
+  opacity: .92;
+}
+.ipt-workspace--v2 .ipt-brief-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 10px;
+}
+.ipt-workspace--v2 .ipt-brief-tools__spacer { flex: 1 1 auto; min-width: 8px; }
+.ipt-workspace--v2 .ipt-brief-count { color: var(--muted-foreground); font-size: 12px; font-variant-numeric: tabular-nums; }
+.ipt-checklist { display: grid; gap: 8px; }
+.ipt-checklist ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ipt-checklist li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  font-size: 13px;
+}
+.ipt-checklist li:first-child { border-top: 0; padding-top: 0; }
+.ipt-checklist li[data-ready] { color: var(--foreground); }
+.ipt-checklist li:not([data-ready]) { color: var(--muted-foreground); }
+.ipt-checklist li strong { display: block; font-size: 13px; font-weight: 600; }
+.ipt-checklist li small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; }
+.ipt-inline-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--destructive) 8%, var(--background));
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ipt-inline-banner > div { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.ipt-inline-banner strong { font-size: 13px; }
+.ipt-inline-banner p { margin: 0; color: var(--muted-foreground); font-size: 12.5px; }
+.ipt-sticky-progress {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  background: color-mix(in srgb, var(--primary) 7%, var(--background));
+}
+.ipt-sticky-progress > div { display: grid; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.ipt-sticky-progress strong { font-size: 13px; }
+.ipt-sticky-progress span { color: var(--muted-foreground); font-size: 12px; }
+.ipt-creation-process { display: grid; gap: 6px; }
+.ipt-creation-process h4 { margin: 0; font-size: 13px; font-weight: 650; }
+.ipt-creation-process.is-open { padding-top: 4px; }
+.ipt-empty--flat {
+  border: 0;
+  background: color-mix(in srgb, var(--muted) 40%, var(--background));
+  border-radius: 10px;
+  padding: 14px;
+}
+.ipt-voice-mini { display: grid; gap: 12px; }
+.ipt-voice-list {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  overflow: auto;
+}
+.ipt-voice-list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ipt-voice-list__item:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); }
+.ipt-voice-list__item.is-selected { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.ipt-voice-list__wave {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  color: var(--muted-foreground);
+  flex: 0 0 auto;
+}
+.ipt-voice-list__item.is-selected .ipt-voice-list__wave {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+.ipt-voice-list__meta b { font-size: 13px; font-weight: 600; }
+.ipt-voice-mini__settings .voice-dub-settings { margin: 0; }
+.ipt-voice-mini__settings .voice-dock-footer { margin-top: 8px; }
+.ipt-cover-studio { display: grid; gap: 12px; }
+.ipt-cover-studio__layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  align-items: start;
+}
+.ipt-cover-preview__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ipt-workspace--v2 .ipt-review,
+.ipt-workspace--v2 .ipt-export-checks,
+.ipt-workspace--v2 .ipt-voice-status {
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: none;
+}
+.ipt-workspace--v2 .ipt-cover-panel,
+.ipt-cover-studio .ipt-cover-preview {
+  box-shadow: none;
+}
+@media (max-width: 860px) {
+  .ipt-cover-studio__layout { grid-template-columns: minmax(0, 1fr); }
+  .ipt-cover-preview { max-width: 280px; }
+}

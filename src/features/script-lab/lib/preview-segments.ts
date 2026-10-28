@@ -15,6 +15,8 @@ export function resolvePreviewSegments(config: ScriptConfig): PreviewSegment[] {
     mode: config.mode,
     goal: config.goal,
     durationSec: config.durationSec,
+    // 视频：预览必须跟着用户选定的结构走，否则「预览一套、生成另一套」
+    presetId: config.structure.kind === 'preset' ? config.structure.presetId : undefined,
     customStructure,
   })
   const hit = hits[0]

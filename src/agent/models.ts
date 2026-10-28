@@ -25,7 +25,7 @@ export const MODEL_PROFILES: Record<ModelProfileId, ModelProfile> = {
   /** 独立评审：温度 0，必须与写手是两次独立调用且看不到写手上下文 */
   review: { temperature: 0, maxTokens: 4096, label: '独立评审' },
   /** 自动补全：轻量、短超时、失败静默降级 */
-  autofill: { temperature: 0.4, maxTokens: 512, label: '自动补全', lightweight: true },
+  autofill: { temperature: 0.4, maxTokens: 8192, label: '自动补全', lightweight: true },
 }
 
 export const DEFAULT_PROFILE_ID: ModelProfileId = 'plan'

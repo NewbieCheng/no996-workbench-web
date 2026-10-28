@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { ChevronDown, Sparkles } from 'lucide-react'
 import {
   LIVE_DURATIONS,
@@ -55,6 +55,8 @@ export type ScriptFormProps = {
   hideSubmit?: boolean
   /** 向导模式下藏掉行内示例/error/note（由 InputWizard 统一承担） */
   hideFooter?: boolean
+  /** 参考资料上传位，由页面传入并交给选填字段展示。 */
+  attachmentSlot?: ReactNode
 }
 
 export function ScriptForm({
@@ -73,6 +75,7 @@ export function ScriptForm({
   step,
   hideSubmit,
   hideFooter,
+  attachmentSlot,
 }: ScriptFormProps) {
   const { t } = useTranslation('scriptLab')
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -82,13 +85,19 @@ export function ScriptForm({
   const isVideo = mode === 'video'
   const durations = isVideo ? VIDEO_DURATIONS : LIVE_DURATIONS
   const platforms = isVideo ? VIDEO_PLATFORMS : LIVE_PLATFORMS
-  const goalLabels: Record<ScriptGoal, string> = {
+  const goalLabels: Partial<Record<ScriptGoal, string>> = {
     获客: t('goal.acquisition'),
+    人设: t('goal.persona'),
+    观点干货: t('goal.opinion'),
+    转化: t('goal.conversion2'),
     流量: t('goal.traffic'),
     成交: t('goal.conversion'),
   }
-  const goalHints: Record<ScriptGoal, string> = {
+  const goalHints: Partial<Record<ScriptGoal, string>> = {
     获客: t('goal.hints.acquisition'),
+    人设: t('goal.hints.persona'),
+    观点干货: t('goal.hints.opinion'),
+    转化: t('goal.hints.conversion2'),
     流量: t('goal.hints.traffic'),
     成交: t('goal.hints.conversion'),
   }
@@ -318,6 +327,7 @@ export function ScriptForm({
             mode={mode}
             config={config}
             onChange={onChange}
+            attachmentSlot={attachmentSlot}
           />
         ) : (
       <div className="sl-adv">

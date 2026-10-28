@@ -107,6 +107,9 @@ export function finalizeScript(input: FinalizeInput): FinalizeResult {
     mode: config.mode,
     hasStockInfo: Boolean(config.offer?.trim()),
     targetChars,
+    // 视频脚本用「口播字数」（去空白与标点）：目标是按每秒 4.17 字推的语速，
+    // 标点不该占掉预算。标题那种平台硬上限仍用默认的 raw 口径。
+    lengthCountMode: isVideo ? 'spoken' : 'raw',
     segmentCharBudgets: targetChars ? segmentCharBudgets(segments, targetChars) : undefined,
     allowedNumberSources: input.allowedNumberSources,
   })

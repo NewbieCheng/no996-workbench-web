@@ -134,3 +134,60 @@ test('序数豁免不适用于用户自设的禁用词', () => {
   const result = runHardCheck({ text: '第一步很重要', bannedWords: ['第一'] })
   assert.ok(result.hits.some((h) => h.label === '第一' && h.rule === 'user-banned'))
 })
+
+test('「第一个月 / 第一时间 / 第一反应」是正常叙述，不算绝对化用语', () => {
+  const isBanned = (text) =>
+    runHardCheck({ text }).hits.some((h) => h.label === '第一' && h.rule === 'banned')
+  assert.equal(isBanned('第一个月先别急着换方法。'), false)
+  assert.equal(isBanned('第一时间把问题记下来。'), false)
+  assert.equal(isBanned('我的第一反应是先去复盘。'), false)
+  assert.equal(isBanned('第一位顾客进来的时候，我还在备料。'), false)
+})
+
+test('宣称语境里的「第一」即使跟量词也仍然命中', () => {
+  const isBanned = (text) =>
+    runHardCheck({ text }).hits.some((h) => h.label === '第一' && h.rule === 'banned')
+  assert.equal(isBanned('我们是行业第一位。'), true)
+  assert.equal(isBanned('这是全网销量第一的品牌。'), true)
+  assert.equal(isBanned('第一品牌就是这么做的。'), true)
+})
+
+test('同一个违禁词出现在多段时，每段都要被点名（mustFixIds 不能只收第一段）', () => {
+  const result = runHardCheck({
+    text: '这是我们行业第一的做法。\n中间段正常讲方法。\n第一步照样做，但结果还是行业第一。',
+    segments: [
+      { id: 'seg-1', text: '这是我们行业第一的做法。' },
+      { id: 'seg-2', text: '中间段正常讲方法。' },
+      { id: 'seg-3', text: '第一步照样做，但结果还是行业第一。' },
+    ],
+  })
+  const firstHits = result.hits.filter((h) => h.label === '第一')
+  assert.equal(firstHits.length, 2)
+  assert.deepEqual(firstHits.map((h) => h.segmentId), ['seg-1', 'seg-3'])
+  assert.deepEqual(result.mustFixIds.sort(), ['seg-1', 'seg-3'])
+})
+
+test('口播字数口径不计标点，且命中说明带目标区间与差额', () => {
+  // 每段 9 个字符里 1 个是逗号：35 段 = 原始 315 字 / 口播 280 字。
+  // 目标 250（区间 213–288）：原始口径超限，口播口径合格。
+  const body = '这是口播正文内容，'.repeat(35)
+  const raw = runHardCheck({ text: body, targetChars: 250 })
+  const spoken = runHardCheck({ text: body, targetChars: 250, lengthCountMode: 'spoken' })
+  assert.equal(raw.hits.some((h) => h.rule === 'length'), true)
+  assert.equal(spoken.hits.some((h) => h.rule === 'length'), false)
+
+  const over = runHardCheck({
+    text: '字'.repeat(300),
+    targetChars: 250,
+    lengthCountMode: 'spoken',
+  })
+  const hit = over.hits.find((h) => h.rule === 'length')
+  assert.ok(hit)
+  assert.equal(hit.length.target, 250)
+  assert.equal(hit.length.low, 213)
+  assert.equal(hit.length.high, 288)
+  assert.equal(hit.length.direction, 'over')
+  assert.equal(hit.length.delta, 12)
+  assert.match(hit.detail, /合格区间 213–288/)
+})
+

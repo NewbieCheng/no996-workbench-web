@@ -41,12 +41,18 @@ import {
   optionLabel,
 } from '../../../components/capture-settings-shared'
 import { XHS_CAPTURE_NOTE_TYPE_DEFAULT } from './xhs-keyword-filter-options'
+import {
+  REQUIRED_EXTENSION_VERSION,
+  isExtensionOutdated,
+} from '../../../services/extension/extension-version'
 
 export type CaptureMode = 'keyword' | 'links'
 
 interface Props {
   userId: number | null
   isConnected: boolean
+  /** 已连接插件的版本；过低时采集前拦截并提示更新 */
+  extensionVersion?: string
   mode: CaptureMode
   accounts?: WorkbenchBridgeAccountSummary[]
   onConnectAccount?: (platformId: WorkbenchBridgePlatformId) => Promise<void>
@@ -66,6 +72,7 @@ interface BatchProgress {
 export function ExtensionCapturePanel({
   userId,
   isConnected,
+  extensionVersion,
   mode,
   accounts = [],
   onConnectAccount,
@@ -74,6 +81,7 @@ export function ExtensionCapturePanel({
   onSwitchToMaterials,
 }: Props) {
   const { t } = useTranslation('extension')
+  const extensionOutdated = isConnected && isExtensionOutdated(extensionVersion)
 
   // 国际化动态选项
   const platformChips = useMemo(
@@ -293,6 +301,16 @@ export function ExtensionCapturePanel({
       setError(t('captureNotConnectedError', { defaultValue: '插件未连接，请先在“安装与状态”页确认知源扩展已正常运行' }))
       return
     }
+    if (extensionOutdated) {
+      setError(
+        t('captureBlockedOutdated', {
+          current: extensionVersion || '?',
+          required: REQUIRED_EXTENSION_VERSION,
+          defaultValue: '当前插件 v{{current}} 过旧，请先更新到 v{{required}} 再抓取。',
+        }),
+      )
+      return
+    }
     const kw = keyword.trim()
     if (!kw) return
 
@@ -366,6 +384,16 @@ export function ExtensionCapturePanel({
   const handleCollectLinks = async () => {
     if (!isConnected) {
       setError(t('captureNotConnectedError', { defaultValue: '插件未连接，请先在“安装与状态”页确认知源扩展已正常运行' }))
+      return
+    }
+    if (extensionOutdated) {
+      setError(
+        t('captureBlockedOutdated', {
+          current: extensionVersion || '?',
+          required: REQUIRED_EXTENSION_VERSION,
+          defaultValue: '当前插件 v{{current}} 过旧，请先更新到 v{{required}} 再抓取。',
+        }),
+      )
       return
     }
     const rawLines = urlInput
@@ -510,7 +538,7 @@ export function ExtensionCapturePanel({
             <Button
               size="lg"
               onClick={handleSearchKeyword}
-              disabled={isSearching || !keyword.trim() || !isConnected}
+              disabled={isSearching || !keyword.trim() || !isConnected || extensionOutdated}
               className="h-11 px-5 text-xs sm:text-sm font-medium gap-1.5 shadow-xs shrink-0 rounded-xl"
             >
               {isSearching ? (
@@ -1016,7 +1044,7 @@ export function ExtensionCapturePanel({
             <Button
               size="sm"
               onClick={handleCollectLinks}
-              disabled={isCapturingLinks || !urlInput.trim() || !isConnected}
+              disabled={isCapturingLinks || !urlInput.trim() || !isConnected || extensionOutdated}
               className="gap-1.5 shadow-xs px-5"
             >
               {isCapturingLinks ? (

@@ -10,6 +10,8 @@ export function TalkVisualStep({
   ratio,
   lookId,
   busy,
+  canNext = true,
+  blocker,
   onFormat,
   onLook,
   onBrowse,
@@ -21,6 +23,8 @@ export function TalkVisualStep({
   ratio: string
   lookId?: string
   busy: boolean
+  canNext?: boolean
+  blocker?: string
   onFormat: (ratio: TalkFormatRatio) => void
   onLook: (lookId: string) => void
   onBrowse: () => void
@@ -34,8 +38,9 @@ export function TalkVisualStep({
     stage="visual"
     title={t('stepVisual')}
     hint={t('stepVisualHint')}
-    primary={{ label: t('nextVoice'), onClick: onNext, disabled: busy, icon: 'next', testId: 'ipt-next-voice' }}
+    primary={{ label: t('nextVoice'), onClick: onNext, disabled: busy || !canNext, icon: 'next', testId: 'ipt-next-voice' }}
     secondary={{ label: t('advancedSettings'), onClick: onOpenAdvanced, disabled: busy }}
+    blocker={blocker}
     onBack={onBack}
   >
     <section className="ipt-step-section" aria-labelledby="ipt-format-title">

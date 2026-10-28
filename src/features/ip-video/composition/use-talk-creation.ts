@@ -8,6 +8,7 @@ import { toastTaskEnqueued } from '../../../lib/toast-task-enqueued'
 import { runTalkCreationFlow, createTalkCreationMockResponder } from '../agent/video-assembly-flow'
 import type { TalkCreationInput, TalkCreationResult } from '../agent/types'
 import { compileTalkDirectorPlan } from './talk-director-compiler'
+import { humanizeTalkCreationError } from './talk-creation-errors'
 import { editTalk, talkSettings, type TalkDocument } from './talk-model'
 
 /** Ignore bookkeeping and voice catalog loading, but compare every editable program field. */
@@ -37,10 +38,12 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
   const [processRun, setProcessRun] = useState<AgentRunSnapshot>()
   const [directions, setDirections] = useState<Extract<TalkCreationResult, { kind: 'directions' }> | null>(null)
   const [pending, setPending] = useState<PendingResult | null>(null)
+  const [lastFailure, setLastFailure] = useState<string | null>(null)
   const alive = useRef(true)
   const submission = useRef(false)
   const demoAbort = useRef<AbortController | null>(null)
   const seen = useRef(new Set<string>())
+  const sessionSubmitted = useRef(new Set<string>())
   const applyCallback = useRef(onApplied)
   applyCallback.current = onApplied
   const demo = resolveAgentMode() === 'demo'
@@ -59,7 +62,6 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
     if (current.scope !== String(owner) || item.input.document.id !== current.id || item.input.document.scope !== current.scope) throw new Error('该方案不属于当前账号或作品。')
     const previous = talkSettings(current).creation
     if (previous?.appliedTaskIds?.includes(item.id)) { setPending(null); return }
-    // A changed draft needs a new snapshot. Applying a stale plan to it is never implicit.
     if (talkCreationFingerprint(current) !== talkCreationFingerprint(item.input.document)) throw new Error('作品在 AI 工作期间已修改。请按当前作品重新规划，或先另存一份查看原方案。')
     const plan = item.result.plan
     editTalk(editor, 'director-apply', source => {
@@ -67,14 +69,14 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
       return { ...next, ipVideo: { ...talkSettings(next), creation: { ...previous, brief: item.input.brief, summary: plan.summary, usedMock: item.result.usedMock, appliedTaskIds: [...(previous?.appliedTaskIds ?? []), item.id] } } }
     })
     setPending(null)
+    setLastFailure(null)
     applyCallback.current()
-    // If saving fails the applied id is already in memory, so retry saves instead of reapplying.
     void flush().then(async () => {
       if (!item.payloadId) return
       const repo = createIndexedDbWorkbenchTaskRepository()
       const stored = await repo.getPayload(item.payloadId)
       if (stored?.kind === 'ip_video_create') await repo.patchPayload(item.payloadId, { ...(stored.data as IPVideoCreatePayload), appliedTo: { documentId: current.id, revision: editor.getDocument().revision } })
-    }).catch(failure => { if (alive.current) onError(apiErrorMessage(failure)) })
+    }).catch(failure => { if (alive.current) onError(humanizeTalkCreationError(apiErrorMessage(failure))) })
   }, [editor, flush, onError, owner])
 
   const receive = useCallback((item: PendingResult) => {
@@ -92,7 +94,12 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
     if (currentSettings?.dismissedTaskIds?.includes(task.id)) return
     if (task.status === 'failed' || task.status === 'cancelled') {
       seen.current.add(task.id)
-      if (task.status === 'failed') onError(task.errorMessage || 'AI 制作失败，当前作品已保留。可修改要求后重新提交。')
+      if (task.status === 'failed') {
+        const message = humanizeTalkCreationError(task.errorMessage || 'AI 制作失败，当前作品已保留。可修改要求后重新提交。')
+        setLastFailure(message)
+        // Only toast failures that started in this browser session.
+        if (sessionSubmitted.current.has(task.id)) onError(message)
+      }
       return
     }
     if (task.status !== 'succeeded' && task.status !== 'running') return
@@ -106,7 +113,7 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
       seen.current.add(task.id)
       if (payload.appliedTo?.documentId === editor.getDocument().id) return
       receive({ id: task.id, payloadId: task.payloadId, input: payload.input, result: payload.result })
-    }).catch(failure => { if (active) onError(apiErrorMessage(failure)) })
+    }).catch(failure => { if (active) onError(humanizeTalkCreationError(apiErrorMessage(failure))) })
     return () => { active = false }
   }, [task, actions, editor, onError, owner, receive])
 
@@ -114,7 +121,7 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
     if (submission.current || busy) return
     submission.current = true
     setSubmitting(true)
-    setDirections(null); setPending(null); setProcessRun(undefined); setDemoRun(undefined)
+    setDirections(null); setPending(null); setProcessRun(undefined); setDemoRun(undefined); setLastFailure(null)
     try {
       await flush()
       if (!alive.current) return
@@ -129,11 +136,16 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
         receive({ id: `demo-${crypto.randomUUID()}`, input, result })
       } else {
         const id = await actions.enqueueIPVideoCreate(input)
+        sessionSubmitted.current.add(id)
         if (alive.current) setSubmittedId(id)
-        toastTaskEnqueued({ message: 'AI 创作已加入后台任务，可离开本页，返回作品查看结果。请保持浏览器打开。' })
+        toastTaskEnqueued({ message: 'AI 创作已加入后台任务，可到历史查看进度。请保持浏览器打开。' })
       }
     } catch (failure) {
-      if (alive.current && !(failure instanceof DOMException && failure.name === 'AbortError')) onError(apiErrorMessage(failure))
+      if (alive.current && !(failure instanceof DOMException && failure.name === 'AbortError')) {
+        const message = humanizeTalkCreationError(apiErrorMessage(failure))
+        setLastFailure(message)
+        onError(message)
+      }
     } finally {
       submission.current = false
       if (alive.current) setSubmitting(false)
@@ -148,9 +160,23 @@ export function useTalkCreation({ owner, selectedTaskId, flush, onError, onAppli
   }
   const cancel = () => {
     if (demo) demoAbort.current?.abort()
-    else if (task) void actions.cancelTask(task.id).catch(failure => onError(apiErrorMessage(failure)))
+    else if (task) void actions.cancelTask(task.id).catch(failure => onError(humanizeTalkCreationError(apiErrorMessage(failure))))
   }
   const run = demoRun ?? processRun
   const runningStage = run?.stages.find(stage => stage.status === 'running')
-  return { submit, busy, task, run, directions, clearDirections: () => setDirections(null), pending, dismiss, cancel, demo, stageLabel: runningStage?.headline ?? task?.meta?.headline ?? (task?.status === 'queued' ? '创作已排队，等待开始…' : '正在为你安排口播内容与画面…') }
+  return {
+    submit,
+    busy,
+    task,
+    run,
+    directions,
+    clearDirections: () => setDirections(null),
+    pending,
+    dismiss,
+    cancel,
+    demo,
+    lastFailure,
+    dismissFailure: () => setLastFailure(null),
+    stageLabel: runningStage?.headline ?? task?.meta?.headline ?? (task?.status === 'queued' ? '创作已排队，等待开始…' : '正在为你安排口播内容与画面…'),
+  }
 }

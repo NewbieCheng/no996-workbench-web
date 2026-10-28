@@ -2,16 +2,32 @@
  * 爆款脚本引擎 · 类型定义
  */
 import type { AgentRunSnapshot } from '../../../agent'
+import type { StoredChatAttachment } from '../../../lib/chat-attachments/types'
 
 export type ScriptMode = 'video' | 'live'
-export type ScriptGoal = '获客' | '流量' | '成交'
+/**
+ * 创作目的（视频）/ 创作目标（直播）。
+ *
+ * 视频自 2026-10-28 起用四类目的：获客 / 人设 / 观点干货 / 转化。
+ * `流量` 与 `成交` 只保留给历史任务读取，不再出现在新视频任务里；
+ * `成交` 继续生成时由 `purposeIdFromGoal` 映射成转化型。
+ */
+export type ScriptGoal = '获客' | '人设' | '观点干货' | '转化' | '流量' | '成交'
 export type ScriptStrengthLabel = '软种草' | '平衡' | '强促单'
 
-export const SCRIPT_GOALS: ScriptGoal[] = ['获客', '流量', '成交']
+/** 新视频任务的四类创作目的 */
+export const VIDEO_GOALS: ScriptGoal[] = ['获客', '人设', '观点干货', '转化']
+/** 直播沿用原来的三个目标（本轮不改直播的目的语义） */
+export const LIVE_GOALS: ScriptGoal[] = ['获客', '流量', '成交']
+/** 兼容旧引用：默认给直播 */
+export const SCRIPT_GOALS: ScriptGoal[] = LIVE_GOALS
 
 /** 目标说明（摘要行灰字） */
 export const GOAL_HINTS: Record<ScriptGoal, string> = {
   获客: '引导加微信、留资、咨询',
+  人设: '让观众理解并相信你',
+  观点干货: '讲清一个判断和一个方法',
+  转化: '讲清交付、证据与下一步',
   流量: '涨粉、破播放、引发评论',
   成交: '建立信任、拉升下单',
 }
@@ -55,10 +71,17 @@ export type ScriptConfig = {
   intro?: string
   durationSec: number
   goal: ScriptGoal
+  /**
+   * 视频专用：四类创作目的。为空表示用户还没选（新任务不允许直接生成）。
+   * `goal` 仍按目的同步更新，供 Markdown 与历史列表显示。
+   */
+  purpose?: 'acquisition' | 'persona' | 'opinion' | 'conversion'
+  /** 按目的收集的关键事实（键见 purposes/*.ts 的 materials） */
+  materials?: Record<string, string>
   structure: {
     kind: 'auto' | 'custom' | 'preset'
     text?: string
-    /** 内置 preset id（`goal-auto` 表示跟随目标的推荐公式） */
+    /** 内置 preset id（四类目的共 16 个结构之一） */
     presetId?: string
   }
   audience?: string
@@ -174,6 +197,8 @@ export type ScriptPromptLogEntry = {
 /** 入队 payload：配置快照 + 全部产物 */
 export type ScriptGeneratePayload = {
   config: ScriptConfig
+  /** 参考资料（正文随 planner / writer 两次调用发送，不进评审） */
+  chatAttachments?: StoredChatAttachment[]
   run?: AgentRunSnapshot
   autofill?: ScriptAutofill
   brief?: ScriptBrief

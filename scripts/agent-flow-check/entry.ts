@@ -484,6 +484,82 @@ async function main() {
     check(`脚本(${mode})：提词器含速度与字号控件`, /速度|字号/.test(html))
   }
 
+  /* -------- 硬校验未解除：仍要交付成稿，不许整份丢弃 -------- */
+  {
+    const cfg: ScriptConfig = {
+      mode: 'video',
+      product: '早八通勤穿搭',
+      audience: '上班族',
+      platform: '抖音',
+      durationSec: 60,
+      goal: '获客',
+      strength: 50,
+      structure: { kind: 'auto' },
+      // 演示应答器不会写这个词，硬校验必然过不了 —— 用来复现线上那类失败。
+      mustWords: ['绝对不存在的必含词'],
+    }
+    const result = await runScriptFlow({
+      config: cfg,
+      clients: createMockAgentClients({
+        mockResponder: createScriptMockResponder({ product: cfg.product, mode: 'video' }),
+      }),
+    })
+    const finalizeOutput = (result.run?.stages ?? []).find((s) => s.id === 'finalize')?.output as
+      | { stopReason?: string }
+      | undefined
+    check('脚本：硬校验未解除时仍交付成稿', (result.segments?.length ?? 0) > 0)
+    check('脚本：硬校验未解除时如实标记 pass=false', result.hardCheck?.pass === false)
+    check(
+      '脚本：未解除时 stopReason 写明待修改项',
+      /待修改/.test(String(finalizeOutput?.stopReason ?? '')),
+      String(finalizeOutput?.stopReason ?? ''),
+    )
+    check('脚本：未解除时流程仍是 done（不是 failed）', result.run?.status === 'done')
+  }
+
+  /* -------- 四类目的：结构锁定 + 目的方法注入 -------- */
+  {
+    const cfg: ScriptConfig = {
+      mode: 'video',
+      product: '通勤穿搭',
+      audience: '每天通勤一小时以上的上班族',
+      platform: '抖音',
+      durationSec: 60,
+      goal: '转化',
+      purpose: 'conversion',
+      structure: { kind: 'preset', presetId: 'conv-pain-solution' },
+      materials: {
+        delivery: '一份 12 节通勤穿搭清单',
+        fitFor: '每天通勤 1 小时以上的人',
+        action: '评论区回复「穿搭」',
+      },
+      strength: 50,
+    }
+    const result = await runScriptFlow({
+      config: cfg,
+      clients: createMockAgentClients({
+        mockResponder: createScriptMockResponder({ product: cfg.product, mode: 'video', segmentCount: 5 }),
+      }),
+    })
+    const segs = result.segments ?? []
+    check('目的升级：按用户选定结构生成 5 段', segs.length === 5, String(segs.length))
+    check(
+      '目的升级：段名与顺序来自结构定义',
+      segs[0]?.name === '具体问题' && segs[4]?.name === '适配与唯一行动',
+      segs.map((seg) => seg.name).join(' / '),
+    )
+    check(
+      '目的升级：段占比由宿主锁定',
+      segs.every((seg, index) => Math.abs(seg.share - [0.16, 0.18, 0.24, 0.22, 0.2][index]) < 1e-6),
+      segs.map((seg) => seg.share.toFixed(2)).join(','),
+    )
+    const writerPrompt = (result.run?.stages ?? []).find((stage) => stage.id === 'writer')?.actualPrompt ?? ''
+    const reviewerPrompt = (result.run?.stages ?? []).find((stage) => stage.id === 'reviewer')?.actualPrompt ?? ''
+    check('目的升级：编剧提示词注入转化型方法', /【转化型方法】/.test(writerPrompt))
+    check('目的升级：编剧提示词带本次素材', writerPrompt.includes('一份 12 节通勤穿搭清单'))
+    check('目的升级：评审提示词注入转化型口径', /【转化型评审重点】/.test(reviewerPrompt))
+  }
+
 
   /* -------- 直播自定义结构：UI 选择后必须原样进入生成与结果 -------- */
   {
@@ -584,11 +660,12 @@ async function main() {
       reviewerReq?.maxTokens === resolveBudgets(true).reviewerMaxTokens,
       String(reviewerReq?.maxTokens),
     )
-    // 预填是最短的一步，给它的上限不该被抬高
+    // 预填是轻量步骤，但思考 token 与正文共用额度：512 / 1024 会被思考吃光，
+    // 线上表现为「模型输出被长度上限截断」。现在给 8192，并确保不超过远端上限。
     const autofillReq = seen.find((s) => s.stageHint === 'autofill')
     check(
-      '稳定性：预填步骤没有被抬高 token 上限',
-      (autofillReq?.maxTokens ?? 999) <= 512,
+      '稳定性：预填额度足够思考且不超过上限',
+      (autofillReq?.maxTokens ?? 0) >= 2048 && (autofillReq?.maxTokens ?? 0) <= 8192,
       String(autofillReq?.maxTokens),
     )
   }

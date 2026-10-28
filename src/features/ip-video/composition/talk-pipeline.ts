@@ -19,7 +19,19 @@ export const TALK_PIPELINE_STEPS: readonly TalkPipelineStep[] = [
 
 export type TalkStageAvailability = {
   allowed: boolean
-  reasonKey?: 'needContent' | 'needResult'
+  reasonKey?: 'needContent' | 'needVoiceChoice' | 'needResult'
+}
+
+export type TalkStageGateInput = {
+  hasResult: boolean
+  hasDuration: boolean
+  canGenerate: boolean
+  /** Content step satisfied (brief / script / audio / direction confirmed). */
+  contentReady?: boolean
+  /** Voice step satisfied (voice / audio / explicit skip). */
+  voiceReady?: boolean
+  /** User has visited/confirmed the visual step at least once in this session. */
+  visualConfirmed?: boolean
 }
 
 export function talkStageIndex(stage: TalkStageId): number {
@@ -34,9 +46,24 @@ export function defaultTalkStage(hasResult: boolean): TalkStageId {
   return hasResult ? 'edit' : 'content'
 }
 
-export function canEnterTalkStage(stage: TalkStageId, input: { hasResult: boolean; hasDuration: boolean; canGenerate: boolean }): TalkStageAvailability {
-  if (stage === 'generate') return input.canGenerate || input.hasResult ? { allowed: true } : { allowed: false, reasonKey: 'needContent' }
-  if (stage === 'edit' || stage === 'export') return input.hasDuration ? { allowed: true } : { allowed: false, reasonKey: 'needResult' }
+/**
+ * Rail / jump gates. Later stages require earlier readiness so empty projects
+ * cannot skip straight to generate.
+ */
+export function canEnterTalkStage(stage: TalkStageId, input: TalkStageGateInput): TalkStageAvailability {
+  const contentReady = input.contentReady ?? (input.canGenerate || input.hasResult)
+  const voiceReady = input.voiceReady ?? true
+  if (stage === 'visual' || stage === 'voice') {
+    return contentReady ? { allowed: true } : { allowed: false, reasonKey: 'needContent' }
+  }
+  if (stage === 'generate') {
+    if (!contentReady && !input.hasResult) return { allowed: false, reasonKey: 'needContent' }
+    if (!input.hasResult && !voiceReady) return { allowed: false, reasonKey: 'needVoiceChoice' }
+    return input.canGenerate || input.hasResult ? { allowed: true } : { allowed: false, reasonKey: 'needContent' }
+  }
+  if (stage === 'edit' || stage === 'export') {
+    return input.hasDuration ? { allowed: true } : { allowed: false, reasonKey: 'needResult' }
+  }
   return { allowed: true }
 }
 

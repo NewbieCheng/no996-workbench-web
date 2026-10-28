@@ -32,7 +32,11 @@ import {
   type AgentRunSnapshot,
 } from '../../agent'
 import { downloadText } from '../../services/browser'
-import { toastSuccess } from '../../lib/toast'
+import { toastSuccess, toastWarning } from '../../lib/toast'
+import { ChatPromptAttachments, useChatPromptAttachments } from '../../components/ChatPromptAttachments'
+import { prepareAttachmentsFromItems, type StoredChatAttachment } from '../../lib/chat-attachments/prepare'
+import { checkScriptReadiness, readinessSummary } from './lib/purpose-readiness'
+import { structureById } from './agent/purposes'
 import { SCRIPT_FLOW_ID, SCRIPT_STAGES } from './agent/stages'
 import { SCRIPT_PROGRESS_STAGE_IDS } from './agent/stages'
 import { generateAlternate, runScriptFlow, spokenOf } from './agent/script-flow'
@@ -69,14 +73,31 @@ import {
 } from './dev/dev-fixtures'
 import './script-lab.css'
 
-function defaultConfig(mode: ScriptMode): ScriptConfig {
-  const isVideo = mode === 'video'
+/**
+ * 演示模式下的段数：让 mock 写手按用户选定的结构返回同样段数。
+ * 不同步的话，宿主会以「分段数量与锁定结构不一致」判失败 —— 演示页看起来像 bug。
+ */
+function demoSegmentCountFor(config: ScriptConfig): number | undefined {
+  if (config.mode !== 'video') return undefined
+  if (config.structure.kind === 'preset') {
+    return structureById(config.structure.presetId)?.segments.length
+  }
+  if (config.structure.kind === 'custom' && config.structure.text?.trim()) {
+    return config.structure.text.split(/[+＋]/).map((name) => name.trim()).filter(Boolean).length
+  }
+  return undefined
+}
+
+function defaultConfig(mode: ScriptMode): ScriptConfig {  const isVideo = mode === 'video'
   return {
     mode,
     product: '',
     intro: '',
     durationSec: isVideo ? VIDEO_DURATIONS[1].seconds : LIVE_DURATIONS[2].seconds,
     goal: isVideo ? '获客' : '成交',
+    // 新视频任务不预选目的与结构：PRD 要求用户显式选择，未选不能生成。
+    purpose: undefined,
+    materials: {},
     structure: { kind: 'auto' },
     audience: '',
     sellingPoints: '',
@@ -117,6 +138,9 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
   }
   const goalLabels: Record<string, string> = {
     获客: ts('goal.acquisition'),
+    人设: ts('goal.persona'),
+    观点干货: ts('goal.opinion'),
+    转化: ts('goal.conversion2'),
     流量: ts('goal.traffic'),
     成交: ts('goal.conversion'),
   }
@@ -142,6 +166,12 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
   const [submittedAt, setSubmittedAt] = useState<number | undefined>(undefined)
   /** 流式输出缓冲：只用于「让等待可解释」，不落库、不导出 */
   const [streamText, setStreamText] = useState('')
+  /** 参考资料：只存在本机内存/任务载荷里，不上传云端 */
+  const {
+    items: attachmentItems,
+    setItems: setAttachmentItems,
+    clear: clearAttachments,
+  } = useChatPromptAttachments()
   const abortRef = useRef<AbortController | null>(null)
   const submittedConfigRef = useRef<ScriptConfig | null>(null)
   const personaInject = usePersonaInjection()
@@ -316,6 +346,15 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
       setError(ts('runtime.missingProduct'))
       return
     }
+    // 资料完整性：目的/结构/关键事实缺一项就不调用模型（PRD 7.5）。
+    // 之前只校验产品名，模型拿不到事实就只能编，成稿必然空泛。
+    const issues = checkScriptReadiness(config)
+    if (issues.length) {
+      setError(readinessSummary(issues))
+      setStep(issues.some((issue) => issue.step === 2) ? 2 : 1)
+      return
+    }
+
     setError('')
     setEdited({})
     setAltText({})
@@ -333,10 +372,25 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
     }
     submittedConfigRef.current = withPersona
 
+    // 参考资料：先过输入闸（单份 5 万字 / 合计 8 万字），超限要么拒绝要么截断并提示。
+    let attachments: StoredChatAttachment[] | undefined
+    try {
+      attachments = attachmentItems.length
+        ? await prepareAttachmentsFromItems(attachmentItems, {
+            onNotice: (message) => toastWarning(message),
+          })
+        : undefined
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '参考资料解析失败，请重试。')
+      setStep(2)
+      return
+    }
+
     if (!demo) {
       try {
         const id = await enqueueScriptGenerate({
           config: withPersona,
+          chatAttachments: attachments,
           route,
           title: scriptTaskTitle(config),
         })
@@ -355,10 +409,15 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
     setBusy(true)
     try {
       const clients = createAgentClients({
-        mockResponder: createScriptMockResponder({ product: config.product, mode }),
+        mockResponder: createScriptMockResponder({
+          product: config.product,
+          mode,
+          segmentCount: demoSegmentCountFor(config),
+        }),
       })
       const result = await runScriptFlow({
         config: withPersona,
+        chatAttachments: attachments,
         clients,
         sink: memorySink.sink,
         signal: ac.signal,
@@ -404,10 +463,15 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
       setSubmittedAt(Date.now())
       try {
         const clients = createAgentClients({
-          mockResponder: createScriptMockResponder({ product: resumeConfig.product, mode: resumeConfig.mode }),
+          mockResponder: createScriptMockResponder({
+            product: resumeConfig.product,
+            mode: resumeConfig.mode,
+            segmentCount: demoSegmentCountFor(resumeConfig),
+          }),
         })
         const result = await runScriptFlow({
           config: resumeConfig,
+          chatAttachments: stored?.chatAttachments,
           clients,
           sink: memorySink.sink,
           signal: ac.signal,
@@ -440,6 +504,7 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
       setSubmittedAt(Date.now())
       const id = await enqueueScriptGenerate({
         config: stored.config,
+        chatAttachments: stored.chatAttachments,
         resumeFromStageId: stageId,
         resumeSnapshot: checkpointSnapshot,
         route: sourceTask.route,
@@ -473,6 +538,7 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
     setStep(0)
     setInputCollapsed(false)
     setSubmittedAt(undefined)
+    clearAttachments()
   }
 
   /** 开发环境专享：一键注入高完成度真实业务调试示例 */
@@ -712,10 +778,25 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
                     autofill={payload?.autofill ?? null}
                     examples={isVideo ? VIDEO_EXAMPLES : LIVE_EXAMPLES}
                     onUseExample={(text) => patch({ product: text })}
-                      step={step}
-                      hideSubmit
-                      hideFooter
-                    />
+                    step={step}
+                    hideSubmit
+                    hideFooter
+                    attachmentSlot={
+                      isVideo ? (
+                        <div className="sl-wiz-blk">
+                          <div className="sl-wiz-blk__head">
+                            <h3>{ts('materials.reference')}</h3>
+                            <span>{ts('materials.referenceHint')}</span>
+                          </div>
+                          <ChatPromptAttachments
+                            disabled={running}
+                            items={attachmentItems}
+                            onChange={setAttachmentItems}
+                          />
+                        </div>
+                      ) : undefined
+                    }
+                  />
                 </InputWizard>
               </ScriptLabWizardLayout>
             ) : null}

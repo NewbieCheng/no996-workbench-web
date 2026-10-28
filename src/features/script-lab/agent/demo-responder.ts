@@ -46,13 +46,16 @@ function demoSpoken(index: number, ctx: DemoContext): string {
 
 function buildSegments(ctx: DemoContext, count: number, withRound: number) {
   const structure = ctx.mode === 'video' ? VIDEO_STRUCTURE : LIVE_STRUCTURE
-  return structure.slice(0, count).map((seg, i) => {
-    const spoken = demoSpoken(i, ctx)
+  return Array.from({ length: Math.max(1, count) }, (_, i) => {
+    // 四类目的的结构是 5 段，演示结构只有 4 条文案：按需循环，并把段名补成通用名，
+    // 避免「结构 5 段、演示只回 4 段」导致宿主判为结构错位。
+    const seg = structure[i] ?? { name: `第 ${i + 1} 段`, purpose: '按宿主锁定的结构承担该段职责' }
+    const spoken = demoSpoken(i % 4, ctx)
     const item: Record<string, unknown> = {
       id: `seg-${i + 1}`,
       name: seg.name,
       purpose: seg.purpose,
-      share: seg.share,
+      share: ctx.mode === 'video' ? (1 / Math.max(1, count)) : (structure[i]?.share ?? 1 / Math.max(1, count)),
       spoken: withRound > 1 ? `${spoken}（第 ${withRound} 轮优化版）` : spoken,
       note: withRound > 1 ? '调整了开场与承接方式' : undefined,
     }
@@ -112,7 +115,9 @@ export function createScriptMockResponder(config: { product: string; mode: 'vide
         return {
           formulaId: ctx.mode === 'video' ? 'video-acquisition' : 'live-five-chapter',
           formulaName: ctx.mode === 'video' ? '痛点场景 + 身份共情 + 干货解法 + 行动引导' : '固定五章',
-          segments: (ctx.mode === 'video' ? VIDEO_STRUCTURE : LIVE_STRUCTURE).map((s) => ({ ...s })),
+          segments: Array.from({ length: segmentCount }, (_, i) => ({
+            ...(ctx.mode === 'video' ? VIDEO_STRUCTURE[i] ?? { name: `第 ${i + 1} 段`, purpose: '按用户选定的结构承担该段职责', share: 1 / segmentCount } : LIVE_STRUCTURE[i] ?? { name: `第 ${i + 1} 章`, purpose: '按用户选定的结构承担该章职责', share: 1 / segmentCount }),
+          })),
         }
       case 'writer':
         return { segments: buildSegments(ctx, segmentCount, 1) }

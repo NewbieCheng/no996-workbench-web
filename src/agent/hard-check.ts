@@ -5,6 +5,15 @@
  * 医疗与收益承诺、虚假紧迫感（仅直播）、编造数据。
  *
  * 该表同时服务 titles（绝对化用语）与 script-lab（全量规则）。
+ *
+ * 2026-10-28 修复（线上「定稿仍有未解除的硬校验问题：第一、总字数 289」）：
+ * 1. 违禁词不再「每个词只产出一条命中、只定位第一段」——同一词出现在多段时
+ *    每段各一条，`mustFixIds` 才能收全；否则评审/编辑只能改到第一段，
+ *    其余段里的同一个词永远修不掉，三轮后必然判失败。
+ * 2. 「第一」的序数白名单补上「个 / 时间 / 反应」等常见说法；同时加「宣称语境」
+ *    覆盖（销量、排名、行业、全网…），真正的极限宣称仍然命中。
+ * 3. 总字数支持「口播字数」口径（去掉空白与标点），与语音语速目标同单位；
+ *    命中说明带目标区间与差额，编辑步骤才有可执行数字。
  */
 
 /** 内置违禁词：命中即标记。可按行业扩充。 */
@@ -48,27 +57,21 @@ const FAKE_URGENCY_PATTERNS: Array<{ label: string; re: RegExp }> = [
 const NUMERIC_PATTERN = /(\d+(?:\.\d+)?\s*(?:%|％|万|亿|倍|天|年|小时|分钟|秒|元|块|单|人|件|G|GB|ml|ML))/g
 
 /**
- * 「第一」的序数用法：「第一步」「第一次」「第一天」这类是叙述顺序，
- * 不含极限宣称的意思。绝对化用语规则要放行的正是这些，而不是「销量第一」。
+ * 「第一」后面跟这些字时是序数/量词，不是极限宣称。
+ *
+ * 之前只有「步次天版轮遍条节课部分批回阶段稿款」，漏掉「个 / 时间 / 反应」
+ * 这类日常说法，导致「第一个月」「第一时间」被判成绝对化用语 —— 线上事故
+ * 的第一条命中就是它。这里补齐常见量词与时间表达。
  */
-const ORDINAL_AFTER_FIRST = /第一(?=[步次天版轮遍条节课部分批回阶段稿款])/
+const ORDINAL_AFTER_FIRST =
+  /第一(?=[步次天版轮遍条节课部分批回阶段稿款个种位眼层句段届场局期年月日周季集]|时间|反应|感觉|印象)/
 
 /**
- * 是否每一处「第一」都属序数用法。
- * 只要有一处不是（例如「全网销量第一」），就仍然算命中 —— 不能因为文案里
- * 同时出现了「第一步」就把真正违规的那一处一起放过。
+ * 「第一」前面出现这些词时是宣称语境，即使后面跟量词也仍然算极限宣称
+ * （例如「行业第一位」「销量第一个」）。只看紧邻的 10 个字。
  */
-function onlyOrdinalUsages(text: string, word: string): boolean {
-  const ordinalRe = new RegExp(ORDINAL_AFTER_FIRST.source, 'g')
-  let ordinalCount = 0
-  while (ordinalRe.exec(text)) ordinalCount += 1
-
-  const wordRe = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
-  let totalCount = 0
-  while (wordRe.exec(text)) totalCount += 1
-
-  return totalCount > 0 && ordinalCount >= totalCount
-}
+const CLAIM_CONTEXT_BEFORE =
+  /(?:销量|销售额|排名|排行|行业|全国|全网|全球|市场|品牌|口碑|人气|好评|增速|增长率|占有率|份额|榜单)[^。！？；\n]{0,6}$/
 
 export type HardCheckHit = {
   /** 命中词或规则名 */
@@ -79,6 +82,19 @@ export type HardCheckHit = {
   segmentId?: string
   /** 说明 */
   detail: string
+  /**
+   * 总字数命中的结构化信息：目标区间与差额。
+   *
+   * 有了它，编辑步骤才能拿到「要压多少字 / 要补多少字」——
+   * 之前只有一句「偏差超过 15%」，模型无从下手。
+   */
+  length?: {
+    target: number
+    low: number
+    high: number
+    direction: 'over' | 'under'
+    delta: number
+  }
 }
 
 export type HardCheckInput = {
@@ -94,6 +110,13 @@ export type HardCheckInput = {
   hasStockInfo?: boolean
   /** 视频：目标字数与容差（默认 ±15%） */
   targetChars?: number
+  /**
+   * 字数口径：
+   * - `raw`（默认）：按码点计，标点与换行都算 —— 标题这种平台硬上限用这个；
+   * - `spoken`：只数实际念出来的字（去空白与标点）—— 视频脚本用这个，
+   *   与「每秒 4.17 字」的语速目标同单位。
+   */
+  lengthCountMode?: 'raw' | 'spoken'
   /** 视频：逐段字数预算，用于检查单段是否超 130% */
   segmentCharBudgets?: Array<{ id: string; budget: number }>
   /**
@@ -123,16 +146,57 @@ function locate(needle: string, segments?: Array<{ id: string; text: string }>):
   return segments.find((s) => s.text.includes(needle))?.id
 }
 
+/** 按码点计数（避免 emoji 被算两次） */
 function countChars(text: string): number {
-  // 与 UI 字数统计一致：按码点计数（避免 emoji 被算两次）
   return [...text].length
+}
+
+/** 空白 + 中英文标点 */
+const NON_SPOKEN_CHARS = /[\s\u3000-\u303f\uff00-\uffef!-/:-@[-`{-~]/g
+
+/**
+ * 口播字数：只数真正要念出来的字。
+ *
+ * 标点、空格、换行都不念，所以不应该占掉「每秒 4.17 字」的预算。
+ * 之前用原始码点计数，一篇 60 秒稿子光标点就有 20–40 个字，
+ * 直接把 15% 的容差吃掉大半。
+ */
+export function countSpokenChars(text: string): number {
+  return [...String(text ?? '').replace(NON_SPOKEN_CHARS, '')].length
+}
+
+/** 某一处「第一」是否属于序数用法（不是极限宣称） */
+function isOrdinalFirstAt(text: string, index: number): boolean {
+  if (!ORDINAL_AFTER_FIRST.test(text.slice(index))) return false
+  const before = text.slice(Math.max(0, index - 10), index)
+  return !CLAIM_CONTEXT_BEFORE.test(before)
+}
+
+/**
+ * 文本里是否还有「未被序数豁免」的该词出现。
+ *
+ * 只有内置违禁词「第一」需要这个判断；其余词一律按出现即命中。
+ */
+function hasClaimOccurrence(word: string, text: string, builtinFirst: boolean): boolean {
+  if (!builtinFirst) return text.includes(word)
+  let index = text.indexOf(word)
+  while (index >= 0) {
+    if (!isOrdinalFirstAt(text, index)) return true
+    index = text.indexOf(word, index + word.length)
+  }
+  return false
+}
+
+/** 该段是否包含需要命中的出现（用于按段展开） */
+function segmentHasHit(word: string, segmentText: string, builtinFirst: boolean): boolean {
+  return hasClaimOccurrence(word, segmentText, builtinFirst)
 }
 
 export function runHardCheck(input: HardCheckInput): HardCheckResult {
   const hits: HardCheckHit[] = []
   const text = input.text ?? ''
 
-  // 1. 内置违禁词 + 用户禁用词
+  // 1. 内置违禁词 + 用户禁用词（按段展开）
   const banned: string[] = [...BUILTIN_BANNED_WORDS]
   for (const w of input.bannedWords ?? []) {
     const word = String(w).trim()
@@ -141,11 +205,29 @@ export function runHardCheck(input: HardCheckInput): HardCheckResult {
   const userBanned = new Set((input.bannedWords ?? []).map((w) => String(w).trim()).filter(Boolean))
   for (const word of Array.from(new Set(banned))) {
     if (!word || !text.includes(word)) continue
-    // 「第一」是绝对化用语，但「第一步 / 第一次 / 第一版」是序数词，不是极限宣称。
-    // 逐处判断：只有所有出现都属序数用法时才不命中（用户自设的禁用词不做豁免）。
-    if (word === '第一' && !userBanned.has(word) && onlyOrdinalUsages(text, word)) {
+    const builtinFirst = word === '第一' && !userBanned.has(word)
+
+    if (input.segments?.length) {
+      // 同一词出现在多段时每段各一条：否则 mustFixIds 只含第一段，
+      // 其余段里的同一个词在「编辑只合并 targetIds」的约束下永远修不掉。
+      const targets = input.segments.filter((segment) => segmentHasHit(word, segment.text, builtinFirst))
+      if (!targets.length) continue
+      for (const segment of targets) {
+        hits.push({
+          label: word,
+          rule: userBanned.has(word) ? 'user-banned' : 'banned',
+          segmentId: segment.id,
+          detail: userBanned.has(word)
+            ? '命中用户设置的禁用词'
+            : builtinFirst
+              ? '命中内置违禁词（此处不是「第一步」这类序数用法，属极限宣称）'
+              : '命中内置违禁词',
+        })
+      }
       continue
     }
+
+    if (!hasClaimOccurrence(word, text, builtinFirst)) continue
     hits.push({
       label: word,
       rule: userBanned.has(word) ? 'user-banned' : 'banned',
@@ -154,12 +236,16 @@ export function runHardCheck(input: HardCheckInput): HardCheckResult {
     })
   }
 
-  // 2. 必含词
+  // 2. 必含词（全局规则：没有任何段可定位时由评审与编辑按全文补齐）
   for (const w of input.mustWords ?? []) {
     const word = String(w).trim()
     if (!word) continue
     if (!text.includes(word)) {
-      hits.push({ label: word, rule: 'must-word', detail: '必须出现的词未在脚本中出现' })
+      hits.push({
+        label: word,
+        rule: 'must-word',
+        detail: `必须出现的词「${word}」未在脚本中出现，需要挑一段自然补进去`,
+      })
     }
   }
 
@@ -179,16 +265,26 @@ export function runHardCheck(input: HardCheckInput): HardCheckResult {
     }
   }
 
-  // 5. 字数：总量与单段预算
-  const charCount = countChars(text)
+  // 5. 字数：总量与单段预算（同一口径）
+  const counter = input.lengthCountMode === 'spoken' ? countSpokenChars : countChars
+  const charCount = counter(text)
   if (input.targetChars && input.targetChars > 0) {
-    const low = input.targetChars * 0.85
-    const high = input.targetChars * 1.15
+    const low = Math.round(input.targetChars * 0.85)
+    const high = Math.round(input.targetChars * 1.15)
     if (charCount < low || charCount > high) {
+      const over = charCount > high
+      const delta = over ? charCount - high : low - charCount
       hits.push({
         label: `总字数 ${charCount}`,
         rule: 'length',
-        detail: `与目标字数 ${input.targetChars} 偏差超过 15%`,
+        detail: `目标 ${input.targetChars} 字（合格区间 ${low}–${high}），当前 ${charCount} 字，${over ? '超出上限' : '不足下限'} ${delta} 字`,
+        length: {
+          target: input.targetChars,
+          low,
+          high,
+          direction: over ? 'over' : 'under',
+          delta,
+        },
       })
     }
   }
@@ -196,7 +292,7 @@ export function runHardCheck(input: HardCheckInput): HardCheckResult {
   for (const seg of input.segmentCharBudgets ?? []) {
     const segText = input.segments?.find((s) => s.id === seg.id)?.text
     if (!segText || !seg.budget) continue
-    const used = countChars(segText)
+    const used = counter(segText)
     if (used > seg.budget * tolerance) {
       hits.push({
         label: `第 ${seg.id} 段 ${used} 字`,

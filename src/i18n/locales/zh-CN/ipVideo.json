@@ -32,6 +32,7 @@
       "invalidDuration": "视频时长必须大于零且不超过 5 分钟。", "invalidLayout": "排版参数无效，请检查图层的位置、尺寸和字体设置。", "invalidSubtitle": "字幕时间无效，请检查先后顺序、重叠和总时长。", "subtitleOverflow": "文字超出了文本框。请放大文本框或缩小字号后重新导出，系统不会截掉正文。", "audioDurationMismatch": "音频实际时长与项目时长不一致，请重新确认配音。", "invalidAudio": "音频无法处理或超过本机容量限制，请选择不超过 5 分钟的单声道或双声道音频。", "audioDecodeUnsupported": "浏览器无法解码音频，请使用新版 Chrome 或 Edge。", "invalidImage": "图片无法处理或超过 4000 万像素，请压缩后重试。", "exportTooLarge": "素材或成片超过 250 MB 本机容量限制，请缩短内容或压缩素材。", "capacityLimit": "成片超过 250 MB，请缩短内容后重新导出。", "encodeFailed": "本机编码失败，请检查浏览器支持情况后重新导出。", "encodingFailed": "浏览器实时录制失败，请保持前台后重试。", "foregroundRequired": "兼容录制需要保持页面前台，请返回页面后重新导出。", "mediaTimeout": "本机合成超时，请重新导出。", "canvasFailed": "无法创建画布，请关闭占用较高的页面后重试。", "audioBlocked": "浏览器未允许音频处理，请点击导出按钮重试。", "renderUnsupported": "当前浏览器没有可用的视频编码方式，请使用新版 Chrome 或 Edge。"
     }
   },
+  "talkEditor": { "ranges": { "captionSize": "字幕大小", "captionHorizontalPosition": "字幕水平位置", "captionVerticalPosition": "字幕垂直位置", "motionStrength": "动效强度", "lineHeight": "行距", "letterSpacing": "字间距", "textWidth": "文字宽度", "outlineThickness": "描边厚度" } },
   "editor": {
     "label": "固定模板编辑器", "properties": "图层属性", "selectLayers": "选择图层", "selectLayer": "选择{{layer}}图层",
     "layers": { "title": "标题", "subtitle": "字幕", "photo": "照片" },

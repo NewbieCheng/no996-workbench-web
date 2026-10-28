@@ -4,7 +4,6 @@ import { Button } from '@no996/ui/button'
 import { useTalkV2Copy } from '../v2-copy'
 
 export function TalkEditStep({
-  rail,
   stage,
   inspector,
   divider,
@@ -14,7 +13,6 @@ export function TalkEditStep({
   onBack,
   onNext,
 }: {
-  rail: ReactNode
   stage: ReactNode
   inspector: ReactNode
   divider?: ReactNode
@@ -39,7 +37,6 @@ export function TalkEditStep({
       </div>
     </header>
     <div className="ipt-edit-grid">
-      {rail}
       <div className="ipt-edit-center">
         {stage}
         {timelineOpen && timeline ? <div className="ipt-edit-timeline">{timeline}</div> : null}

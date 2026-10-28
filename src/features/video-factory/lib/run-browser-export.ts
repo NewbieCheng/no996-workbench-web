@@ -86,7 +86,7 @@ export async function runBrowserExport(input: RunBrowserExportInput): Promise<Ru
     })), signal)
     throwIfAborted(signal)
     if (composition === 'preview') {
-      return runPreviewExport({
+      return await runPreviewExport({
         doc,
         resolutionPreset,
         getAssetBlob: cachedGetBlob,

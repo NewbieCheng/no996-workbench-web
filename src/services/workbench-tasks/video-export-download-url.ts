@@ -7,9 +7,11 @@ export async function resolveVideoExportDownloadUrl(
 ): Promise<string> {
   if (task.kind !== 'video_factory_export' || task.status !== 'succeeded' || !task.blobId) return ''
   const blob = await repo.getBlob(task.blobId)
-  if (!blob?.data || blob.data.byteLength === 0) return ''
+  if (!blob?.data) return ''
+  const data = blob.data
+  if ((data instanceof Blob ? data.size : data.byteLength) === 0) return ''
   const mime = blob.mime || 'video/mp4'
-  return URL.createObjectURL(new Blob([blob.data], { type: mime }))
+  return URL.createObjectURL(data instanceof Blob && data.type === mime ? data : new Blob([data], { type: mime }))
 }
 
 export async function resolveVideoExportFileName(

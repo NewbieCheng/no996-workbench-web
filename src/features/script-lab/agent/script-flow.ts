@@ -10,6 +10,7 @@
  * 同一份代码既能页内跑，也能入队跑 —— 区别只在传入哪个 sink。
  */
 import {
+  countSpokenChars,
   createDisplayDelta,
   createStageRunner,
   isAbortError,
@@ -19,6 +20,7 @@ import {
   type AgentClients,
   type AgentRunSnapshot,
   type AgentSink,
+  type HardCheckResult,
   type StageRunner,
 } from '../../../agent'
 import { SCRIPT_FLOW_ID, SCRIPT_STAGES } from './stages'
@@ -50,6 +52,8 @@ import {
 } from './structure-plan'
 import { finalizeScript, formatTimecode, segmentCharBudgets } from './finalize'
 import { pickTargets, roundFromReview, shouldStop, MAX_ROUNDS, RETENTION_TARGET } from './retention'
+import { purposeById, purposeIdFromGoal } from './purposes'
+import type { StoredChatAttachment } from '../../../lib/chat-attachments/types'
 import {
   videoTargetChars,
   type ScriptAutofill,
@@ -58,6 +62,7 @@ import {
   type ScriptGeneratePayload,
   type ScriptPromptLogEntry,
   type ScriptReview,
+  type ScriptReviewItem,
   type ScriptSegment,
   type ScriptNode,
 } from './types'
@@ -73,6 +78,8 @@ export type RunScriptFlowInput = {
   clients: AgentClients
   sink?: AgentSink
   signal?: AbortSignal
+  /** 参考资料（只随策划与编剧发送，不进评审） */
+  chatAttachments?: StoredChatAttachment[]
   /** 从指定步骤恢复：仅重跑该步骤及其下游。 */
   resume?: { fromStageId: string; snapshot: AgentRunSnapshot }
   /** 步骤开始/结束的细粒度回调（页面用于提示） */
@@ -85,8 +92,6 @@ export type RunScriptFlowInput = {
    */
   onDelta?: (chunk: string) => void
 }
-
-class UnresolvedHardCheckError extends Error {}
 
 type ScriptFlowCheckpoint = {
   autofill?: ScriptAutofill
@@ -243,6 +248,8 @@ function allowedNumberSources(config: ScriptConfig, brief: ScriptBrief, autofill
     autofill?.audience,
     autofill?.sellingPoints,
     autofill?.pain,
+    // 四类目的的素材同样是事实来源
+    ...Object.values(config.materials ?? {}),
     // 时长本身是用户选择的，允许出现
     String(config.durationSec),
   ]
@@ -250,11 +257,135 @@ function allowedNumberSources(config: ScriptConfig, brief: ScriptBrief, autofill
     .join('\n')
 }
 
+/**
+ * 把「按目的收集的素材」渲染成提示词里的事实清单。
+ *
+ * 只列用户真的填了的字段；必填但缺失的显式写「（缺失）」，
+ * 让模型知道这里不能编，而不是当成「用户没提所以可以自由发挥」。
+ */
+function buildPurposeFacts(config: ScriptConfig): string {
+  const purpose = purposeById(config.purpose)
+  const rows: string[] = []
+  const push = (label: string, value: string | undefined) => {
+    const text = value?.trim()
+    if (text) rows.push(`- ${label}：${text}`)
+  }
+  push('产品/主题介绍', config.intro)
+  push('目标人群', config.audience)
+  push('痛点/问题', config.pain)
+  push('卖点', config.sellingPoints)
+  if (purpose) {
+    for (const field of purpose.materials) {
+      const value = config.materials?.[field.key]?.trim()
+      if (value) rows.push(`- ${field.label}：${value}`)
+      else if (field.required) rows.push(`- ${field.label}：（缺失，不能编造）`)
+    }
+  }
+  return rows.length ? rows.join('\n') : '（无，请只写用户已提供的产品名与主题，不要补造事实）'
+}
+
+/* --------------------------- 硬校验可执行化 --------------------------- */
+
+/**
+ * 把硬校验结果整理成评审能直接执行的输入。
+ *
+ * 之前只丢一句「2 处问题：第一（…）；总字数 289（…）」：没有段 id、没有目标区间，
+ * 评审只能靠猜，`mustFixIds` 里的段也可能漏标。现在把「必须标 mustFix 的段」
+ * 明确写出来 —— 提示词里那句「已在 mustFixIds 中给出」才不再是空话。
+ */
+function formatHardCheckForReview(checked: HardCheckResult): string {
+  if (!checked.hits.length) return '全部通过。'
+  const lines = checked.hits.map((hit) => {
+    const where = hit.segmentId ? `[${hit.segmentId}]` : '[全文]'
+    return `- ${where} ${hit.label}：${hit.detail}`
+  })
+  const must = checked.mustFixIds.length
+    ? `必须标为 mustFix 的段：${checked.mustFixIds.join('、')}`
+    : '没有可直接定位的段（属于全局问题：请判断它最该落在哪一段，并把该段标为 mustFix）'
+  return `${checked.hits.length} 处问题\n${must}\n${lines.join('\n')}`
+}
+
+/** 某一稿的口播总字数（与硬校验同口径） */
+function totalSpoken(segments: ScriptSegment[], spokenOf: (seg: ScriptSegment) => string): number {
+  return segments.reduce((sum, seg) => sum + countSpokenChars(spokenOf(seg)), 0)
+}
+
+/**
+ * 字数总账：目标区间、当前字数、差额、逐段预算与现状。
+ *
+ * 编辑步骤之前只看得到「完整原稿」和评审意见，既不知道目标字数，也不知道差多少 ——
+ * 全局字数命中因此在结构上不可修。这里把它变成一组可执行的数字。
+ */
+function buildLengthLedger(
+  targetChars: number,
+  segments: ScriptSegment[],
+  spokenOf: (seg: ScriptSegment) => string,
+): string {
+  const low = Math.round(targetChars * 0.85)
+  const high = Math.round(targetChars * 1.15)
+  const total = totalSpoken(segments, spokenOf)
+  const gap = total > high ? `需要压缩 ${total - high} 字` : total < low ? `需要补足 ${low - total} 字` : '已在区间内'
+  const rows = segments.map((seg) => {
+    const budget = Math.max(1, Math.round(seg.share * targetChars))
+    return `- [${seg.id}] ${seg.name}：预算 ${budget} 字，当前 ${countSpokenChars(spokenOf(seg))} 字`
+  })
+  return [
+    `目标口播字数 ${targetChars} 字（合格区间 ${low}–${high}，按去标点的口播字数计）`,
+    `当前合计 ${total} 字，${gap}`,
+    '逐段预算与现状：',
+    ...rows,
+  ].join('\n')
+}
+
+/**
+ * 全局字数命中时，按「偏离本段预算最多」挑最多 3 段作为定向修复目标。
+ *
+ * 长度命中本身没有 segmentId，评审也未必会点名；不给编辑明确的段，
+ * 三轮都只能盲改。这里用纯算法补齐落点。
+ */
+function lengthFixTargets(
+  checked: HardCheckResult,
+  targetChars: number,
+  segments: ScriptSegment[],
+  spokenOf: (seg: ScriptSegment) => string,
+): ScriptReviewItem[] {
+  const lengthHit = checked.hits.find((hit) => hit.length)
+  if (!lengthHit?.length) return []
+  const { direction } = lengthHit.length
+  const scored = segments
+    .map((seg) => {
+      const budget = Math.max(1, Math.round(seg.share * targetChars))
+      const current = countSpokenChars(spokenOf(seg))
+      return { seg, budget, current, gap: direction === 'over' ? current - budget : budget - current }
+    })
+    .filter((row) => row.gap > 0)
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 3)
+
+  return scored.map((row) => ({
+    segmentId: row.seg.id,
+    retention: 0,
+    primaryIssue: `本段 ${row.current} 字，预算 ${row.budget} 字`,
+    improvementDirection:
+      direction === 'over'
+        ? `压到 ${row.budget} 字左右：删重复解释和空话，保留具体场景与事实`
+        : `补到 ${row.budget} 字左右：补具体场景、动作或证据，不要用空话凑字数`,
+    mustFix: true,
+  }))
+}
+
 /* ------------------------------- 主流程 ------------------------------- */
 
 export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGeneratePayload> {
-  const { config, clients, sink, signal, onDelta } = input
+  const { config, clients, sink, signal, onDelta, chatAttachments } = input
   const isVideo = config.mode === 'video'
+
+  // 四类创作目的：视频按 purpose（旧任务回退到 goal）；直播不注入目的方法。
+  const purpose = isVideo ? purposeById(config.purpose ?? purposeIdFromGoal(config.goal)) : undefined
+  const purposeLabel = purpose?.label ?? config.goal
+  const purposeMethod = purpose?.method ?? ''
+  const purposeReviewFocus = purpose?.reviewFocus ?? ''
+  const purposeFacts = isVideo ? buildPurposeFacts(config) : ''
 
   // 人设注入：只把正文交给模板，标签由提示词模板自己写（避免两处都加前缀拼出双标题）。
   // 关掉开关时 config.personaContent 为 undefined，模板会渲染成「表达参考人设：无」。
@@ -390,6 +521,8 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             product: config.product,
             durationLabel,
             goal: config.goal,
+            purposeLabel,
+            facts: purposeFacts,
             strength: config.strength,
             pain,
             sellingPoints,
@@ -397,6 +530,7 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             extra,
           },
           timeoutMs: budgets.stepMs,
+          chatAttachments,
           responseFormat: { type: 'json_object' },
         })
 
@@ -423,6 +557,7 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
           mode: config.mode,
           goal: config.goal,
           durationSec: config.durationSec,
+          presetId: config.structure.kind === 'preset' ? config.structure.presetId : undefined,
           customStructure: structureCustomText(config),
         })
         const candidateText = structures
@@ -480,6 +615,10 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
           offer: config.offer,
           refGood,
           persona: personaBlock,
+          // 四类目的：把该目的的方法与事实清单交给编剧
+          purposeLabel,
+          purposeMethod,
+          facts: purposeFacts,
         }
 
         if (!isVideo && shouldGenerateLiveByChapter(config.durationSec)) {
@@ -508,6 +647,7 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             userTemplate: isVideo ? WRITER_PROMPT_VIDEO : WRITER_PROMPT_LIVE,
             vars: writerVars,
             timeoutMs: budgets.stepMs,
+            chatAttachments: isVideo ? chatAttachments : undefined,
             // 编剧走流式，不加 response_format；截断由内核识别并抬高 max_tokens 重试。
             onDelta: displayDelta,
           })
@@ -563,6 +703,8 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             const reviewed = await runner.runModel<Record<string, unknown>>('reviewer', {
               userTemplate: isVideo ? REVIEWER_PROMPT_VIDEO : REVIEWER_PROMPT_LIVE,
               vars: {
+                purposeLabel,
+                purposeReviewFocus,
                 segments: structuredSegments
                   .map((s, i) => {
                     const detail = isVideo
@@ -571,9 +713,9 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
                     return (i + 1) + '. [' + s.id + '] ' + s.name + '（目的：' + s.purpose + '）\n' + s.spoken + '\n' + detail
                   })
                   .join('\n\n'),
-                hardCheck: checked.hits.length
-                  ? checked.hits.length + ' 处问题：' + checked.hits.map((h) => h.label + '（' + h.detail + '）').join('；')
-                  : '无问题',
+                // 之前只传 label+detail：评审看不到「哪一段必须改」，
+                // 提示词却声称已在 mustFixIds 给出。现在把段 id 一起交出去。
+                hardCheck: formatHardCheckForReview(checked),
               },
               round,
               timeoutMs: budgets.reviewerMs,
@@ -602,7 +744,11 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
 
           if (firstResumeIndex < 6) {
             const stop = shouldStop(rounds)
-            if (stop.stop) {
+            // 硬校验还红着时不能按留存提前停：否则「稿子越好越快失败」——
+            // 明明还有可修项，却因为平均留存达标直接进定稿并判失败。
+            const hasHardErrors = !checked.pass
+            const mustFinish = rounds.length >= MAX_ROUNDS
+            if (stop.stop && (!hasHardErrors || mustFinish)) {
               stopReason = stop.reason
               await runner.skip('editor')
               await runner.setCheckpoint('editor', {
@@ -614,7 +760,17 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
           }
 
           input.onStageChange?.('editor')
-          const targets = pickTargets(reviewForRound, segments)
+          const reviewTargets = pickTargets(reviewForRound, segments)
+          // 全局字数命中没有段 id：用纯算法补落点，否则编辑只能盲改。
+          const lengthTargets = isVideo && target > 0
+            ? lengthFixTargets(checked, target, segments, (s) => spokenOf(s))
+            : []
+          const seenTargetIds = new Set<string>()
+          const targets = [...reviewTargets, ...lengthTargets].filter((item) => {
+            if (seenTargetIds.has(item.segmentId)) return false
+            seenTargetIds.add(item.segmentId)
+            return true
+          })
           const targetIds = targets.map((target) => target.segmentId)
           const targetBlock = targets
             .map((target) => {
@@ -640,6 +796,9 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             userTemplate: isVideo ? EDITOR_PROMPT_VIDEO : EDITOR_PROMPT_LIVE,
             vars: {
               targets: '允许修改的 targetIds：' + (targetIds.join('、') || '无') + '\n\n可用事实与真实福利：\n' + allowedFacts + '\n真实福利：' + (config.offer?.trim() || '无') + '\n\n完整原稿：\n' + completeDraft + '\n\n目标意见：\n' + targetBlock,
+              lengthBudget: isVideo && target > 0
+                ? buildLengthLedger(target, segments, (s) => spokenOf(s))
+                : '（本次任务不设总字数区间）',
               stopRetention: RETENTION_TARGET,
               maxRounds: MAX_ROUNDS,
             },
@@ -657,30 +816,32 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
 
         /* ------------------------ 8. 定稿 ------------------------ */
         input.onStageChange?.('finalize')
-        const finalized = await runner.runAlgo('finalize', () => ({
-          ...finalizeScript({
+        const finalized = await runner.runAlgo('finalize', () => {
+          const result = finalizeScript({
             config,
             segments,
             spokenOf: (s) => spokenOf(s),
             allowedNumberSources: sources,
-          }),
-          stopReason,
-        }))
+          })
+          // 定稿不再整份丢弃：硬校验未通过时如实交付，并把命中写进 stopReason，
+          // 由页面/任务中心显示「有 N 处待修改」。之前这里直接抛错，
+          // 执行器连 payload 都写不进去，用户拿不到任何成稿。
+          const pending = result.hardCheck.hits
+          const reason = pending.length
+            ? `定稿仍有 ${pending.length} 处待修改：${pending.map((hit) => hit.label).join('、')}`
+            : stopReason
+          return { ...result, stopReason: reason }
+        })
         segments = finalized.segments
         hardCheckResult = finalized.hardCheck
         if (!finalized.hardCheck.pass) {
-          const labels = finalized.hardCheck.hits.map((hit) => hit.label).join('、')
-          throw new UnresolvedHardCheckError('定稿仍有未解除的硬校验问题：' + labels)
+          stopReason = finalized.stopReason
         }
       }
     })()
   } catch (e) {
     clearTimeout(flowTimer)
     signal?.removeEventListener('abort', onOuterAbort)
-    if (e instanceof UnresolvedHardCheckError) {
-      await runner.finish('failed')
-      throw e
-    }
     if (isAbortError(e) && !flowTimedOut) {
       await runner.finish('cancelled')
       throw e
@@ -712,6 +873,7 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
 
   return {
     config,
+    chatAttachments,
     run: runner.snapshot(),
     autofill,
     brief,

@@ -1771,8 +1771,8 @@ a.wb-nav-item:active > span { opacity: .75; }
   max-width: 100%;
 }
 .wb-task-drawer-card__detail--stacked {
-  gap: 10px;
-  padding: 12px 10px 10px;
+  gap: 8px;
+  padding: 10px 10px 8px;
   border-radius: 10px;
   background: color-mix(in oklab, var(--muted) 28%, var(--card));
 }
@@ -1851,6 +1851,17 @@ a.wb-nav-item:active > span { opacity: .75; }
   align-items: center;
   gap: 6px 10px;
   min-width: 0;
+}
+.wb-task-drawer-card__detail-foot-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+}
+.wb-task-drawer-card__detail-foot .wb-task-drawer-preview__video-export {
+  margin-left: auto;
 }
 .wb-task-drawer-card__detail-foot .wb-task-records__time {
   margin: 0;
@@ -2271,6 +2282,16 @@ a.wb-nav-item:active > span { opacity: .75; }
   gap: 4px;
   min-width: 0;
 }
+.wb-task-drawer-preview__video-export {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin-left: auto;
+}
+.wb-task-drawer-preview__download {
+  text-decoration: none;
+  gap: 5px;
+}
 .wb-task-drawer-preview__error {
   margin: 0;
   font-size: 12px;
@@ -2296,6 +2317,9 @@ a.wb-nav-item:active > span { opacity: .75; }
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.wb-task-drawer-preview__chips--inline {
+  flex: 0 1 auto;
 }
 .wb-task-drawer-preview__chip {
   display: inline-flex;

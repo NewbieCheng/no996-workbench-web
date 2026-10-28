@@ -20,6 +20,7 @@ export function TalkStepShell({
   children,
   primary,
   secondary,
+  blocker,
   onBack,
   backLabel,
   className,
@@ -31,6 +32,8 @@ export function TalkStepShell({
   children: ReactNode
   primary?: TalkStepAction
   secondary?: TalkStepAction
+  /** Shown under the footer when the primary action is blocked. */
+  blocker?: string
   onBack?: () => void
   backLabel?: string
   className?: string
@@ -38,6 +41,7 @@ export function TalkStepShell({
 }) {
   const { t } = useTalkV2Copy()
   const Icon = primary?.icon === 'sparkles' ? Sparkles : ArrowRight
+  const primaryBlocked = !!(primary && (primary.disabled || primary.busy) && blocker && !primary.busy && primary.disabled)
   return <section className={`ipt-step${className ? ` ${className}` : ''}`} data-stage={stage}>
     <header className="ipt-step__head">
       <p className="ipt-step__eyebrow">{t('stepOf', { current: talkStageNumber(stage), total: 6 })}</p>
@@ -63,5 +67,6 @@ export function TalkStepShell({
         </Button>}
       </div>
     </footer>}
+    {primaryBlocked ? <p className="ipt-step-blocker" role="status">{blocker}</p> : null}
   </section>
 }

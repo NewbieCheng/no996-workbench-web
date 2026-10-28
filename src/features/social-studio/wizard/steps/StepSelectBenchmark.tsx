@@ -12,11 +12,14 @@ type StepSelectBenchmarkProps = {
   queryText?: string
 }
 
-function formatCount(num?: number): string {
-  if (!num) return '0'
+function formatPositiveCount(num: number): string {
   if (num >= 10000) return `${(num / 10000).toFixed(1)}w`
   if (num >= 1000) return `${(num / 1000).toFixed(1)}k`
   return String(num)
+}
+
+function hasPositiveMetric(num?: number): num is number {
+  return typeof num === 'number' && Number.isFinite(num) && num > 0
 }
 
 export function StepSelectBenchmark({
@@ -79,6 +82,9 @@ export function StepSelectBenchmark({
           const isSelected = selectedItem?.url === item.url
           const isStarred = starredUrls.has(item.url)
           const cover = item.coverUrl || item.imageUrls?.[0]
+          const showLikes = hasPositiveMetric(item.likes)
+          const showCollects = hasPositiveMetric(item.collects)
+          const showMetrics = showLikes || showCollects
 
           return (
             <div
@@ -126,18 +132,27 @@ export function StepSelectBenchmark({
                   <StarIcon className={`size-3.5 ${isStarred ? 'fill-current' : ''}`} />
                 </button>
 
-                {/* 底部渐变蒙层，衬托点赞数 */}
-                <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
-                <div className="absolute bottom-2 inset-x-2.5 flex items-center justify-between text-[11px] text-white/90">
-                  <span className="flex items-center gap-1 font-medium">
-                    <HeartIcon className="size-3 fill-rose-500 text-rose-500" />
-                    {formatCount(item.likes)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <BookmarkIcon className="size-3 text-amber-300" />
-                    {formatCount(item.collects)}
-                  </span>
-                </div>
+                {showMetrics ? (
+                  <>
+                    <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
+                    <div className="absolute bottom-2 inset-x-2.5 flex items-center justify-between text-[11px] text-white/90">
+                      {showLikes ? (
+                        <span className="flex items-center gap-1 font-medium">
+                          <HeartIcon className="size-3 fill-rose-500 text-rose-500" />
+                          {formatPositiveCount(item.likes)}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                      {showCollects ? (
+                        <span className="flex items-center gap-1">
+                          <BookmarkIcon className="size-3 text-amber-300" />
+                          {formatPositiveCount(item.collects)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
               </div>
 
               {/* 信息区 */}

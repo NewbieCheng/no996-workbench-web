@@ -25,7 +25,9 @@ export type TalkSettings = {
   coverTitle?: string
   coverPhotoAssetId?: string
   coverCropMode?: 'cover' | 'contain'
-  /** Generated 1:1 cover image; stored as a project asset, not placed on the video track. */
+  /** Cover output ratio for the independent cover PNG (not the video canvas). */
+  coverRatio?: '1:1' | '3:4' | '9:16'
+  /** Generated cover image; stored as a project asset, not placed on the video track. */
   coverAssetId?: string
   /** Explicit acceptance when manuscript and manually timed captions intentionally differ. */
   captionReviewScript?: string
@@ -46,13 +48,23 @@ export type TalkDocument = EditorDocument & { ipVideo?: TalkSettings }
 export const talkSettings = (doc: EditorDocument): TalkSettings => (doc as TalkDocument).ipVideo ?? { script: doc.captions.map(cue => cue.text).join('\n') }
 export const secondsLabel = (us: number) => `${Math.floor(us / 60_000_000)}:${String(Math.floor(us / 1_000_000) % 60).padStart(2, '0')}`
 
+/** Default talk caption font — 马善政楷书 (loaded via caption-fonts / @fontsource/ma-shan-zheng). */
+export const TALK_DEFAULT_CAPTION_FONT = 'Ma Shan Zheng'
+export const TALK_DEFAULT_CAPTION_PRESET_ID = 'ink'
+
 export function createTalkDocument(scope: string): TalkDocument {
   const doc: TalkDocument = createEmptyDocument(`proj-ip-${crypto.randomUUID()}`, '未命名口播视频', scope, '9:16')
   doc.templateMeta = { templateId: 'ip-composition', presetName: '口播视频', category: 'ip-speaker' }
-  const scroll = TALK_CAPTION_PRESETS.find(item => item.id === 'relay') ?? TALK_CAPTION_PRESETS[0]
-  doc.ipVideo = { script: '', photoMotion: true, speed: 1, captionPresetId: scroll.id, lookId: 'scroll' }
+  const preset = TALK_CAPTION_PRESETS.find(item => item.id === TALK_DEFAULT_CAPTION_PRESET_ID) ?? TALK_CAPTION_PRESETS[0]
+  doc.ipVideo = { script: '', photoMotion: true, speed: 1, captionPresetId: preset.id, lookId: 'scroll' }
   doc.canvas.backgroundColor = '#172128'
-  doc.captionStyle = { ...doc.captionStyle, ...scroll.style, burn: true }
+  doc.captionStyle = {
+    ...doc.captionStyle,
+    ...preset.style,
+    font: TALK_DEFAULT_CAPTION_FONT,
+    weight: 400,
+    burn: true,
+  }
   return doc
 }
 

@@ -9,11 +9,19 @@ import type { ScriptConfig, ScriptGeneratePayload } from '../agent/types.ts'
 export const DEV_VIDEO_SCRIPT_FIXTURE: Partial<ScriptConfig> = {
   product: '郭小满水煮肉片调料包',
   durationSec: 60,
-  goal: '成交',
+  purpose: 'conversion',
+  goal: '转化',
   platform: '抖音',
   structure: {
-    kind: 'custom',
-    text: '生活场景 + 操作演示 + 卖点与证据 + 自然引导',
+    kind: 'preset',
+    presetId: 'conv-pain-solution',
+  },
+  materials: {
+    delivery: '水煮肉片调料包 3 袋装，含腌肉料包与红油酱包，一包做一锅（2–3 人份）',
+    fitFor: '下班想快速做一道川菜、家里 2–4 人吃饭的人',
+    action: '点视频下方购物车，选 3 袋装',
+    proof: '真实试做过程：从备菜到出锅约 12 分钟',
+    objection: '怕太辣、怕操作麻烦',
   },
   intro: '一包搞定地道川味，含特调腌肉料包与醇香红油酱包，免去繁琐备料。',
   audience: '下班想自己做饭的年轻人、家庭掌勺人、爱吃川菜但怕麻烦的人',

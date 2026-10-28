@@ -60,9 +60,13 @@ export function ScriptPreviewRail({
   }
   const goalLabels: Record<string, string> = {
     获客: t('goal.acquisition'),
+    人设: t('goal.persona'),
+    观点干货: t('goal.opinion'),
+    转化: t('goal.conversion2'),
     流量: t('goal.traffic'),
     成交: t('goal.conversion'),
   }
+  const purposeLabel = isVideo && config.purpose ? t(`purpose.${config.purpose}`) : undefined
   const strengthKey = config.strength < 34 ? 'form.soft' : config.strength < 67 ? 'form.balanced' : 'form.strong'
 
   const fillLine =
@@ -133,7 +137,7 @@ export function ScriptPreviewRail({
           <dt>{t('previewRail.platform')}</dt>
           <dd>{platformLabels[config.platform] ?? config.platform}</dd>
           <dt>{t('previewRail.goal')}</dt>
-          <dd>{goalLabels[config.goal] ?? config.goal}</dd>
+          <dd>{purposeLabel ?? goalLabels[config.goal] ?? config.goal}</dd>
           <dt>{t('previewRail.conversion')}</dt>
           <dd>{t(strengthKey)} {config.strength}</dd>
           {wizardStep >= 2 && config.intro?.trim() ? (

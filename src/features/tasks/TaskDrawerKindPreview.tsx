@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWorkbenchTaskActions, type WorkbenchTaskRecord } from '../../services/workbench-tasks'
 import { TaskVoicePlaybackBlock } from './TaskVoicePlaybackBlock'
-import { TaskVideoExportBlock } from './TaskVideoExportBlock'
 import {
   isAgentLikeTask,
   isVideoExportTask,
@@ -20,7 +19,7 @@ type Props = {
 
 export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Props) {
   const { t } = useTranslation('workbench')
-  const { getPayload, retryVideoFactoryExport } = useWorkbenchTaskActions()
+  const { getPayload } = useWorkbenchTaskActions()
   const [payloadHint, setPayloadHint] = useState('')
 
   const running = task.status === 'queued' || task.status === 'running'
@@ -52,23 +51,6 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
   }, [task, getPayload, t])
 
   if (task.kind === 'digital_human_retalk') return <TaskRetalkPreview task={task} />
-
-  if (failed && isVideoExportTask(task)) {
-    return (
-      <div className="wb-task-drawer-preview">
-        {task.errorMessage ? <p className="wb-task-drawer-preview__error">{task.errorMessage}</p> : null}
-        {task.status === 'failed' ? (
-          <button
-            type="button"
-            className="wb-task-drawer-preview__download"
-            onClick={() => void retryVideoFactoryExport(task.id)}
-          >
-            {t('taskVideoExportRetry')}
-          </button>
-        ) : null}
-      </div>
-    )
-  }
 
   if (failed && task.errorMessage) {
     return <p className="wb-task-drawer-preview__error">{task.errorMessage}</p>
@@ -108,7 +90,6 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
       !suppressVoicePlayer &&
       (task.kind === 'voice_tts' || task.kind === 'ip_video_audio') &&
       task.status === 'succeeded'
-
     return (
       <div className="wb-task-drawer-preview">
         {chips.length > 0 ? (
@@ -129,7 +110,6 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
         {task.kind === 'voice_dub_advanced' && task.meta?.awaiting_confirm !== '1' ? (
           <p className="wb-task-drawer-preview__hint">{t('taskDubOpenToReview')}</p>
         ) : null}
-        {isVideoExportTask(task) ? <TaskVideoExportBlock task={task} layout="full" /> : null}
       </div>
     )
   }

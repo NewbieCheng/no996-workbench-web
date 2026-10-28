@@ -289,7 +289,7 @@ export function createIndexedDbWorkbenchTaskRepository(): WorkbenchTaskRepositor
         const req = tx.objectStore(STORE_BLOBS).get(id)
         req.onsuccess = () => {
           const v = req.result as TaskBlobRecord | undefined
-          if (!v || typeof v.id !== 'string' || !(v.data instanceof ArrayBuffer)) {
+          if (!v || typeof v.id !== 'string' || !(v.data instanceof ArrayBuffer) && !(v.data instanceof Blob)) {
             resolve(null)
             return
           }
@@ -688,6 +688,7 @@ export function createIndexedDbWorkbenchTaskRepository(): WorkbenchTaskRepositor
       const id = newTaskId()
       const payload: ScriptTaskPayload = {
         config: input.config,
+        chatAttachments: input.chatAttachments,
         run: input.resumeSnapshot ?? null,
         resumeFromStageId: input.resumeFromStageId,
       }

@@ -33,13 +33,19 @@ export async function mockResolveWork(url: string): Promise<WorkbenchBridgeColle
 export async function mockResolveWechatWork(url: string): Promise<WorkbenchBridgeCollectedItem> {
   await delay(600)
   const normalized = url.trim() || 'https://mp.weixin.qq.com/s/dev-mock-wechat-sample'
+  const coverUrl = 'https://picsum.photos/seed/wechat-mock-cover/800/1000'
   return {
     url: normalized,
     platformId: 'weixin',
     title: '演示：公众号文章抓取',
     content:
-      '# 演示公众号正文\n\n这是演示模式下的示例 Markdown 正文，不会请求后端 web_fetch。\n\n可用于预览导入与排版流程。',
+      '# 演示公众号正文\n\n这是演示模式下的示例正文，不会请求后端 wechat_fetch。\n\n可用于预览导入与排版流程。',
     author: '演示公众号',
+    coverUrl,
+    imageUrls: [
+      coverUrl,
+      'https://picsum.photos/seed/wechat-mock-body/800/600',
+    ],
     collectedAt: Date.now(),
   }
 }

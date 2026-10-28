@@ -85,7 +85,7 @@ export const SCRIPT_STAGES: AgentStageDef[] = [
     roleName: '定稿',
     roleTag: '纯算法',
     kind: 'algo',
-    principle: '补齐时间码并复核硬错误；仍有未解除问题时走既有失败状态，不把降级稿当成功。',
+    principle: '补齐时间码并复核硬错误；仍有未解除问题时如实标注待修改项后照常交付，不整份丢弃成稿。',
     headline: '正在拼接成稿…',
   },
 ]

@@ -9,6 +9,8 @@ export function TalkPipelineRail({
   hasResult,
   hasDuration,
   canGenerate,
+  contentReady,
+  voiceReady,
   busy,
   onSelect,
   onOpenAdvanced,
@@ -17,6 +19,8 @@ export function TalkPipelineRail({
   hasResult: boolean
   hasDuration: boolean
   canGenerate: boolean
+  contentReady?: boolean
+  voiceReady?: boolean
   busy: boolean
   onSelect: (stage: TalkStageId) => void
   onOpenAdvanced: () => void
@@ -25,7 +29,7 @@ export function TalkPipelineRail({
   return <nav className="ipt-pipeline" aria-label={t('pipelineLabel')}>
     <ol className="ipt-pipeline__steps">
       {TALK_PIPELINE_STEPS.map(step => {
-        const availability = canEnterTalkStage(step.id, { hasResult, hasDuration, canGenerate })
+        const availability = canEnterTalkStage(step.id, { hasResult, hasDuration, canGenerate, contentReady, voiceReady })
         const current = step.id === stage
         const done = (step.id === 'edit' || step.id === 'export') && hasResult && !current
         const disabled = busy || !availability.allowed

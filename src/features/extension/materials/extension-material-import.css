@@ -1,0 +1,189 @@
+.ext-material-import {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ext-material-import__trigger {
+  height: var(--wb-chrome-control-h, 32px);
+  gap: 6px;
+  padding-inline: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ext-material-import__trigger.is-open {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.ext-material-import__trigger-icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.85;
+}
+
+.ext-material-import__positioner {
+  z-index: 110;
+  outline: none;
+}
+
+.ext-material-import__panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(calc(100vw - 1.5rem), 22.5rem);
+  max-height: min(28rem, calc(100dvh - 5rem));
+  overflow: hidden;
+  border-radius: 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 14px 36px color-mix(in srgb, var(--foreground) 12%, transparent);
+  outline: none;
+  isolation: isolate;
+  animation: ext-material-import-in 140ms ease-out both;
+}
+
+@keyframes ext-material-import-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ext-material-import__panel {
+    animation: none;
+  }
+}
+
+.ext-material-import__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.ext-material-import__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.ext-material-import__hint {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.ext-material-import__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.35rem 0.4rem;
+}
+
+.ext-material-import__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.55rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.ext-material-import__row:hover {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+.ext-material-import__row.is-selected {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.ext-material-import__row input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+
+.ext-material-import__row-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.ext-material-import__row-title {
+  font-size: 0.8125rem;
+  font-weight: 560;
+  line-height: 1.35;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ext-material-import__row-meta {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.ext-material-import__empty,
+.ext-material-import__status {
+  margin: 0;
+  padding: 1.25rem 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.ext-material-import__status[data-tone='error'] {
+  color: var(--destructive);
+}
+
+.ext-material-import__status[data-tone='ok'] {
+  color: var(--foreground);
+}
+
+.ext-material-import__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--muted) 28%, var(--background));
+}
+
+.ext-material-import__foot-spacer {
+  flex: 1 1 auto;
+  min-width: 0.25rem;
+}
+
+.ext-material-import__message {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}

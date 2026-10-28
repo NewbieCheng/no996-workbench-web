@@ -40,7 +40,7 @@ test('all eight templates draw the same deterministic frames through one painter
 })
 
 test('a 1:1 cover paints the square design instead of a stretched portrait', () => {
-  const project = createTalkCoverProject({ lookId: 'scroll', title: '方屏封面' })
+  const project = createTalkCoverProject({ lookId: 'scroll', title: '方屏封面', ratio: '1:1' })
   const context = mockContext()
   const rects = []
   context.fillRect = (...args) => rects.push(args)

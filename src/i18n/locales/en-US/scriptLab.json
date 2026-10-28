@@ -19,17 +19,41 @@
   },
   "goal": {
     "acquisition": "Acquire customers",
+    "persona": "Persona",
+    "opinion": "Opinion & know-how",
+    "conversion2": "Conversion",
     "traffic": "Grow reach",
     "conversion": "Drive sales",
     "hints": {
       "acquisition": "Encourage contact, lead capture, or consultation",
+      "persona": "Help viewers understand and trust you",
+      "opinion": "State one judgment and one usable method",
+      "conversion2": "Explain delivery, evidence, and next step",
       "traffic": "Grow followers, views, and comments",
       "conversion": "Build trust and encourage purchase"
     }
   },
+  "purpose": {
+    "acquisition": "Acquisition",
+    "persona": "Persona",
+    "opinion": "Opinion & know-how",
+    "conversion": "Conversion"
+  },
+  "purposeHeading": "Creative purpose",
+  "purposeHint": "Pick a purpose first, then one of its four structures",
+  "purposeRequired": "Choose a creative purpose first: acquisition / persona / opinion / conversion",
+  "materials": {
+    "heading": "Materials for this script",
+    "hint": "Required fields (marked *) block generation when missing — the model must not invent them",
+    "required": "Required",
+    "reference": "Reference materials",
+    "referenceHint": "txt / md / docx; up to 50k characters per file and 80k in total"
+  },
   "structure": {
     "title": "Narrative structure",
     "subtitle": "Choose a pace or build your own",
+    "purposeSubtitle": "Pick one of the four structures for this purpose; section names and shares are locked by the app",
+    "purposeFirst": "Pick a creative purpose to see its narrative structures",
     "liveTitle": "Live structure",
     "liveSubtitle": "Default five chapters, or switch templates and build your own",
     "formula": {

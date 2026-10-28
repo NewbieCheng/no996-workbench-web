@@ -107,7 +107,7 @@ export type WorkbenchTaskRecord = {
 export type TaskBlobRecord = {
   id: string
   mime: string
-  data: ArrayBuffer
+  data: ArrayBuffer | Blob
 }
 
 export type TaskPayloadRecord = {
@@ -211,6 +211,8 @@ export type EnqueueTitlesGenerateInput = {
 
 export type EnqueueScriptGenerateInput = {
   config: ScriptConfig
+  /** 参考资料（随任务一起存本机 IndexedDB，历史可复现） */
+  chatAttachments?: StoredChatAttachment[]
   resumeFromStageId?: string
   resumeSnapshot?: AgentRunSnapshot
   route: string

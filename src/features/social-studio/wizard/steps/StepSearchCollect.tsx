@@ -21,6 +21,12 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
+  Trash2,
+  Eye,
+  Info,
+  ExternalLink,
+  Puzzle,
+  Download,
 } from 'lucide-react'
 import { cn } from '@no996/ui/utils'
 import { Button } from '@no996/ui/button'
@@ -36,12 +42,17 @@ import {
 import { isWorkbenchAiDemoMode } from '../../../../api/workbench-ai'
 import { extensionClient } from '../../../../services/extension/extension-client'
 import {
+  REQUIRED_EXTENSION_VERSION,
+  isExtensionOutdated,
+} from '../../../../services/extension/extension-version'
+import {
   mockSearchWorks,
   mockResolveWork,
   mockResolveWechatWork,
 } from '../../material-import/material-import-mock'
 import { resolveWechatArticleByUrl } from '../../../../services/wechat-article/resolve-wechat-article-url'
 import {
+  clearMaterialCaptureSession,
   createEmptySession,
   mergeItemIntoSession,
   readMaterialCaptureSession,
@@ -87,6 +98,18 @@ type StepSearchCollectProps = {
 }
 
 type CollectInputMode = 'keyword' | 'link' | 'script_media' | 'ideation'
+
+/** 公众号对标复刻：可一键填入的示例文章（仅作演示，正式抓取仍走 wechat_fetch） */
+const WECHAT_EXAMPLE_LINKS = [
+  {
+    label: '云栖大会 · AI 产业',
+    url: 'https://mp.weixin.qq.com/s/NNo5CgwPi5PHnbwUo3U93A',
+  },
+  {
+    label: '示例长文 · 可一键填入',
+    url: 'https://mp.weixin.qq.com/s/vOhT5ycDbhnsMiJ42o9pvg',
+  },
+] as const
 
 // 真实小红书热搜备选数据（4 页共 32 条真实小红书爆款热点与细分领域高热选题）
 interface RealHotItem {
@@ -183,6 +206,7 @@ export function StepSearchCollect({
 
   // 扩展插件状态与小红书登录态
   const [isConnected, setIsConnected] = useState(demoMode)
+  const [extensionChecking, setExtensionChecking] = useState(false)
   const [, setXhsLoggedIn] = useState(demoMode)
   // 采集高级过滤参数（专属于小红书）
   const [limit, setLimit] = useState(5)
@@ -199,6 +223,7 @@ export function StepSearchCollect({
   const [hotRankItems, setHotRankItems] = useState<RealHotItem[]>(REAL_XHS_HOT_ITEMS)
   const [hotRankLoading, setHotRankLoading] = useState(false)
   const [searchFiltersOpen, setSearchFiltersOpen] = useState(false)
+  const [wechatLinkHelpOpen, setWechatLinkHelpOpen] = useState(false)
 
   // 粘贴文稿与草稿状态
   const [pastedContent, setPastedContent] = useState('')
@@ -209,8 +234,12 @@ export function StepSearchCollect({
   const [linkDropActive, setLinkDropActive] = useState(false)
   const [mediaDropActive, setMediaDropActive] = useState(false)
 
-  // 检查是否已有缓存抓取
-  const existingSession = readMaterialCaptureSession()
+  // 检查是否已有缓存抓取（tick 用于删除后强制重读 sessionStorage）
+  const [cacheTick, setCacheTick] = useState(0)
+  const existingSession = useMemo(() => {
+    void cacheTick
+    return readMaterialCaptureSession()
+  }, [cacheTick])
   const hasCachedItems = Boolean(existingSession && existingSession.items.length > 0)
   /** 正式环境：找爆款与对标复刻依赖知源扩展；未连接时允许填写，点击开始再用 toast 提示 */
   const needsExtension = !demoMode && !isConnected
@@ -309,6 +338,18 @@ export function StepSearchCollect({
     })
   }
 
+  const promptExtensionUpdateRequired = (current: string) => {
+    toast.error(`当前插件 v${current || '?'} 过旧，请更新到 v${REQUIRED_EXTENSION_VERSION}`, {
+      duration: TOAST_GATE_MS,
+      action: {
+        label: '去更新',
+        onClick: () => {
+          window.location.assign('/workbench/extension')
+        },
+      },
+    })
+  }
+
   async function ensureXhsExploreReady(): Promise<boolean> {
     if (demoMode) return true
 
@@ -318,6 +359,10 @@ export function StepSearchCollect({
       setIsConnected(connected)
       if (!connected) {
         promptExtensionRequired()
+        return false
+      }
+      if (isExtensionOutdated(status.extensionVersion)) {
+        promptExtensionUpdateRequired(status.extensionVersion || '')
         return false
       }
 
@@ -337,29 +382,64 @@ export function StepSearchCollect({
     }
   }
 
+  async function refreshExtensionStatus(): Promise<boolean> {
+    if (demoMode) {
+      setIsConnected(true)
+      setXhsLoggedIn(true)
+      return true
+    }
+    setExtensionChecking(true)
+    try {
+      const status = await extensionClient.checkStatus(1200)
+      const connected = Boolean(status.connected)
+      setIsConnected(connected)
+      if (connected) {
+        const accs = await extensionClient.listAccounts()
+        const currentAcc = accs.find((a) => a.platformId === 'xiaohongshu')
+        setXhsLoggedIn(currentAcc?.status === 'logged_in')
+      } else {
+        setXhsLoggedIn(false)
+      }
+      return connected
+    } catch {
+      setIsConnected(false)
+      setXhsLoggedIn(false)
+      return false
+    } finally {
+      setExtensionChecking(false)
+    }
+  }
+
   // 查询知源插件状态与小红书登录状态
   useEffect(() => {
     let mounted = true
-    const checkPlugin = async () => {
+    void (async () => {
+      if (demoMode) {
+        if (!mounted) return
+        setIsConnected(true)
+        setXhsLoggedIn(true)
+        return
+      }
       try {
         const status = await extensionClient.checkStatus(1200)
         if (!mounted) return
-        setIsConnected(status.connected || demoMode)
-        if (status.connected) {
+        const connected = Boolean(status.connected)
+        setIsConnected(connected)
+        if (connected) {
           const accs = await extensionClient.listAccounts()
-          if (mounted) {
-            const currentAcc = accs.find((a) => a.platformId === 'xiaohongshu')
-            setXhsLoggedIn(currentAcc?.status === 'logged_in')
-          }
+          if (!mounted) return
+          const currentAcc = accs.find((a) => a.platformId === 'xiaohongshu')
+          setXhsLoggedIn(currentAcc?.status === 'logged_in')
+        } else {
+          setXhsLoggedIn(false)
         }
       } catch {
-        if (mounted && demoMode) {
-          setIsConnected(true)
-          setXhsLoggedIn(true)
+        if (mounted) {
+          setIsConnected(false)
+          setXhsLoggedIn(false)
         }
       }
-    }
-    void checkPlugin()
+    })()
     return () => {
       mounted = false
     }
@@ -450,6 +530,7 @@ export function StepSearchCollect({
               minComments: minComments !== 'any' ? Number(minComments) : undefined,
               noteType: xhsNoteType !== 'all' ? xhsNoteType : undefined,
               searchRange: xhsSearchRange !== 'all' ? xhsSearchRange : undefined,
+              collectMode: 'auto',
             },
           })
 
@@ -473,7 +554,7 @@ export function StepSearchCollect({
     }
   }
 
-  // 单条链接解析采集（公众号走服务端 web_fetch；小红书走浏览器扩展）
+  // 单条链接解析采集（公众号走服务端 wechat_fetch；小红书走浏览器扩展）
   async function handleResolveLink() {
     if (platform !== 'wechat' && needsExtension) {
       promptExtensionRequired()
@@ -505,7 +586,7 @@ export function StepSearchCollect({
             : await extensionClient.resolveWork(url)
       const merged = mergeItemIntoSession(session, item)
       writeMaterialCaptureSession(merged)
-      onCollected(merged.items, true, 'benchmark_clone')
+      onCollected(merged.items, false, 'benchmark_clone')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       notifyOperationError(`链接解析失败: ${message}`, { id: WIZARD_SEARCH_TOAST_ID, raw: true })
@@ -562,9 +643,6 @@ export function StepSearchCollect({
       coverUrl: uploadedImages[0]?.url,
       imageUrls: uploadedImages.map((img) => img.url),
       collectedAt: Date.now(),
-      likes: 888,
-      collects: 666,
-      comments: 66,
     }
 
     onCollected([customItem], true, 'benchmark_clone')
@@ -647,10 +725,15 @@ export function StepSearchCollect({
     }
   }
 
-  // 恢复历史会话
+  // 恢复历史会话（先进选择爆款，不直跳模板）
   function handleRestoreCachedSession() {
     if (!existingSession || existingSession.items.length === 0) return
-    onCollected(existingSession.items, existingSession.mode === 'link', 'benchmark_clone')
+    onCollected(existingSession.items, false, 'benchmark_clone')
+  }
+
+  function handleClearCachedSession() {
+    clearMaterialCaptureSession()
+    setCacheTick((n) => n + 1)
   }
 
   // 分页计算
@@ -742,6 +825,46 @@ export function StepSearchCollect({
 
       {mode !== 'ideation' && (
         <div className="ssw-body space-y-3.5">
+
+          {platform === 'xhs' && needsExtension ? (
+            <div className="ssw-extension-banner" role="status">
+              <div className="ssw-extension-banner__icon" aria-hidden>
+                <Puzzle size={15} />
+              </div>
+              <div className="ssw-extension-banner__body">
+                <p className="ssw-extension-banner__title">找爆款 / 链接对标需要知源浏览器扩展</p>
+                <p className="ssw-extension-banner__desc">
+                  请先安装并启用扩展，再开始关键词探测或单链接采集；登录态仅保存在本机浏览器。
+                </p>
+              </div>
+              <div className="ssw-extension-banner__actions">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  disabled={extensionChecking}
+                  onClick={() => void refreshExtensionStatus()}
+                >
+                  {extensionChecking ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <RefreshCw size={13} />
+                  )}
+                  <span>重新检测</span>
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => {
+                    window.location.assign('/workbench/extension')
+                  }}
+                >
+                  <Download size={13} />
+                  <span>去安装</span>
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           {/* 子模式 1：关键词探测爆款（小红书专属） */}
           {mode === 'keyword' && platform === 'xhs' && (
@@ -1012,7 +1135,7 @@ export function StepSearchCollect({
             </div>
           )}
 
-          {/* 子模式 2：单链接解析采集（精简专一） */}
+          {/* 子模式 2：单链接解析采集 */}
           {mode === 'link' && (
             <div className="w-full space-y-4">
               <div
@@ -1020,37 +1143,121 @@ export function StepSearchCollect({
                   linkDropActive ? ' ssw-panel--drop-active' : ''
                 }`}
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground">
-                      {platform === 'wechat' ? '输入微信公众号文章链接' : '输入小红书单篇笔记链接'}
-                    </label>
-                    <span className="text-[11px] text-muted-foreground">
-                      {platform === 'wechat' ? '支持任意微信 mp.weixin.qq.com 链接' : '支持 xhslink.com 或网页链接'}
-                    </span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                    <div className="relative flex-1 min-w-0">
-                      <Link2
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-                        size={17}
-                      />
-                      <Input
-                        placeholder={
-                          platform === 'wechat'
-                            ? '粘贴微信公众号文章链接，如 https://mp.weixin.qq.com/s/...'
-                            : '粘贴小红书笔记链接，如 http://xhslink.com/... 或网页链接'
-                        }
-                        value={linkUrl}
-                        onChange={(e) => setLinkUrl(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key !== 'Enter' || loading) return
-                          if (linkUrl.trim()) void handleResolveLink()
-                        }}
-                        disabled={loading}
-                        className="h-11 w-full pl-10 pr-4 text-xs sm:text-sm bg-background shadow-xs focus:ring-primary/20 rounded-xl"
-                      />
+                <div className="space-y-3">
+                  {platform !== 'wechat' ? (
+                    <div className="min-w-0 space-y-0.5">
+                      <label className="text-xs font-semibold text-foreground">
+                        输入小红书单篇笔记链接
+                      </label>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        支持 xhslink.com 或网页链接
+                      </p>
                     </div>
+                  ) : null}
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    {platform === 'wechat' ? (
+                      <PopoverPrimitive.Root
+                        open={wechatLinkHelpOpen}
+                        onOpenChange={setWechatLinkHelpOpen}
+                        modal={false}
+                      >
+                        <div className="relative flex-1 min-w-0">
+                          <Link2
+                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-[1]"
+                            size={17}
+                          />
+                          <Input
+                            placeholder="粘贴微信公众号文章链接，如 https://mp.weixin.qq.com/s/..."
+                            value={linkUrl}
+                            onChange={(e) => setLinkUrl(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key !== 'Enter' || loading) return
+                              if (linkUrl.trim()) void handleResolveLink()
+                            }}
+                            disabled={loading}
+                            className="h-11 w-full pl-10 pr-11 text-xs sm:text-sm bg-background shadow-xs focus:ring-primary/20 rounded-xl"
+                          />
+                          <PopoverPrimitive.Trigger
+                            render={
+                              <button
+                                type="button"
+                                className={cn(
+                                  'ssw-search-filters-trigger absolute right-2 top-1/2 z-[2] -translate-y-1/2',
+                                  wechatLinkHelpOpen && 'is-open',
+                                )}
+                                aria-label="如何获取文章链接"
+                                disabled={loading}
+                              />
+                            }
+                          >
+                            <Info size={16} aria-hidden />
+                          </PopoverPrimitive.Trigger>
+                        </div>
+                        <PopoverPrimitive.Portal>
+                          <PopoverPrimitive.Positioner
+                            side="bottom"
+                            align="end"
+                            sideOffset={10}
+                            collisionPadding={16}
+                            className="ssw-wechat-link-help__positioner"
+                          >
+                            <PopoverPrimitive.Popup
+                              className="ssw-wechat-link-help"
+                              role="dialog"
+                              aria-label="如何获取文章链接"
+                            >
+                              <p className="ssw-wechat-link-help__title">如何复制文章链接</p>
+                              <ol className="ssw-wechat-link-help__steps">
+                                <li>微信里打开目标公众号文章</li>
+                                <li>
+                                  点右上角 <strong>···</strong>，选「用默认浏览器打开」或「复制链接」
+                                </li>
+                                <li>回到此处粘贴，点「一键采集导入」</li>
+                              </ol>
+                              <div className="ssw-wechat-link-help__examples">
+                                <span className="ssw-wechat-link-help__examples-label">试试示例</span>
+                                <div className="ssw-wechat-link-help__chips">
+                                  {WECHAT_EXAMPLE_LINKS.map((example) => (
+                                    <button
+                                      key={example.url}
+                                      type="button"
+                                      className="ssw-wechat-link-help__chip"
+                                      disabled={loading}
+                                      onClick={() => {
+                                        setLinkUrl(example.url)
+                                        setWechatLinkHelpOpen(false)
+                                      }}
+                                    >
+                                      <ExternalLink size={12} aria-hidden />
+                                      <span>{example.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </PopoverPrimitive.Popup>
+                          </PopoverPrimitive.Positioner>
+                        </PopoverPrimitive.Portal>
+                      </PopoverPrimitive.Root>
+                    ) : (
+                      <div className="relative flex-1 min-w-0">
+                        <Link2
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                          size={17}
+                        />
+                        <Input
+                          placeholder="粘贴小红书笔记链接，如 http://xhslink.com/... 或网页链接"
+                          value={linkUrl}
+                          onChange={(e) => setLinkUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Enter' || loading) return
+                            if (linkUrl.trim()) void handleResolveLink()
+                          }}
+                          disabled={loading}
+                          className="h-11 w-full pl-10 pr-4 text-xs sm:text-sm bg-background shadow-xs focus:ring-primary/20 rounded-xl"
+                        />
+                      </div>
+                    )}
                     <Button
                       size="lg"
                       onClick={() => void handleResolveLink()}
@@ -1237,18 +1444,30 @@ export function StepSearchCollect({
 
           {/* 历史缓存提示 */}
           {hasCachedItems && (
-            <div className="flex items-center justify-between p-3.5 rounded-xl border border-border/60 bg-muted/30 text-xs">
-              <span className="text-muted-foreground">
+            <div className="flex items-center justify-between gap-2 p-3.5 rounded-xl border border-border/60 bg-muted/30 text-xs">
+              <span className="text-muted-foreground min-w-0">
                 检测到上次探测的 {existingSession?.items.length} 篇参考素材
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRestoreCachedSession}
-                className="h-7 text-xs"
-              >
-                直接查看上次抓取结果
-              </Button>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRestoreCachedSession}
+                  className="size-7 text-muted-foreground hover:text-foreground"
+                  aria-label="查看上次抓取结果"
+                >
+                  <Eye size={14} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClearCachedSession}
+                  className="size-7 text-muted-foreground hover:text-destructive"
+                  aria-label="删除上次抓取缓存"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </div>
             </div>
           )}
         </div>

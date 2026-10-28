@@ -981,6 +981,20 @@
   padding-bottom: 14px;
 }
 
+.sl-wiz-ref__attachments {
+  padding: 16px 0 14px;
+  border-top: 1px solid var(--sl-line);
+}
+
+.sl-wiz-optional--compact .sl-wiz-ref__attachments .sl-wiz-blk {
+  margin: 0;
+}
+
+.sl-wiz-ref__attachments .sl-wiz-blk__head {
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
 .wf-wizard--script-lab .wf-wizard__body {
   padding: 8px 0 20px;
 }

@@ -103,6 +103,7 @@ async function recordWithWebCodecs(input: RecordCompositionInput): Promise<Recor
   try {
     await abortable(output.start(), signal)
     let audioOffset = 0
+    const started = performance.now()
     onProgress?.(0.02, '正在快速合成（预览直录）')
     for (let frame = 0; frame < totalFrames; frame++) {
       throwIfAborted(signal)
@@ -134,9 +135,12 @@ async function recordWithWebCodecs(input: RecordCompositionInput): Promise<Recor
       }
       if (frame % 2 === 0) await yieldTask(signal)
       if (frame % 5 === 0 || frame === totalFrames - 1) {
-        const elapsedSec = (frame + 1) / fps
-        const remain = Math.max(0, durationMs / 1000 - elapsedSec)
-        onProgress?.(Math.min(0.92, (frame + 1) / totalFrames * 0.9), `正在快速合成 · 约剩余 ${Math.ceil(remain)} 秒`)
+        const processed = frame + 1
+        const elapsedMs = performance.now() - started
+        const stage = elapsedMs >= 1000 && processed >= fps
+          ? `正在快速合成 · 约剩余 ${Math.ceil((elapsedMs / processed * (totalFrames - processed)) / 1000)} 秒`
+          : '正在快速合成'
+        onProgress?.(Math.min(0.92, processed / totalFrames * 0.9), stage)
       }
     }
     videoSource.close()
@@ -214,8 +218,12 @@ async function recordWithMediaRecorder(input: RecordCompositionInput): Promise<R
       if (wait > 4) await sleep(wait, signal)
       else await yieldTask(signal)
       if (frame % 5 === 0 || frame === totalFrames - 1) {
-        const remain = Math.max(0, (durationMs - (frame + 1) * frameMs) / 1000)
-        onProgress?.(Math.min(0.92, (frame + 1) / totalFrames * 0.9), `正在快速合成 · 约剩余 ${Math.ceil(remain)} 秒`)
+        const processed = frame + 1
+        const elapsedMs = performance.now() - started
+        const stage = elapsedMs >= 1000 && processed >= fps
+          ? `正在快速合成 · 约剩余 ${Math.ceil((elapsedMs / processed * (totalFrames - processed)) / 1000)} 秒`
+          : '正在快速合成'
+        onProgress?.(Math.min(0.92, processed / totalFrames * 0.9), stage)
       }
     }
     await new Promise<void>((resolve, reject) => {

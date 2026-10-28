@@ -89,12 +89,13 @@ export function buildStructurePlan(input: {
   }
   const plan = selected.segments.map((segment, index) => {
     const item = rawSegments[index]
-    const shareRaw = Number(item?.share)
     return {
       id: `seg-${index + 1}`,
       name: segment.name,
       purpose: text(item?.purpose) || segment.purpose,
-      share: Number.isFinite(shareRaw) && shareRaw > 0 ? shareRaw : segment.share,
+      // 视频：占比与段名由用户选定的结构锁定，模型只能写 purpose。
+      // 之前允许模型改 share，等于把「用户选择的结构」又交给模型重排。
+      share: segment.share,
     }
   })
   const shares = normalizeStructureShares(plan.map((segment) => segment.share))

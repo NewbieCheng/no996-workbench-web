@@ -3,11 +3,10 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import {
   LIVE_STRUCTURE_PRESETS,
   LIVE_STRUCTURE_QUICK_SEGMENTS,
-  VIDEO_STRUCTURE_PRESETS,
-  videoFormulaName,
   structureCustomText,
   libraryProvider,
 } from '../agent/library'
+import { structuresForPurpose } from '../agent/purposes'
 import type { ScriptConfig, ScriptGoal, ScriptMode } from '../agent/types'
 import { STRUCTURE_QUICK_SEGMENTS, isHookSegment } from '../copy/structure-segments'
 import { ScriptOptionTile } from './ScriptOptionTile'
@@ -24,12 +23,12 @@ function activePresetId(config: ScriptConfig, mode: ScriptMode): string {
   if (config.structure.kind === 'preset' && config.structure.presetId) {
     return config.structure.presetId
   }
-  return mode === 'video' ? 'goal-auto' : 'live-five-chapter'
+  return mode === 'video' ? '' : 'live-five-chapter'
 }
 
 function segmentLabelsFromConfig(config: ScriptConfig): string[] {
   const text = structureCustomText(config)
-  if (text && (config.structure.kind === 'custom' || config.structure.kind === 'preset')) {
+  if (text && config.structure.kind !== 'auto') {
     return text
       .split(/[+＋]/)
       .map((s) => s.trim())
@@ -39,17 +38,18 @@ function segmentLabelsFromConfig(config: ScriptConfig): string[] {
     mode: config.mode,
     goal: config.goal,
     durationSec: config.durationSec,
+    presetId: config.structure.kind === 'preset' ? config.structure.presetId : undefined,
   })[0]
   return hit?.segments.map((s) => s.name) ?? []
 }
-export function ScriptStructureEditor({ mode, config, goal, onChange }: ScriptStructureEditorProps) {
+
+export function ScriptStructureEditor({ mode, config, onChange }: ScriptStructureEditorProps) {
   const { t } = useTranslation('scriptLab')
   const isLive = mode === 'live'
   const presetId = activePresetId(config, mode)
-  const presets = isLive ? LIVE_STRUCTURE_PRESETS : VIDEO_STRUCTURE_PRESETS
+  const purposeStructures = useMemo(() => structuresForPurpose(config.purpose), [config.purpose])
   const quickSegments = isLive ? LIVE_STRUCTURE_QUICK_SEGMENTS : STRUCTURE_QUICK_SEGMENTS
   const maxSegments = isLive ? 10 : 7
-  const defaultPresetId = isLive ? 'live-five-chapter' : 'goal-auto'
   const segments = useMemo(() => segmentLabelsFromConfig(config), [config])
   const liveOfferWarning = isLive && !config.offer?.trim() && segments.some((name) => /福利|优惠|赠品|秒杀|限量/.test(name))
   const [dragFrom, setDragFrom] = useState<number | null>(null)
@@ -97,6 +97,7 @@ export function ScriptStructureEditor({ mode, config, goal, onChange }: ScriptSt
     onSelect: () => void,
     recommended?: boolean,
     className?: string,
+    subtitle?: string,
   ) => (
     <ScriptOptionTile
       key={id}
@@ -110,7 +111,7 @@ export function ScriptStructureEditor({ mode, config, goal, onChange }: ScriptSt
           {recommended ? <em className="sl-wiz-tile__rec">{t('structure.recommended')}</em> : null}
         </>
       }
-      subtitle={labels.join(' → ')}
+      subtitle={subtitle ?? labels.join(' → ')}
     >
       <div className="sl-wiz-mini" aria-hidden="true">
         {labels.map((name) => (
@@ -124,28 +125,46 @@ export function ScriptStructureEditor({ mode, config, goal, onChange }: ScriptSt
     <div className="sl-wiz-blk sl-wiz-blk--struct">
       <div className="sl-wiz-blk__head">
         <h3>{t(isLive ? 'structure.liveTitle' : 'structure.title')}</h3>
-        <span>{t(isLive ? 'structure.liveSubtitle' : 'structure.subtitle')}</span>
+        <span>
+          {isLive
+            ? t('structure.liveSubtitle')
+            : config.purpose
+              ? t('structure.purposeSubtitle')
+              : t('structure.purposeFirst')}
+        </span>
       </div>
 
-      {config.structure.kind !== 'custom' ? (
+      {!isLive && !config.purpose ? (
+        <p className="sl-wiz-live-warning" role="note">
+          {t('structure.purposeFirst')}
+        </p>
+      ) : null}
+
+      {config.structure.kind !== 'custom' && (isLive || config.purpose) ? (
         <div className="sl-wiz-tiles sl-wiz-tiles--2" role="radiogroup" aria-label={t('structure.templates')}>
-          {presets.map((p) => {
-            const labels =
-              !isLive && p.id === 'goal-auto' ? videoFormulaName(goal).split(/\s*\+\s*/) : p.segmentLabels
-            const title = isLive
-              ? t('structure.livePreset.' + p.id)
-              : p.id === 'goal-auto'
-                ? videoFormulaName(goal)
-                : t('structure.preset.' + p.id)
-            return renderStructureTile(
-              p.id,
-              title,
-              labels,
-              presetId === p.id,
-              () => selectPreset(p.id),
-              p.recommended,
-            )
-          })}
+          {isLive
+            ? LIVE_STRUCTURE_PRESETS.map((p) =>
+                renderStructureTile(
+                  p.id,
+                  t('structure.livePreset.' + p.id),
+                  p.segmentLabels,
+                  presetId === p.id,
+                  () => selectPreset(p.id),
+                  p.recommended,
+                ),
+              )
+            : purposeStructures.map((p) =>
+                renderStructureTile(
+                  p.id,
+                  p.name,
+                  p.segments.map((segment) => segment.name),
+                  presetId === p.id,
+                  () => selectPreset(p.id),
+                  undefined,
+                  undefined,
+                  p.summary,
+                ),
+              )}
           {renderStructureTile(
             'custom',
             <>
@@ -236,7 +255,10 @@ export function ScriptStructureEditor({ mode, config, goal, onChange }: ScriptSt
           <button
             type="button"
             className="sl-link sl-wiz-custom-link"
-            onClick={() => selectPreset(defaultPresetId)}
+            onClick={() => {
+              const fallbackId = isLive ? 'live-five-chapter' : purposeStructures[0]?.id
+              if (fallbackId) selectPreset(fallbackId)
+            }}
           >
             {t('structure.backToTemplates')}
           </button>

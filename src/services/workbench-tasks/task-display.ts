@@ -78,6 +78,12 @@ export function taskSuccessToast(kind: WorkbenchTaskKind, title: string, meta?: 
     }
     case 'script_generate': {
       if (meta?.fallback === '1') return `脚本已生成（部分步骤降级）：${short}`
+      // 硬校验未通过仍交付：必须说清楚「有 N 处待修改」，不能只说「已完成」。
+      if (meta?.hardCheck === '1') {
+        const count = meta?.hardCheckCount ?? '?'
+        const labels = meta?.hardCheckLabels ? `（${meta.hardCheckLabels}）` : ''
+        return `${meta?.mode === 'live' ? '直播' : '视频'}脚本已生成，有 ${count} 处待修改${labels}：${short}`
+      }
       const retention = meta?.retention ? `，预估留存 ${meta.retention}%` : ''
       return `${meta?.mode === 'live' ? '直播' : '视频'}脚本已完成${retention}：${short}`
     }

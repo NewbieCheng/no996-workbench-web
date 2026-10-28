@@ -65,7 +65,8 @@
 | `POST` | `/api/v1/ai/videos/generations` | 视频生成；`model` 可省略，服务端选 `video-generation` 链首位 | 由对应业务薄封装调用 |
 | `POST` | `/api/v1/ai/videos/retalk` | 口型替换；`model` 可省略，服务端选 `lipsync` 链首位 | `src/api/video-retalk.ts`；浏览器只发送素材引用与任务参数 |
 | `POST` | `/v1/tools/web_search` | 网页搜索（`queries: string[]`） | `src/api/tools.ts`；由 `src/agent/clients.ts` 暴露给 `kind: 'tool'` 阶段 |
-| `POST` | `/v1/tools/web_fetch` | 网页抓取（`url`，默认 DeepSeek `POST /v1/tools/fetch` 源） | `src/api/tools.ts` 的 `webFetch()`；公众号向导「单链接采集」经 `src/services/wechat-article/resolve-wechat-article-url.ts` 调用（按次计费，反爬拦截见 `WEB_FETCH_BLOCKED_BY_SITE`） |
+| `POST` | `/v1/tools/web_fetch` | 网页抓取（`url`，默认 DeepSeek `POST /v1/tools/fetch` 源） | `src/api/tools.ts` 的 `webFetch()`；通用网页正文；按次计费，反爬见 `WEB_FETCH_BLOCKED_BY_SITE` |
+| `POST` | `/v1/tools/wechat_fetch` | 微信公众号专用抽取（`url` → `kind` / `title` / `account` / `content` / `images[]`） | `src/api/tools.ts` 的 `wechatFetch()`；公众号向导「单链接采集」经 `src/services/wechat-article/resolve-wechat-article-url.ts` 映射首图为 `coverUrl`（专用接口关闭时回退 `web_fetch`） |
 | `POST` | `/api/v1/ai/audio/speech` | TTS（请求省略 `model`，由后端使用 voice-synthesis 链首位；直配与高阶配音共用） | `src/api/tts.ts` |
 | `GET` | `/v1/audio/voices` | 列出自己的复刻音色 + `meta` | `src/api/voice-clone.ts` |
 | `POST` | `/v1/audio/voices` | multipart 创建复刻；`target_model` 可省略，由 voice-enrollment 默认配置裁决 | `VoicePage` |

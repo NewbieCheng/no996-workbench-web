@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Lightbulb, Paperclip, Route, Sparkles } from 'lucide-react'
+import { Lightbulb, Sparkles } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { Textarea } from '@no996/ui/textarea'
 import { HoverTip } from '@no996/ui/tooltip'
@@ -17,8 +17,11 @@ export function TalkContentStep({
   demo,
   directions,
   canSuggest,
+  canNext,
+  blocker,
+  contentConfirmed,
+  selectedDirectionTitle,
   assetStrip,
-  onAdd,
   onAddFiles,
   onDirections,
   onUseDirection,
@@ -34,8 +37,11 @@ export function TalkContentStep({
   demo: boolean
   directions: TalkDirection[] | null
   canSuggest: boolean
+  canNext: boolean
+  blocker?: string
+  contentConfirmed?: boolean
+  selectedDirectionTitle?: string
   assetStrip: ReactNode
-  onAdd: () => void
   onAddFiles: (files: File[]) => void
   onDirections: () => void
   onUseDirection: (direction: TalkDirection) => void
@@ -54,8 +60,15 @@ export function TalkContentStep({
     stage="content"
     title={t(hasResult ? 'adjustTitle' : 'briefTitle')}
     hint={t(hasResult ? 'adjustHint' : 'briefHint')}
-    primary={{ label: t('nextVisual'), onClick: onNext, disabled: busy, icon: 'next', testId: 'ipt-next-visual' }}
+    primary={{
+      label: contentConfirmed && !hasResult ? t('continueWithDirection') : t('nextVisual'),
+      onClick: onNext,
+      disabled: busy || !canNext,
+      icon: 'next',
+      testId: 'ipt-next-visual',
+    }}
     secondary={{ label: t('advancedSettings'), onClick: onOpenAdvanced, disabled: busy }}
+    blocker={blocker}
   >
     <div
       className="ipt-brief-surface"
@@ -80,34 +93,18 @@ export function TalkContentStep({
       />
       {assetStrip}
       <div className="ipt-brief-tools">
-        <div className="flex items-center gap-1">
-          <HoverTip label={t('assetFormats')} enabled>
-            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" aria-label={t('addAssets')} disabled={busy} onClick={onAdd}>
-              <Paperclip className="size-3.5 mr-1" />
-              <span className="text-xs">{t('addAssets')}</span>
-            </Button>
-          </HoverTip>
-          {!hasResult && <HoverTip label={t('inspirationHint')} enabled={!canSuggest && !busy}>
-            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground" disabled={busy || !canSuggest} onClick={requestDirections}>
-              <Lightbulb className="size-3.5 mr-1" />{t('inspiration')}
-            </Button>
-          </HoverTip>}
-        </div>
         <span className="ipt-brief-tools__spacer" />
-        <span className="ipt-brief-count">{Array.from(brief).length}</span>
+        {!hasResult && <HoverTip label={t('inspirationHint')} enabled={!canSuggest && !busy}>
+          <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground" disabled={busy || !canSuggest} onClick={requestDirections}>
+            <Lightbulb className="size-3.5 mr-1" />{t('inspiration')}
+          </Button>
+        </HoverTip>}
       </div>
     </div>
     {needContext && <p className="ipt-context-question" role="status">{t('contextHint')}</p>}
-    {!hasResult && <button type="button" className="ipt-drop" disabled={busy} onClick={onAdd}>
-      <span className="ipt-drop__ico" aria-hidden="true">＋</span>
-      <span><b>{t('addPerson')}</b><small>{t('addPersonHint')}</small></span>
-    </button>}
+    {selectedDirectionTitle ? <p className="ipt-direction-chip" role="status">{t('directionSelected', { title: selectedDirectionTitle })}</p> : null}
     <p className="ipt-help ipt-brief-cost">{t(demo ? 'demoHint' : 'paidHint')}</p>
-    {!hasScript && <div className="ipt-step-note">
-      <Route size={15} aria-hidden />
-      <span>{t('scriptOptionalHint')}</span>
-      <Button type="button" variant="ghost" size="sm" onClick={onOpenAdvanced}>{t('openAdvancedScript')}</Button>
-    </div>}
+    {!hasScript && !hasResult && <p className="ipt-help">{t('scriptLaterHint')}</p>}
     {directions && <section className="ipt-directions" aria-label={t('directions')}>
       <div className="ipt-section-heading"><h3>{t('directions')}</h3><span className="ipt-help">{t(demo ? 'demoDirections' : 'preparedDirections')}</span></div>
       {directions.map((direction, index) => <article key={`${index}:${direction.title}`} className="ipt-direction">

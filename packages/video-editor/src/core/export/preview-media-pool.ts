@@ -10,15 +10,39 @@ export class PreviewMediaPool {
   private videos = new Map<string, HTMLVideoElement>()
   private blobs = new Map<string, Blob>()
   private disposed = false
+  private pendingLoads = new Set<() => void>()
 
   async load(doc: EditorDocument, getAssetBlob: GetAssetBlobFn, signal?: AbortSignal): Promise<void> {
     throwIfAborted(signal)
-    const jobs: Promise<void>[] = []
-    for (const [id, asset] of Object.entries(doc.assets)) {
-      if (!asset.blobId || asset.kind === 'audio') continue
-      jobs.push(this.loadAsset(id, asset.blobId, asset.kind, asset.name, getAssetBlob, signal))
+    const used = new Set<string>()
+    for (const track of doc.tracks) {
+      if (track.hidden) continue
+      for (const element of track.elements) {
+        if ((element.type === 'video' || element.type === 'image') && element.durationUs > 0 && element.startUs < doc.durationUs && element.startUs + element.durationUs > 0) used.add(element.assetId)
+      }
     }
-    await Promise.all(jobs)
+    const assets = [...used].flatMap((id) => {
+      const asset = doc.assets[id]
+      return asset?.blobId ? [{ id, asset, blobId: asset.blobId }] : []
+    })
+    let next = 0
+    let firstError: unknown
+    const worker = async () => {
+      while (next < assets.length && !this.disposed) {
+        const { id, asset, blobId } = assets[next++]
+        try {
+          await this.loadAsset(id, blobId, asset.kind, asset.name, getAssetBlob, signal)
+        } catch (error) {
+          if (firstError === undefined) firstError = error
+          this.dispose()
+          throw error
+        }
+      }
+    }
+    const results = await Promise.allSettled(Array.from({ length: Math.min(2, assets.length) }, worker))
+    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+    if (failure) throw firstError ?? failure.reason
+    throwIfAborted(signal)
   }
 
   resolve(doc: EditorDocument, elementId: string): CanvasImageSource | null {
@@ -50,6 +74,8 @@ export class PreviewMediaPool {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    for (const cancel of this.pendingLoads) cancel()
+    this.pendingLoads.clear()
     for (const image of this.images.values()) image.close()
     this.images.clear()
     for (const video of this.videos.values()) {
@@ -74,11 +100,18 @@ export class PreviewMediaPool {
   ): Promise<void> {
     throwIfAborted(signal)
     const blob = this.blobs.get(assetId) ?? await getAssetBlob(blobId)
+    throwIfAborted(signal)
+    if (this.disposed) throw new DOMException('媒体加载已取消', 'AbortError')
     if (!blob?.size) throw new Error(`媒体文件缺失或为空：${name || assetId}`)
     this.blobs.set(assetId, blob)
     if (kind === 'image' || blob.type.startsWith('image/')) {
       if (this.images.has(assetId)) return
-      this.images.set(assetId, await createImageBitmap(blob))
+      const image = await createImageBitmap(blob)
+      if (this.disposed || signal?.aborted) {
+        image.close()
+        throw new DOMException('媒体加载已取消', 'AbortError')
+      }
+      this.images.set(assetId, image)
       return
     }
     if (this.videos.has(assetId)) return
@@ -89,11 +122,19 @@ export class PreviewMediaPool {
     video.src = URL.createObjectURL(blob)
     this.videos.set(assetId, video)
     await new Promise<void>((resolve, reject) => {
-      const fail = () => reject(new Error(`无法播放素材「${name || '视频'}」`))
-      video.onloadeddata = () => resolve()
-      video.onerror = fail
-      video.load()
-      signal?.addEventListener('abort', () => reject(new DOMException('编码已取消', 'AbortError')), { once: true })
+      const cleanup = () => {
+        video.onloadeddata = null
+        video.onerror = null
+        signal?.removeEventListener('abort', cancel)
+        this.pendingLoads.delete(cancel)
+      }
+      const cancel = () => { cleanup(); reject(new DOMException('媒体加载已取消', 'AbortError')) }
+      video.onloadeddata = () => { cleanup(); resolve() }
+      video.onerror = () => { cleanup(); reject(new Error(`无法播放素材「${name || '视频'}」`)) }
+      this.pendingLoads.add(cancel)
+      signal?.addEventListener('abort', cancel, { once: true })
+      if (signal?.aborted || this.disposed) cancel()
+      else video.load()
     })
   }
 }

@@ -3,6 +3,8 @@ import type { ExportTaskSnapshot } from '@no996/video-editor/panels/export/Expor
 import { createIndexedDbWorkbenchTaskRepository } from '../../../services/workbench-tasks/idb-repository'
 import { useWorkbenchTaskActions, useWorkbenchTasks } from '../../../services/workbench-tasks'
 import type { WorkbenchTaskRecord } from '../../../services/workbench-tasks/types'
+import { resolveVideoExportDownloadUrl } from '../../../services/workbench-tasks/video-export-download-url'
+import { manageDownloadUrl } from '../../../services/workbench-tasks/managed-download-url'
 
 function mapTaskToSnapshot(
   task: WorkbenchTaskRecord | undefined,
@@ -30,7 +32,8 @@ export function useVideoExportTaskSnapshot(
 ) {
   const exportTasks = useWorkbenchTasks({ kind: 'video_factory_export' })
   const { cancelTask, retryVideoFactoryExport } = useWorkbenchTaskActions()
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [download, setDownload] = useState<{ key: string; url: string } | null>(null)
+  const downloadKey = `${activeTaskId ?? ''}:${exportTasks.find((t) => t.id === activeTaskId)?.blobId ?? ''}:${exportTasks.find((t) => t.id === activeTaskId)?.status ?? ''}`
 
   const task = useMemo(
     () => (activeTaskId ? exportTasks.find((t) => t.id === activeTaskId) : undefined),
@@ -38,28 +41,19 @@ export function useVideoExportTaskSnapshot(
   )
 
   useEffect(() => {
-    let revokedUrl: string | null = null
-    if (!task || task.status !== 'succeeded' || !task.blobId) {
-      setDownloadUrl(null)
-      return
-    }
+    if (!task || task.status !== 'succeeded' || !task.blobId) return
     const repo = createIndexedDbWorkbenchTaskRepository()
-    void repo.getBlob(task.blobId).then((rec) => {
-      if (!rec) return
-      const url = URL.createObjectURL(new Blob([rec.data], { type: rec.mime || 'video/mp4' }))
-      revokedUrl = url
-      setDownloadUrl(url)
-    })
-    return () => {
-      if (revokedUrl) URL.revokeObjectURL(revokedUrl)
-    }
+    return manageDownloadUrl(
+      () => resolveVideoExportDownloadUrl(repo, task),
+      (url) => setDownload({ key: downloadKey, url }),
+    )
   }, [task?.id, task?.status, task?.blobId])
 
   const snapshot = useMemo(
     () =>
       mapTaskToSnapshot(
         task,
-        downloadUrl,
+        download?.key === downloadKey ? download.url : null,
         () => {
           if (activeTaskId) void cancelTask(activeTaskId)
         },
@@ -68,7 +62,7 @@ export function useVideoExportTaskSnapshot(
           void retryVideoFactoryExport(activeTaskId).then((nextId) => onActiveTaskIdChange?.(nextId))
         },
       ),
-    [task, downloadUrl, activeTaskId, cancelTask, retryVideoFactoryExport, onActiveTaskIdChange],
+    [task, download, downloadKey, activeTaskId, cancelTask, retryVideoFactoryExport, onActiveTaskIdChange],
   )
 
   return { task, snapshot }

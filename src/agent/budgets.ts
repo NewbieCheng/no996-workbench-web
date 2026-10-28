@@ -58,7 +58,10 @@ const REMOTE_BUDGETS: AgentBudgets = {
   autofillMs: 30_000,
   retry: 1,
   reviewerMaxTokens: 8_192,
-  maxTokensCap: 16_384,
+  // 必须与后端 `t_llm_gateway_setting.max_tokens_cap` 一致（2026-10-28 起 32768）。
+  // 之前这里写 16384 而后端是 8192：截断重试「加码」会被服务端压回上限，
+  // 表现为同一份输出截断两次，重试等于没做。
+  maxTokensCap: 32_768,
 }
 
 /** 按客户端模式取预算。演示模式用短预算，远端模式用宽预算。 */

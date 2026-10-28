@@ -26,7 +26,7 @@ import { usePersonaInjection } from '../../components/agent/PersonaInjection'
 import { deriveTitlesPrefillPatch } from '../../lib/persona-form-prefill'
 import { usePersonaFormPrefill } from '../../hooks/usePersonaFormPrefill'
 import { useWorkbenchSessionTask } from '../../hooks/useWorkbenchSessionTask'
-import { useNotifyOperationMessage } from '../../lib/toast'
+import { toastWarning, useNotifyOperationMessage } from '../../lib/toast'
 import { WorkbenchTaskHistory } from '../tasks/WorkbenchTaskHistory'
 import { useWorkbenchTaskActions, useWorkbenchTasks, type WorkbenchTaskRecord } from '../../services/workbench-tasks'
 import type { TitlesTaskPayload } from '../../services/workbench-tasks'
@@ -322,7 +322,9 @@ export default function TitlesPage() {
     let chatAttachments: StoredChatAttachment[] | undefined
     try {
       chatAttachments = materialAttachments.length
-        ? await prepareAttachmentsFromItems(materialAttachments)
+        ? await prepareAttachmentsFromItems(materialAttachments, {
+            onNotice: (message) => toastWarning(message),
+          })
         : undefined
     } catch (e) {
       setError(e instanceof Error ? e.message : '附件解析失败，请重试。')

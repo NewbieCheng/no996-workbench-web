@@ -329,7 +329,7 @@ export function SocialStudioWizard({
 
                 setOutlinePlan({ suggestedTitles: [], hook: '', sections: [], conclusion: '', visualStyle: '', imagePlans: [] })
 
-                // 若是单篇直接导入（粘贴脚本/单篇链接/上传图片），直接跳到模板选择
+                // 仅自备文稿可直达模板；链接/关键词抓取先进「选择爆款」
                 if (directAdvanceToTemplate) {
                   setCurrentStep('template')
                 } else {

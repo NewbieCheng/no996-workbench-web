@@ -32,6 +32,7 @@ import {
 import { getPersonaFence } from '../../prompts/persona'
 import type { AttachmentUploaderItem } from '@no996/ui/attachment-uploader'
 import { prepareAttachmentsFromItems } from '../../lib/chat-attachments/prepare'
+import { toastWarning } from '../../lib/toast'
 import {
   useWorkbenchTaskActions,
   useWorkbenchTasks,
@@ -260,7 +261,9 @@ export default function PersonaPage() {
     try {
       const persisted = await persistDraft(formData, { questionnaireStep, mode })
       const chatAttachments = attachmentItems?.length
-        ? await prepareAttachmentsFromItems(attachmentItems)
+        ? await prepareAttachmentsFromItems(attachmentItems, {
+            onNotice: (message) => toastWarning(message),
+          })
         : undefined
       const taskId = await enqueuePersona({
         personaId: persisted.id,

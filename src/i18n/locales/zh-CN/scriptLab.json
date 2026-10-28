@@ -19,17 +19,41 @@
   },
   "goal": {
     "acquisition": "获客",
+    "persona": "人设",
+    "opinion": "观点·干货",
+    "conversion2": "转化",
     "traffic": "流量",
     "conversion": "成交",
     "hints": {
       "acquisition": "引导加微信、留资、咨询",
+      "persona": "让观众理解并相信你",
+      "opinion": "讲清一个判断和一个方法",
+      "conversion2": "讲清交付、证据与下一步",
       "traffic": "涨粉、破播放、引发评论",
       "conversion": "建立信任、拉升下单"
     }
   },
+  "purpose": {
+    "acquisition": "获客型",
+    "persona": "人设型",
+    "opinion": "观点·干货型",
+    "conversion": "转化型"
+  },
+  "purposeHeading": "创作目的",
+  "purposeHint": "先定目的，再从该目的下的四套结构里选一套",
+  "purposeRequired": "请先选择创作目的：获客 / 人设 / 观点·干货 / 转化",
+  "materials": {
+    "heading": "本次素材",
+    "hint": "带 * 的必填项缺失时不会发起生成，模型也不能替你编",
+    "required": "必填",
+    "reference": "参考资料",
+    "referenceHint": "txt / md / docx；单份最多 5 万字、合计最多 8 万字，超出会提示或截断"
+  },
   "structure": {
     "title": "叙事结构",
-"subtitle": "选一套节奏，或自己搭",
+    "subtitle": "选一套节奏，或自己搭",
+    "purposeSubtitle": "从当前目的下的四套结构里选一套，段名与占比由宿主锁定",
+    "purposeFirst": "先选创作目的，这里才会出现对应的叙事结构",
     "liveTitle": "直播结构",
     "liveSubtitle": "默认固定五章，也可换模板或自定义环节",
     "formula": {

@@ -1,15 +1,17 @@
 import {
   GOAL_HINTS,
   LIVE_DURATIONS,
+  LIVE_GOALS,
   LIVE_PLATFORMS,
-  SCRIPT_GOALS,
   VIDEO_DURATIONS,
+  VIDEO_GOALS,
   VIDEO_PLATFORMS,
   videoTargetChars,
   type ScriptConfig,
   type ScriptGoal,
   type ScriptMode,
 } from '../agent/types'
+import { SCRIPT_PURPOSES, goalOfPurpose } from '../agent/purposes'
 import { platformHints } from '../copy/platform-hints'
 import { ScriptOptionTile } from './ScriptOptionTile'
 import { ScriptStructureEditor } from './ScriptStructureEditor'
@@ -37,11 +39,16 @@ export function ScriptSpecStep({ mode, config, onChange }: ScriptSpecStepProps) 
     快手: t('platform.kuaishou'),
     淘宝: t('platform.taobao'),
   }
-  const goalLabels: Record<string, string> = {
+  const goalLabels: Partial<Record<ScriptGoal, string>> = {
     获客: t('goal.acquisition'),
+    人设: t('goal.persona'),
+    观点干货: t('goal.opinion'),
+    转化: t('goal.conversion2'),
     流量: t('goal.traffic'),
     成交: t('goal.conversion'),
   }
+  const liveGoals = LIVE_GOALS
+  void VIDEO_GOALS
 
   return (
     <div className="sl-wiz-spec">
@@ -97,32 +104,54 @@ export function ScriptSpecStep({ mode, config, onChange }: ScriptSpecStepProps) 
         </div>
       </div>
 
-      <div className="sl-wiz-blk">
-        <div className="sl-wiz-blk__head">
-          <h3>{t('goalHeading')}</h3>
-        </div>
-        <div className="sl-wiz-tiles sl-wiz-tiles--3">
-          {SCRIPT_GOALS.map((g) => (
-            <ScriptOptionTile
-              key={g}
-              selected={config.goal === g}
-              onSelect={() => {
-                const patch: Partial<ScriptConfig> = { goal: g as ScriptGoal }
-                if (
-                  isVideo &&
-                  (config.structure.kind === 'auto' ||
-                    (config.structure.kind === 'preset' && config.structure.presetId === 'goal-auto'))
-                ) {
-                  patch.structure = { kind: 'preset', presetId: 'goal-auto' }
+      {isVideo ? (
+        <div className="sl-wiz-blk">
+          <div className="sl-wiz-blk__head">
+            <h3>{t('purposeHeading')}</h3>
+            <span>{t('purposeHint')}</span>
+          </div>
+          <div className="sl-wiz-tiles sl-wiz-tiles--4">
+            {SCRIPT_PURPOSES.map((purpose) => (
+              <ScriptOptionTile
+                key={purpose.id}
+                selected={config.purpose === purpose.id}
+                onSelect={() =>
+                  onChange({
+                    purpose: purpose.id,
+                    // 目的变化必须清空旧结构，否则会出现「人设型 + 获客结构」的错配
+                    goal: goalOfPurpose(purpose.id),
+                    structure: { kind: 'auto' },
+                  })
                 }
-                onChange(patch)
-              }}
-              title={goalLabels[g] ?? g}
-              subtitle={GOAL_HINTS[g]}
-            />
-          ))}
+                title={purpose.label}
+                subtitle={purpose.summary}
+              />
+            ))}
+          </div>
+          {!config.purpose ? (
+            <p className="sl-wiz-live-warning" role="note">
+              {t('purposeRequired')}
+            </p>
+          ) : null}
         </div>
-      </div>
+      ) : (
+        <div className="sl-wiz-blk">
+          <div className="sl-wiz-blk__head">
+            <h3>{t('goalHeading')}</h3>
+          </div>
+          <div className="sl-wiz-tiles sl-wiz-tiles--3">
+            {liveGoals.map((g) => (
+              <ScriptOptionTile
+                key={g}
+                selected={config.goal === g}
+                onSelect={() => onChange({ goal: g as ScriptGoal })}
+                title={goalLabels[g] ?? g}
+                subtitle={GOAL_HINTS[g]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <ScriptStructureEditor mode={mode} config={config} goal={config.goal} onChange={onChange} />
     </div>

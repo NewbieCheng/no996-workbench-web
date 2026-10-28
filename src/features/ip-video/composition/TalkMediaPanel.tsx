@@ -1,10 +1,21 @@
+import { ImagePlus, Plus, UserRound } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { Input } from '@no996/ui/input'
 import { useEditorDocument, useEditorInstance } from '@no996/video-editor'
 import { editTalk, retimePhotos, talkSettings, applyTalkComposition, type TalkComposition } from './talk-model'
 import { useEditorSelection } from './use-editor-selection'
 
-export function TalkMediaPanel({ onAdd, onDigital }: { onAdd: () => void; onDigital: () => void }) {
+export function TalkMediaPanel({
+  onAdd,
+  onDigital,
+  onAiImage,
+  busy = false,
+}: {
+  onAdd: () => void
+  onDigital: () => void
+  onAiImage?: () => void
+  busy?: boolean
+}) {
   const editor = useEditorInstance()
   const doc = useEditorDocument()
   const selectedIds = useEditorSelection(editor)
@@ -15,11 +26,20 @@ export function TalkMediaPanel({ onAdd, onDigital }: { onAdd: () => void; onDigi
     if (!selected) return
     editTalk(editor, 'visual-transform', current => retimePhotos({ ...current, tracks: current.tracks.map(t => ({ ...t, elements: t.elements.map(e => e.id === selected.id && 'transform' in e ? { ...e, transform: { ...e.transform, ...patch } } : e) })) }))
   }
-  return <div className="ipt-panel-body">
-    <div className="ipt-section-heading"><h3>人物与画面</h3><Button variant="toolbar" onClick={onAdd}>添加素材</Button></div>
+  return <div className="ipt-panel-body ipt-ve-panel">
+    <div className="ipt-ve-panel__head">
+      <div className="ipt-ve-panel__title">
+        <span>人物与画面</span>
+        <span className="ipt-ve-tag">{visuals.length}</span>
+      </div>
+    </div>
     <p className="ipt-help">照片轻轻运动，人物视频保留真实动作。没有素材也能做纯文字口播。</p>
+    <div className="ipt-ve-capsules" role="group" aria-label="添加素材">
+      <Button type="button" variant="toolbar" size="sm" disabled={busy} onClick={onAdd}><Plus size={14} />添加素材</Button>
+      <Button type="button" variant="toolbar" size="sm" disabled={busy} onClick={onDigital}><UserRound size={14} />用数字人</Button>
+      {onAiImage ? <Button type="button" variant="toolbar" size="sm" disabled={busy} onClick={onAiImage}><ImagePlus size={14} />生成图片</Button> : null}
+    </div>
     {!!visuals.length && <><div className="ipt-inline-actions" role="group" aria-label="整体人物构图">{([{ id: 'full', label: '人物全屏' }, { id: 'side', label: '人物在左' }, { id: 'top', label: '人物在上' }, { id: 'pip', label: '人物小窗' }] as Array<{ id: TalkComposition; label: string }>).map(layout => <Button key={layout.id} variant="toolbar" onClick={() => editTalk(editor, 'composition', current => applyTalkComposition(current, layout.id))}>{layout.label}</Button>)}</div><p className="ipt-help">以上按钮会替换全部人物/照片构图，可撤销。字幕风格不会自动改变这里的构图。</p></>}
-    <Button variant="toolbar" onClick={onDigital}>使用已有数字人成片</Button>
     {!visuals.length && <p className="ipt-help">当前为纯文字画面，添加照片或人物视频即可替换。</p>}
     {visuals.map((element, i) => <div className="ipt-media-row" key={element.id}>
       <Button variant="ghost" className="ipt-media-name" aria-pressed={selected?.id === element.id} onClick={() => editor.setSelection([element.id])}>{i + 1}. {doc.assets[element.assetId]?.name ?? '素材'}</Button>

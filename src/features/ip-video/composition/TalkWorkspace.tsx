@@ -37,7 +37,9 @@ import { useTalkCreation } from './use-talk-creation'
 import { TalkLookPreview } from './TalkLookStrip'
 import { talkAspectCss, type TalkFormatRatio } from './talk-format'
 import { applyTalkLook, talkLookById, TALK_LOOKS } from './talk-looks'
-import { composeTalkCoverSquare, validateImage } from '../lib/cover'
+import { composeTalkCoverSquare, TALK_COVER_RATIO_SIZE, validateImage, type TalkCoverRatio } from '../lib/cover'
+import { humanizeTalkCreationError, talkCreationErrorNeedsContent } from './talk-creation-errors'
+import { canLeaveTalkContentStep, canLeaveTalkVoiceStep, canSubmitTalkCreation, canSuggestTalkDirection, hasEnoughTalkBrief, talkContentBlockerKey, talkVoiceBlockerKey } from './talk-creation-availability'
 import { templateProtectionRequired } from './templates/model'
 import { TalkAssetStrip } from './TalkAssetStrip'
 import { TalkShotPanel } from './TalkShotPanel'
@@ -52,9 +54,8 @@ import { TalkTemplateLibrary, TalkTemplateSaveDialog } from './templates'
 import { useTemplateCopy } from './templates/copy'
 import { matchingTalkPreset } from './talk-caption-presets'
 import { useTalkV2Copy } from './v2-copy'
-import { canSubmitTalkCreation, canSuggestTalkDirection } from './talk-creation-availability'
 import { DEFAULT_TALK_BRIEF_OPTIONS, effectiveTalkOptions, initialTalkOptions, lockCaptions, type TalkBriefOptions } from './talk-options'
-import { defaultTalkStage, previousTalkStage, type TalkStageId } from './talk-pipeline'
+import { canEnterTalkStage, defaultTalkStage, previousTalkStage, type TalkStageId } from './talk-pipeline'
 import { TalkPipelineRail } from './pipeline/TalkPipelineRail'
 import { TalkContentStep } from './pipeline/TalkContentStep'
 import { TalkVisualStep } from './pipeline/TalkVisualStep'
@@ -65,10 +66,7 @@ import { TalkExportStep } from './pipeline/TalkExportStep'
 import { TalkAdvancedSettingsDialog } from './pipeline/TalkAdvancedSettingsDialog'
 import { TalkCoverPanel } from './pipeline/TalkCoverPanel'
 import { TalkAiImageDialog } from './pipeline/TalkAiImageDialog'
-import { TalkObjectRail, type TalkInspectorTarget } from './pipeline/TalkObjectRail'
-import { TalkInspector } from './pipeline/TalkInspector'
-import { useEditorSelection } from './use-editor-selection'
-import { TALK_SHOT_CATALOG, talkShotLabel } from './talk-shot-catalog'
+import { TalkInspector, type TalkInspectorTarget } from './pipeline/TalkInspector'
 import './talk-workspace.css'
 import './talk-workspace-v2.css'
 
@@ -104,7 +102,6 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
   const doc = useEditorDocument()
   const { playheadUs, seek } = usePlayback()
   const state = talkSettings(doc)
-  const selectedIds = useEditorSelection(editor)
   const [resultMode, setResultMode] = useState(doc.durationUs > 0)
   const [stage, setStage] = useState<TalkStageId>(() => defaultTalkStage(doc.durationUs > 0))
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -128,9 +125,15 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
   const [versionIds, setVersionIds] = useState<string[]>([])
   const [coverTitle, setCoverTitle] = useState('')
   const [coverCropMode, setCoverCropMode] = useState<'cover' | 'contain'>(state.coverCropMode ?? 'cover')
+  const [coverRatio, setCoverRatio] = useState<TalkCoverRatio>(state.coverRatio ?? '3:4')
   const [coverPhoto, setCoverPhoto] = useState<Blob>()
   const [coverUrl, setCoverUrl] = useState('')
   const [coverGenerating, setCoverGenerating] = useState(false)
+  const [coverAiBusy, setCoverAiBusy] = useState(false)
+  const [contentConfirmed, setContentConfirmed] = useState(!!(hasEnoughTalkBrief(state.creation?.brief ?? '') || state.script.trim()))
+  const [selectedDirectionTitle, setSelectedDirectionTitle] = useState('')
+  const [visualConfirmed, setVisualConfirmed] = useState(doc.durationUs > 0)
+  const [voiceSkipped, setVoiceSkipped] = useState(false)
   const voiceLoaded = useRef(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const mounted = useRef(true)
@@ -155,13 +158,14 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     setLibraryOpen(false)
     setAiImageOpen(false)
     setName(doc.name)
-  }, [doc.id])
-
-  useEffect(() => {
-    setCoverTitle(resolveTalkCoverTitle(doc, talkLookById(state.lookId)?.heading ?? TALK_LOOKS[0].heading))
-    setCoverCropMode(state.coverCropMode ?? 'cover')
-    // Only reset when switching projects or when the stored title changes from outside this editor.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCoverTitle(resolveTalkCoverTitle(doc, talkLookById(nextState.lookId)?.heading ?? TALK_LOOKS[0].heading))
+    setCoverCropMode(nextState.coverCropMode ?? 'cover')
+    setCoverRatio(nextState.coverRatio ?? '3:4')
+    setContentConfirmed(!!(hasEnoughTalkBrief(nextState.creation?.brief ?? '') || nextState.script.trim()))
+    setSelectedDirectionTitle('')
+    setVisualConfirmed(doc.durationUs > 0)
+    setVoiceSkipped(false)
+    voiceLoaded.current = false
   }, [doc.id])
 
   useEffect(() => {
@@ -227,10 +231,11 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     return () => { active = false }
   }, [digitalOpen, owner, onError])
   useEffect(() => {
-    if (!state.script.trim() || voiceLoaded.current || creation.demo || creation.busy) return
+    if (voiceLoaded.current || creation.demo || creation.busy) return
+    if (stage !== 'voice' && stage !== 'generate' && !state.script.trim()) return
     voiceLoaded.current = true
-    void inputs.loadVoices().catch(failure => onError(apiErrorMessage(failure)))
-  }, [state.script, creation.demo, creation.busy, inputs.loadVoices, onError])
+    void inputs.loadVoices().catch(failure => onError(humanizeTalkCreationError(apiErrorMessage(failure))))
+  }, [stage, state.script, creation.demo, creation.busy, inputs.loadVoices, onError])
 
   const effectiveOptions = effectiveTalkOptions(options, state)
   const changeOptions = (next: TalkBriefOptions) => {
@@ -245,20 +250,32 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     if (brief === (talkSettings(editor.getDocument()).creation?.brief ?? '')) return
     editTalk(editor, 'brief-draft', current => ({ ...current, ipVideo: { ...talkSettings(current), creation: { ...talkSettings(current).creation, brief } } }))
   }
+  const contentReady = hasResult || canLeaveTalkContentStep({
+    brief: hasResult ? adjustment : brief,
+    hasScript: !!state.script.trim(),
+    hasAudio: inputs.hasAudio,
+    contentConfirmed,
+  })
+  const voiceReady = hasResult || canLeaveTalkVoiceStep({ hasAudio: inputs.hasAudio, voiceId: state.voiceId, voiceSkipped })
   const canGenerate = hasResult
     ? !!adjustment.trim()
     : canSubmitTalkCreation({ hasResult: false, brief, hasScript: !!state.script.trim(), hasAudio: inputs.hasAudio })
   const make = (intent: 'create' | 'directions' | 'adjust', text = brief) => {
     if (working || exporting || templateBlocked) return
     if (intent === 'directions' && !canSuggestTalkDirection({ brief: text, hasScript: !!state.script.trim() })) return
-    if (intent !== 'directions' && !canSubmitTalkCreation({ hasResult: intent === 'adjust', brief: text, hasScript: !!state.script.trim(), hasAudio: inputs.hasAudio })) return
+    if (intent !== 'directions' && !canSubmitTalkCreation({ hasResult: intent === 'adjust', brief: text, hasScript: !!state.script.trim(), hasAudio: inputs.hasAudio })) {
+      setStage('content')
+      onError(t(hasResult ? 'adjustUnavailable' : 'makeUnavailable'))
+      return
+    }
     void creation.submit({ ...effectiveOptions, intent, brief: intent === 'adjust' ? state.creation?.brief ?? '' : text, adjustment: intent === 'adjust' ? text : undefined, personaContent: persona.background })
   }
   const useDirection = (direction: TalkDirection) => {
     const text = `${direction.title}\n建议开场：${direction.opening}\n${direction.reason}${brief.trim() ? `\n补充要求：${brief}` : ''}`
     setBrief(text)
+    setContentConfirmed(true)
+    setSelectedDirectionTitle(direction.title)
     editTalk(editor, 'brief-draft', current => ({ ...current, ipVideo: { ...talkSettings(current), creation: { ...talkSettings(current).creation, brief: text } } }))
-    setStage('visual')
   }
   const requestAudio = () => {
     if (!state.script.trim()) { onError('先完成口播文稿，再生成配音。'); return }
@@ -336,11 +353,34 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
   }
   const selectStage = (next: TalkStageId) => {
     if (working || exporting) return
+    const gate = canEnterTalkStage(next, { hasResult, hasDuration, canGenerate, contentReady, voiceReady, visualConfirmed })
+    if (!gate.allowed) {
+      onError(t(gate.reasonKey ?? 'needContent'))
+      return
+    }
     if ((next === 'edit' || next === 'export') && !hasResult && hasDuration) setResultMode(true)
     editor.setIsPlaying(false)
     setStage(next)
   }
-  const goNext = () => setStage(stage === 'content' ? 'visual' : stage === 'visual' ? 'voice' : stage === 'voice' ? 'generate' : stage === 'edit' ? 'export' : stage)
+  const goNext = () => {
+    if (stage === 'content') {
+      if (!contentReady) return
+      setContentConfirmed(true)
+      setStage('visual')
+      return
+    }
+    if (stage === 'visual') {
+      setVisualConfirmed(true)
+      setStage('voice')
+      return
+    }
+    if (stage === 'voice') {
+      if (!voiceReady) return
+      setStage('generate')
+      return
+    }
+    if (stage === 'edit') setStage('export')
+  }
   const goBack = () => setStage(previousTalkStage(stage))
   const openStageInspector = (tab: 'text' | 'media') => {
     setResultMode(true)
@@ -353,6 +393,12 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     : selectedLook.name
   const preset = matchingTalkPreset(doc.captionStyle)
   const styleName = selectedStyleName ?? (preset ? builtinName(preset.id) : t('customStyle'))
+  const changeFormatLabel = (ratio: string) => ratio === '16:9' ? t('formatLandscape') : ratio === '3:4' ? t('formatCover') : ratio === '1:1' ? t('square') : t('formatPortrait')
+  const generateChecklist = hasResult ? undefined : [
+    { id: 'content', label: t('checklistContent'), ready: contentReady, detail: contentReady ? t('checklistContentReady') : t('needContent'), onFix: () => setStage('content') },
+    { id: 'visual', label: t('checklistVisual'), ready: visualConfirmed, detail: visualConfirmed ? `${changeFormatLabel(doc.canvas.ratio)} · ${styleName}` : t('needVisualConfirm'), onFix: () => setStage('visual') },
+    { id: 'voice', label: t('checklistVoice'), ready: voiceReady, detail: inputs.hasAudio ? t('voiceReady') : state.voiceId ? t('voiceSelected') : voiceSkipped ? t('voiceSkipped') : t('needVoiceChoice'), onFix: () => setStage('voice') },
+  ]
   const applyLook = (lookId: string) => {
     const look = talkLookById(lookId)
     if (!look || working || exporting || templateBlocked) return
@@ -366,7 +412,6 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     }
     commit()
   }
-  const changeFormatLabel = (ratio: string) => ratio === '16:9' ? t('formatLandscape') : ratio === '3:4' ? t('formatCover') : ratio === '1:1' ? t('square') : t('formatPortrait')
   const coverTitleValue = coverTitle || resolveTalkCoverTitle(doc, selectedLook.heading)
   const commitCoverTitle = () => {
     const next = coverTitle.trim() || resolveTalkCoverTitle(editor.getDocument(), selectedLook.heading)
@@ -380,6 +425,11 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     setCoverCropMode(mode)
     editTalk(editor, 'cover-crop', current => ({ ...current, ipVideo: { ...talkSettings(current), coverCropMode: mode, coverAssetId: undefined } }))
   }
+  const changeCoverRatio = (ratio: TalkCoverRatio) => {
+    if (ratio === coverRatio) return
+    setCoverRatio(ratio)
+    editTalk(editor, 'cover-ratio', current => ({ ...current, ipVideo: { ...talkSettings(current), coverRatio: ratio, coverAssetId: undefined } }))
+  }
   const changeCoverPhoto = (file: File) => {
     void run(async () => {
       await validateImage(file, 10 * 1024 * 1024)
@@ -388,16 +438,41 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
       setCoverPhoto(file)
     })
   }
+  const uploadFinishedCover = (file: File) => {
+    void run(async () => {
+      await validateImage(file, 10 * 1024 * 1024)
+      const asset = await inputs.persistAsset(file, file.name)
+      editTalk(editor, 'cover-image', current => ({ ...current, assets: { ...current.assets, [asset.id]: asset }, ipVideo: { ...talkSettings(current), coverAssetId: asset.id, coverRatio } }))
+    })
+  }
   const generateCover = () => {
     if (working || coverGenerating) return
     setCoverGenerating(true)
     void run(async () => {
       const title = coverTitleValue.trim()
       if (!title) throw new Error('请先填写封面标题。')
-      const blob = await composeTalkCoverSquare({ lookId: selectedLook.id, title, photo: coverPhoto, cropMode: coverCropMode })
+      const blob = await composeTalkCoverSquare({ lookId: selectedLook.id, title, photo: coverPhoto, cropMode: coverCropMode, ratio: coverRatio })
       const asset = await inputs.persistAsset(blob, `封面-${title.replace(/[\/:*?"<>|\s]+/g, '-')}.png`)
-      editTalk(editor, 'cover-image', current => ({ ...current, assets: { ...current.assets, [asset.id]: asset }, ipVideo: { ...talkSettings(current), coverTitle: title, coverCropMode, coverAssetId: asset.id } }))
+      editTalk(editor, 'cover-image', current => ({ ...current, assets: { ...current.assets, [asset.id]: asset }, ipVideo: { ...talkSettings(current), coverTitle: title, coverCropMode, coverRatio, coverAssetId: asset.id } }))
     }).finally(() => { if (mounted.current) setCoverGenerating(false) })
+  }
+  const generateCoverAi = (prompt: string) => {
+    if (working || coverAiBusy) return
+    setCoverAiBusy(true)
+    void run(async () => {
+      const size = TALK_COVER_RATIO_SIZE[coverRatio].aiSize
+      const { imageUrls } = await generateAiImages({ prompt, size, n: 1 })
+      const url = imageUrls[0]
+      if (!url) throw new Error('图像接口没有返回可用图片。')
+      const response = await fetch(url, { signal: AbortSignal.timeout(45_000) })
+      if (!response.ok) throw new Error('生成图片下载失败，请稍后重试。')
+      const blob = await response.blob()
+      if (!blob.type.startsWith('image/')) throw new Error('图像接口返回的内容不是图片。')
+      const file = new File([blob], `AI-封面-${Date.now()}.png`, { type: blob.type || 'image/png' })
+      await validateImage(file, 10 * 1024 * 1024)
+      const asset = await inputs.persistAsset(file, file.name)
+      editTalk(editor, 'cover-image', current => ({ ...current, assets: { ...current.assets, [asset.id]: asset }, ipVideo: { ...talkSettings(current), coverAssetId: asset.id, coverRatio } }))
+    }).finally(() => { if (mounted.current) setCoverAiBusy(false) })
   }
   const generateAiImage = async (prompt: string, size: string) => {
     const { imageUrls } = await generateAiImages({ prompt, size, n: 1 })
@@ -456,7 +531,7 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     { label: t('sound'), value: inputs.hasAudio ? t('voiceReady') : state.voiceId ? (inputs.voices.find(v => v.id === state.voiceId)?.label ?? t('voiceSelected')) : t('noVoice'), onEdit: () => setStage('voice') },
     { label: t('persona'), value: persona.enabled && persona.persona ? persona.persona.name : t('noPersona'), onEdit: () => setAdvancedOpen(true) },
   ]
-  const processPanel = creation.run ? <details className="ipt-details ipt-creation-process"><summary>{t(creation.demo ? 'processDemo' : 'process')}</summary><ol>{creation.run.stages.filter(stageItem => stageItem.status !== 'idle' && stageItem.status !== 'skipped').map(stageItem => <li key={stageItem.id}><span>{t(`stage_${stageItem.id}`, { defaultValue: t('process') })}</span><small>{t(stageItem.status === 'done' ? 'done' : stageItem.status === 'failed' ? 'failed' : stageItem.status === 'running' ? 'running' : 'stopped')}</small>{stageItem.streamingContent && <p>{displayTalkText(stageItem.streamingContent)}</p>}</li>)}</ol></details> : undefined
+  const processPanel = creation.run ? <div className={`ipt-creation-process${creation.busy ? ' is-open' : ''}`}><h4>{t(creation.demo ? 'processDemo' : 'process')}</h4><ol>{creation.run.stages.filter(stageItem => stageItem.status !== 'idle' && stageItem.status !== 'skipped').map(stageItem => <li key={stageItem.id}><span>{t(`stage_${stageItem.id}`, { defaultValue: t('process') })}</span><small>{t(stageItem.status === 'done' ? 'done' : stageItem.status === 'failed' ? 'failed' : stageItem.status === 'running' ? 'running' : 'stopped')}</small>{stageItem.streamingContent && <p>{displayTalkText(stageItem.streamingContent)}</p>}</li>)}</ol></div> : undefined
   const generateNotices = <>
     {creation.busy && <section className="ipt-creation-progress" role="status" aria-live="polite"><LoaderCircle className="animate-spin" size={18} /><div><strong>{creation.stageLabel}</strong><span>{t('creationProgress')}</span></div><Button variant="ghost" size="sm" onClick={creation.cancel}>{t('cancel')}</Button></section>}
     {state.creation?.summary && <details className="ipt-details"><summary>{t('creationSummary')}</summary><p className="ipt-plan-summary">{state.creation.summary}</p></details>}
@@ -489,9 +564,17 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
       <TalkLookPreview look={selectedLook} aspect={talkAspectCss(doc.canvas.ratio)} heading={(brief.trim().split(/[\n。！？!?]/u)[0] || '').slice(0, 18)} />
       <p className="ipt-cap">{styleName} · {changeFormatLabel(doc.canvas.ratio)}</p>
     </>
+  const contentBlockerKey = hasResult ? (adjustment.trim() ? undefined : 'adjustUnavailable') : talkContentBlockerKey({ brief, hasScript: !!state.script.trim(), hasAudio: inputs.hasAudio, contentConfirmed })
+  const voiceBlockerKey = talkVoiceBlockerKey({ hasAudio: inputs.hasAudio, voiceId: state.voiceId, voiceSkipped })
   const contentStep = <TalkContentStep
     brief={hasResult ? adjustment : brief}
-    onBriefChange={hasResult ? setAdjustment : setBrief}
+    onBriefChange={value => {
+      if (hasResult) setAdjustment(value)
+      else {
+        setBrief(value)
+        setContentConfirmed(hasEnoughTalkBrief(value) || !!state.script.trim())
+      }
+    }}
     onRemember={hasResult ? () => {} : rememberBrief}
     hasResult={hasResult}
     hasScript={!!state.script.trim()}
@@ -499,8 +582,11 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     demo={creation.demo}
     directions={hasResult ? null : creation.directions?.directions ?? null}
     canSuggest={canSuggestTalkDirection({ brief, hasScript: !!state.script.trim() })}
+    canNext={hasResult ? !!adjustment.trim() : contentReady}
+    blocker={contentBlockerKey ? t(contentBlockerKey) : undefined}
+    contentConfirmed={contentConfirmed && !hasResult}
+    selectedDirectionTitle={selectedDirectionTitle}
     assetStrip={<TalkAssetStrip assets={project.assets} scope={project.scope} onAddFiles={requestFiles} />}
-    onAdd={() => openFiles()}
     onAddFiles={requestFiles}
     onDirections={() => make('directions')}
     onUseDirection={useDirection}
@@ -520,7 +606,6 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     onOpenAdvanced={() => setAdvancedOpen(true)}
   />
   const voiceStep = <TalkVoiceStep
-    tDh={tDh}
     voices={inputs.voices}
     voiceId={state.voiceId ?? ''}
     speed={state.speed ?? 1}
@@ -530,14 +615,20 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     busy={working || exporting}
     pending={audioWorking}
     demo={creation.demo}
+    canNext={voiceReady}
+    blocker={voiceBlockerKey ? t(voiceBlockerKey) : undefined}
+    voiceSkipped={voiceSkipped}
     showRetryBinding={inputs.task?.status === 'succeeded' && state.appliedTaskId !== inputs.task.id}
-    onModeChange={() => {}}
-    onVoiceIdChange={id => editTalk(editor, 'voice', current => ({ ...current, ipVideo: { ...talkSettings(current), voiceId: id } }))}
+    onVoiceIdChange={id => {
+      setVoiceSkipped(false)
+      editTalk(editor, 'voice', current => ({ ...current, ipVideo: { ...talkSettings(current), voiceId: id } }))
+    }}
     onSpeedChange={value => editTalk(editor, 'voice-rate', current => ({ ...current, ipVideo: { ...talkSettings(current), speed: value } }))}
     onGenerateDub={requestAudio}
-    onReloadVoices={() => void inputs.loadVoices()}
-    onUseExisting={() => setAudioOpen(true)}
-    onUploadAudio={() => openFiles('audio/*')}
+    onReloadVoices={() => { voiceLoaded.current = false; void inputs.loadVoices().catch(failure => onError(humanizeTalkCreationError(apiErrorMessage(failure)))) }}
+    onUseExisting={() => { setVoiceSkipped(false); setAudioOpen(true) }}
+    onUploadAudio={() => { setVoiceSkipped(false); openFiles('audio/*') }}
+    onSkipVoice={() => setVoiceSkipped(true)}
     onRetryBinding={() => void run(inputs.retryBinding)}
     onNext={goNext}
     onBack={goBack}
@@ -545,50 +636,42 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
   />
   const generateStep = <TalkGenerateStep
     summaries={summary}
-    canGenerate={canGenerate}
+    checklist={generateChecklist}
+    canGenerate={canGenerate && (hasResult || voiceReady)}
     canDirectEdit={hasDuration && !hasResult}
     busy={working || exporting}
     demo={creation.demo}
     hasResult={hasResult}
+    blocker={!canGenerate ? t(hasResult ? 'adjustUnavailable' : 'makeUnavailable') : !voiceReady ? t('needVoiceChoice') : undefined}
+    lastFailure={creation.lastFailure}
+    onDismissFailure={creation.dismissFailure}
     notices={generateNotices}
     processPanel={processPanel}
-    onGenerate={() => make(hasResult ? 'adjust' : 'create', hasResult ? adjustment : brief)}
+    onGenerate={() => {
+      if (!canGenerate) {
+        if (talkCreationErrorNeedsContent(t('makeUnavailable'))) setStage('content')
+        return
+      }
+      make(hasResult ? 'adjust' : 'create', hasResult ? adjustment : brief)
+    }}
     onDirectEdit={() => { setResultMode(true); setStage('edit') }}
     onBack={goBack}
     onOpenAdvanced={() => setAdvancedOpen(true)}
   />
-  const visualItems = doc.tracks.flatMap(track => track.elements.filter(element => element.type === 'image' || element.type === 'video').map(element => ({
-    id: element.id,
-    name: doc.assets[element.assetId]?.name ?? t('visuals'),
-    kind: element.type as 'image' | 'video',
-  })))
-  const shotItems = doc.tracks.flatMap(track => track.elements.filter(element => element.type === 'shot').map(element => ({
-    id: element.id,
-    name: (() => { const entry = TALK_SHOT_CATALOG.find(item => item.shot.shotId === element.shotId); return entry ? talkShotLabel(entry) : element.shotId })() ,
-  })))
   const editStep = <TalkEditStep
-    rail={<TalkObjectRail
-      target={inspectorTarget}
-      captionCount={doc.captions.length}
-      visuals={visualItems}
-      shots={shotItems}
-      selectedIds={selectedIds}
-      busy={working || exporting}
-      onTarget={setInspectorTarget}
-      onSelectElement={(id, target) => { editor.setSelection([id]); setInspectorTarget(target); editor.setIsPlaying(false) }}
-      onAdd={() => openFiles()}
-      onDigital={() => setDigitalOpen(true)}
-      onAiImage={() => setAiImageOpen(true)}
-    />}
     stage={preview}
-    inspector={<TalkInspector target={inspectorTarget} onTarget={setInspectorTarget}>
+    inspector={<TalkInspector
+      target={inspectorTarget}
+      onTarget={setInspectorTarget}
+      counts={{ captions: doc.captions.length, media: doc.tracks.flatMap(track => track.elements.filter(element => element.type === 'image' || element.type === 'video')).length, shots: doc.tracks.flatMap(track => track.elements.filter(element => element.type === 'shot')).length }}
+    >
       <TalkCaptionReview onError={onError} />
       {inspectorTarget === 'captions' ? <TalkCaptionPanel onError={onError} /> : inspectorTarget === 'media' ? <>
-        <TalkMediaPanel onAdd={() => openFiles()} onDigital={() => setDigitalOpen(true)} />
+        <TalkMediaPanel onAdd={() => openFiles()} onDigital={() => setDigitalOpen(true)} onAiImage={() => setAiImageOpen(true)} busy={working || exporting} />
         {!hasVisual && <p className="ipt-help">{t('textOnly')}</p>}
       </> : <TalkShotPanel onError={onError} disabled={working || exporting} curated />}
     </TalkInspector>}
-    divider={<ColumnDivider className="ipt-inspector-divider" previewSelector=".ipt-inspector" widthVariable="--ipt-inspector-width" defaultWidth={420} minWidth={320} minMainWidth={620} invert label={t('resizeInspector')} />}
+    divider={<ColumnDivider className="ipt-inspector-divider" previewSelector=".ipt-inspector" widthVariable="--ipt-inspector-width" defaultRatio={0.5} defaultWidth={480} minWidth={340} minMainWidth={360} maxPreviewRatio={0.5} invert label={t('resizeInspector')} />}
     timeline={<TimelinePanel editor={timelineEditor} variant="compact" playheadUs={playheadUs} onSeek={seek} toolbarSimplified />}
     timelineOpen={timelineOpen}
     onToggleTimeline={() => setTimelineOpen(value => !value)}
@@ -600,15 +683,20 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
     lookId={selectedLook.id}
     title={coverTitleValue}
     cropMode={coverCropMode}
+    ratio={coverRatio}
     photo={coverPhoto}
     coverUrl={coverUrl}
     busy={working || exporting}
     generating={coverGenerating}
+    aiBusy={coverAiBusy}
     onTitle={setCoverTitle}
     onTitleCommit={commitCoverTitle}
     onCrop={changeCoverCrop}
+    onRatio={changeCoverRatio}
     onPhoto={changeCoverPhoto}
+    onUploadCover={uploadFinishedCover}
     onGenerate={generateCover}
+    onGenerateAi={generateCoverAi}
     onDownload={downloadCover}
   />
   const exportStep = <TalkExportStep
@@ -625,8 +713,9 @@ function TalkEditor({ project, owner, sourceProjectId, creationTaskId, toolbarTa
   const step = stage === 'content' ? contentStep : stage === 'visual' ? visualStep : stage === 'voice' ? voiceStep : stage === 'generate' ? generateStep : stage === 'export' ? exportStep : editStep
   return <div className="ipt-workspace ipt-workspace--v2" data-stage={stage} data-testid="ip-talk-workspace" onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault() }} onDrop={event => { if (!event.dataTransfer.files.length) return; event.preventDefault(); requestFiles(Array.from(event.dataTransfer.files)) }}>
     <TalkProjectToolbar targets={toolbarTargets} drafts={project.drafts} saveState={project.saveState} saveError={project.saveState === 'unsaved' && !!project.error} busy={working || exporting || templateBlocked} hasResult={hasResult} exporting={exporting} canExport={!issues.length} onOpen={id => void run(() => project.open(id))} onNew={() => void run(project.create)} onRename={() => { setName(doc.name); setRenameOpen(true) }} onDelete={() => setConfirmAction({ title: '删除本机作品', message: `将删除「${doc.name}」的编辑工程。已下载文件和视频工厂作品不受影响，此操作无法撤销。`, label: '删除作品', run: project.remove })} onSaveTemplate={() => setSaveTemplateOpen(true)} onOpenAdvancedSettings={() => setAdvancedOpen(true)} onRetrySave={() => void run(project.flush)} onExport={requestExport} />
-    <TalkPipelineRail stage={stage} hasResult={hasResult} hasDuration={hasDuration} canGenerate={canGenerate} busy={working || exporting || templateBlocked} onSelect={selectStage} onOpenAdvanced={() => setAdvancedOpen(true)} />
+    <TalkPipelineRail stage={stage} hasResult={hasResult} hasDuration={hasDuration} canGenerate={canGenerate} contentReady={contentReady} voiceReady={voiceReady} busy={working || exporting || templateBlocked} onSelect={selectStage} onOpenAdvanced={() => setAdvancedOpen(true)} />
     <input ref={fileRef} type="file" multiple hidden accept="audio/*,video/*,image/png,image/jpeg,image/webp,.srt" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ''; requestFiles(files) }} />
+    {creation.busy ? <section className="ipt-sticky-progress" role="status" aria-live="polite"><LoaderCircle className="animate-spin" size={16} /><div><strong>{creation.stageLabel}</strong><span>{t('creationProgress')}</span></div><Button variant="ghost" size="sm" onClick={creation.cancel}>{t('cancel')}</Button></section> : null}
     {stage !== 'export' && exportStatus}
     {stage === 'edit' ? <fieldset className="ipt-edit-fieldset" disabled={working || exporting}>{step}</fieldset> : <div className="ipt-flow-layout" data-stage={stage}>
       <section className="ipt-flow-preview" aria-label={t('preview')}>{preview}</section>
