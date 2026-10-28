@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { CSSProperties } from 'react'
 import { Input } from '@no996/ui/input'
 
 type RangeSliderProps = {

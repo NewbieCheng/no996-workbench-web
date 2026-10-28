@@ -88,7 +88,6 @@ export function ColumnDivider({
     const parent = root()
     const handle = handleRef.current
     if (!parent || !handle) return
-    const fallback = resolveDefault(parent.clientWidth)
     const max = computePreviewMax(parent.clientWidth, minMainWidth, maxPreviewRatio)
     const width =
       max >= minWidth
