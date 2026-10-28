@@ -239,6 +239,7 @@ export function PersonaQuestionnaireView({
       backLabel={t('form.back')}
       nextLabel={t('form.next')}
       ariaLabel={t('questionnaire.wizardAria')}
+      footerButtons="glass"
       footerLeadingSlot={
         <div className="persona-q-foot-toolbar">
           {canCollapse && onCollapse ? (

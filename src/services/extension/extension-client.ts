@@ -33,11 +33,11 @@ export class ExtensionClient {
       let timer: ReturnType<typeof setTimeout> | undefined;
 
       const handler = (event: MessageEvent) => {
-        if (event.source !== window) return;
+        if (event.source !== window || event.origin !== window.location.origin) return;
         const resp = event.data as WorkbenchBridgeWindowResponse<M> | undefined;
         if (!resp || typeof resp !== 'object') return;
         if (resp.source !== WORKBENCH_BRIDGE_WINDOW_MESSAGE_SOURCE_EXTENSION) return;
-        if (resp.requestId !== requestId) return;
+        if (resp.requestId !== requestId || resp.method !== method || resp.protocolVersion !== WORKBENCH_BRIDGE_PROTOCOL_VERSION) return;
 
         window.removeEventListener('message', handler);
         if (timer) clearTimeout(timer);

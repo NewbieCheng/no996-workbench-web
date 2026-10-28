@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  applySimpleInheritForAdvanced,
+  hasSimplePersonaContent,
   inheritSimpleToAdvanced,
   isQuestionnaireEmpty,
   missingRequiredQuestionnaireKeys,
   normalizeQuestionnaire,
   projectLegacyUserForm,
   questionnaireFromLegacyContent,
+  questionnairePreviewFieldsForMode,
+  questionnaireProgressForMode,
+  REQUIRED_QUESTIONNAIRE_KEYS,
+  SIMPLE_PREVIEW_KEYS,
 } from './questionnaire.ts'
 import { EMPTY_QUESTIONNAIRE, EMPTY_USER_FORM } from './types.ts'
 
@@ -123,6 +129,31 @@ test('inheritSimpleToAdvanced inherits seven fields into questionnaire without o
   assert.equal(merged.products, '一对一个案咨询')
 })
 
+test('applySimpleInheritForAdvanced fills empty advanced fields from simple and skips when simple empty', () => {
+  assert.equal(hasSimplePersonaContent(EMPTY_QUESTIONNAIRE), false)
+  const empty = applySimpleInheritForAdvanced(EMPTY_QUESTIONNAIRE)
+  assert.equal(empty.occupation, '')
+
+  const fromSimple = applySimpleInheritForAdvanced({
+    ...EMPTY_QUESTIONNAIRE,
+    industry: '内容营销',
+    role: '顾问',
+    primaryBusiness: '陪跑',
+    targetClients: '老板',
+  })
+  assert.equal(hasSimplePersonaContent(fromSimple), true)
+  assert.equal(fromSimple.occupation, '顾问 · 内容营销')
+  assert.equal(fromSimple.products, '陪跑')
+  assert.equal(fromSimple.audiences, '老板')
+
+  const keepAdvanced = applySimpleInheritForAdvanced({
+    ...fromSimple,
+    occupation: '已手写高级身份',
+  })
+  assert.equal(keepAdvanced.occupation, '已手写高级身份')
+  assert.equal(keepAdvanced.products, '陪跑')
+})
+
 test('typing publicName does not pollute occupation and allows clearing', () => {
   const form = normalizeQuestionnaire({
     ...EMPTY_QUESTIONNAIRE,
@@ -138,4 +169,60 @@ test('typing publicName does not pollute occupation and allows clearing', () => 
     publicName: '',
   })
   assert.equal(cleared.publicName, '', 'clearing publicName should leave it empty')
+})
+
+test('questionnaireProgressForMode uses 7 fields for simple and 19 for advanced', () => {
+  const emptySimple = questionnaireProgressForMode(EMPTY_QUESTIONNAIRE, 'simple')
+  assert.equal(emptySimple.total, SIMPLE_PREVIEW_KEYS.length)
+  assert.equal(emptySimple.filled, 0)
+
+  const emptyAdvanced = questionnaireProgressForMode(EMPTY_QUESTIONNAIRE, 'advanced')
+  assert.equal(emptyAdvanced.total, REQUIRED_QUESTIONNAIRE_KEYS.length)
+  assert.equal(emptyAdvanced.filled, 0)
+
+  const partial = normalizeQuestionnaire({
+    ...EMPTY_USER_FORM,
+    industry: '内容营销',
+    role: '顾问',
+    primaryBusiness: '陪跑',
+  })
+  const simpleProgress = questionnaireProgressForMode(partial, 'simple')
+  assert.equal(simpleProgress.filled, 3)
+  assert.equal(simpleProgress.total, 7)
+
+  const advancedPartial = normalizeQuestionnaire({
+    ...EMPTY_QUESTIONNAIRE,
+    publicName: '小明',
+    occupation: '顾问 · 内容营销',
+    paidStatus: 'yes',
+    accountGoals: ['consult'],
+  })
+  const advancedProgress = questionnaireProgressForMode(advancedPartial, 'advanced')
+  assert.equal(advancedProgress.filled, 4)
+  assert.equal(advancedProgress.total, 19)
+})
+
+test('questionnairePreviewFieldsForMode switches field lists by mode', () => {
+  const form = normalizeQuestionnaire({
+    ...EMPTY_USER_FORM,
+    industry: '内容营销',
+    role: '顾问',
+    publicName: '小明',
+    paidStatus: 'yes',
+    accountGoals: ['consult', 'influence'],
+  })
+  const simpleFields = questionnairePreviewFieldsForMode(form, 'simple', {
+    industry: '行业',
+    role: '身份',
+  })
+  assert.equal(simpleFields.length, 7)
+  assert.equal(simpleFields[0].id, 'industry')
+  assert.equal(simpleFields[0].label, '行业')
+  assert.equal(simpleFields[0].value, '内容营销')
+
+  const advancedFields = questionnairePreviewFieldsForMode(form, 'advanced')
+  assert.equal(advancedFields.length, 19)
+  assert.ok(advancedFields.some((field) => field.id === 'publicName' && field.value === '小明'))
+  assert.ok(advancedFields.some((field) => field.id === 'paidStatus' && field.value.includes('付费')))
+  assert.ok(advancedFields.some((field) => field.id === 'accountGoals' && field.value.includes('咨询')))
 })

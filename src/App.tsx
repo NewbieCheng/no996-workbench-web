@@ -20,8 +20,9 @@ import MomentsPage from './features/moments/MomentsPage'
 import VoicePage from './features/voice/VoicePage'
 import DigitalHumanPage from './features/digital-human/DigitalHumanPage'
 import IPVideoPage from './features/ip-video/IPVideoPage'
-import VideoFactoryPage from './features/video-factory/VideoFactoryPage'
 import { Suspense, lazy } from 'react'
+
+const VideoFactoryPage = lazy(() => import('./features/video-factory/VideoFactoryPage'))
 
 // 开发专用：镜头渲染自检页。生产构建不会引用到它。
 const ShotCheckPage = lazy(() => import('./features/video-factory/dev/ShotCheckPage'))
@@ -73,7 +74,7 @@ function AppRoutes() {
         <Route path="moments" element={<MomentsPage />} />
         <Route path="voice" element={<VoicePage />} />
         <Route path="ip-video" element={<IPVideoPage />} />
-        <Route path="video-factory" element={<VideoFactoryPage />} />
+        <Route path="video-factory" element={<Suspense fallback={<div className="auth-session-boot" aria-busy="true" />}><VideoFactoryPage /></Suspense>} />
         <Route path="digital-human" element={<DigitalHumanPage />} />
         <Route path="extension" element={<ExtensionPage />} />
         <Route path="account" element={<AccountPage />} />

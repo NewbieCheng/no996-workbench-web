@@ -14,6 +14,10 @@ export const XHS_CAPTURE_NOTE_TYPE_OPTIONS = [
   { value: 'image-text', label: '仅图文笔记' },
 ] as const
 
+/** 关键词采集默认笔记形式：图文（找爆款 / 对标复刻更常用） */
+export const XHS_CAPTURE_NOTE_TYPE_DEFAULT =
+  'image-text' satisfies (typeof XHS_CAPTURE_NOTE_TYPE_OPTIONS)[number]['value']
+
 export const XHS_CAPTURE_SEARCH_RANGE_OPTIONS = [
   { value: 'all', label: '不限搜索范围' },
   { value: 'recently-viewed', label: '已看过' },

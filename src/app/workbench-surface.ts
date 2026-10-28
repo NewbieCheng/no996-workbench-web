@@ -3,6 +3,7 @@ const TOOL_PAGE = 'workbench-tool-page'
 
 const WORKBENCH_SURFACE_BY_SEGMENT: Record<string, string> = {
   persona: `workbench-page--fluid ${TOOL_PAGE} persona-workbench-page`,
+  'product-position': `workbench-page--fluid ${TOOL_PAGE} product-position-workbench-page`,
   titles: `workbench-page--fluid ${TOOL_PAGE}`,
   'video-script': `workbench-page--fluid ${TOOL_PAGE} video-script-workbench-page`,
   'live-script': `workbench-page--fluid ${TOOL_PAGE} live-script-workbench-page`,

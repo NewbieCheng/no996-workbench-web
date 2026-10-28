@@ -19,21 +19,25 @@ img { max-width: 100%; }
 ::selection { color: var(--foreground); background: color-mix(in srgb, var(--primary) 22%, transparent); }
 input, textarea { caret-color: var(--primary); }
 :focus-visible:not(input):not(textarea) { outline: 2px solid var(--ring); outline-offset: 3px; }
-input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outline: none; }
-/* Text fields use a quiet neutral keyboard focus indicator rather than a colored glow. */
-input:focus-visible, textarea:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground) 45%, transparent); outline-offset: 2px; }
-/* Keep validation styling while suppressing page-specific colored focus effects. */
-.wb-shell :is(input:not([type='radio']):not([type='checkbox']), textarea):focus:not([aria-invalid='true']) {
-  border-color: var(--input) !important;
+/* Text fields: no focus outline / ring / border change — caret alone indicates focus. */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
   box-shadow: none !important;
 }
-.wb-shell :is(input:not([type='radio']):not([type='checkbox']), textarea):focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 45%, transparent) !important;
-  outline-offset: 2px;
+.wb-shell :is(input:not([type='radio']):not([type='checkbox']), textarea):focus:not([aria-invalid='true']),
+.wb-shell :is(input:not([type='radio']):not([type='checkbox']), textarea):focus-visible:not([aria-invalid='true']) {
+  border-color: var(--input) !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
-.wb-shell .ipt-brief-surface:focus-within {
+.wb-shell .ipt-brief-surface:focus-within,
+.wb-shell .ipt-brief-surface:has(textarea:focus-visible) {
   border-color: var(--input);
-  outline: none;
+  outline: none !important;
+  box-shadow: none;
 }
 #root { min-height: calc(100dvh / var(--app-zoom, 1)); }
 .wb-shell {
@@ -847,15 +851,47 @@ a.wb-nav-item:active > span { opacity: .75; }
   text-align: center;
   pointer-events: none;
 }
-.wb-nav-badge--beta {
+/*
+ * 侧栏徽章配色（与品牌暖橙同谱，浅色玻璃）：
+ * New  #C2612E / #FCE9DC  — 品牌桃杏色，标「新」
+ * Beta #5F7A6E / #E8F0EC  — 鼠尾草绿，与暖橙互补、不抢主色
+ * 仅桌面 #6E6A65 / #EFEEEC — 暖灰，最低存在感
+ */
+.wb-nav-glass-badge.glass-badge {
+  gap: 0;
+  min-height: 17px;
+  margin-left: auto;
+  padding: 2px 7px;
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 3px 6px;
-  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
-  color: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  line-height: 1;
+  border: 1px solid transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent),
+    0 1px 3px -1px rgb(0 0 0 / 6%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.wb-nav-badge--new.wb-nav-glass-badge.glass-badge {
+  color: #c2612e;
+  border-color: color-mix(in srgb, #e8a87c 28%, #fff);
+  background: color-mix(in srgb, #fce9dc 78%, transparent);
+}
+.wb-nav-badge--beta.wb-nav-glass-badge.glass-badge {
+  letter-spacing: 0.06em;
+  color: #5f7a6e;
+  border-color: color-mix(in srgb, #9bb5a8 26%, #fff);
+  background: color-mix(in srgb, #e8f0ec 80%, transparent);
+}
+.wb-desktop-badge.wb-nav-glass-badge.glass-badge {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  color: #6e6a65;
+  border-color: color-mix(in srgb, #c4bfb8 30%, #fff);
+  background: color-mix(in srgb, #efeeec 82%, transparent);
 }
 .wb-announcement-dialog {
   max-width: min(760px, 94vw);
@@ -3434,6 +3470,8 @@ input[type=checkbox] { accent-color: var(--primary); width: 15px; height: 15px; 
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Fallback span so unmapped nav cards never collapse to 1/12 width */
+  grid-column: span 3;
   min-height: 190px;
   padding: 26px;
   border: none;
@@ -3454,12 +3492,15 @@ input[type=checkbox] { accent-color: var(--primary); width: 15px; height: 15px; 
 .home-bento-card--feat {
   background: linear-gradient(170deg, var(--home-panel2), var(--home-panel) 70%);
 }
+/* 12-col bento: persona tall left; 8 content cards pack without leftover 1-col slivers */
 .home-bento-card--persona { grid-column: span 5; grid-row: span 3; min-height: 420px; }
+.home-bento-card--product { grid-column: span 3; }
 .home-bento-card--titles { grid-column: span 4; }
 .home-bento-card--video { grid-column: span 3; }
-.home-bento-card--live { grid-column: span 3; }
-.home-bento-card--xhs { grid-column: span 4; }
+.home-bento-card--live { grid-column: span 4; }
+.home-bento-card--xhs { grid-column: span 7; }
 .home-bento-card--wechat { grid-column: span 7; }
+.home-bento-card--moments { grid-column: span 5; }
 .home-bento-no {
   font-size: 12px;
   font-weight: 700;
@@ -3663,11 +3704,13 @@ a.wb-nav-item {
   .home-more-grid { grid-template-columns: 1fr; }
   .home-bento { grid-template-columns: 1fr; }
   .home-bento-card--persona,
+  .home-bento-card--product,
   .home-bento-card--titles,
   .home-bento-card--video,
   .home-bento-card--live,
   .home-bento-card--xhs,
-  .home-bento-card--wechat { grid-column: auto; grid-row: auto; min-height: 168px; }
+  .home-bento-card--wechat,
+  .home-bento-card--moments { grid-column: auto; grid-row: auto; min-height: 168px; }
   .home-bento-card--feat h3 { font-size: 22px; }
   .wb-login-form { padding-inline: 32px; }
 }

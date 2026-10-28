@@ -215,9 +215,8 @@ export class WorkbenchTaskRunner {
     await this.repo.ensureMigrated()
     if (this.disposed) return
     requireTaskLocks()
-    await this.retalk.recover()
-    if (this.disposed) return
     this.retalk.start()
     this.kick()
+    await this.retalk.recover()
   }
 }

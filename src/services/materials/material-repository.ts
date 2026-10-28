@@ -45,7 +45,19 @@ export interface MaterialDateGroup {
 }
 
 const DB_NAME = 'no996-workbench-materials';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
+
+function scopedId(userId: number, id: string): string {
+  return `${userId}|${id}`;
+}
+
+export function materialIdForUser(userId: number, item: WorkbenchBridgeCollectedItem): string {
+  return scopedId(userId, itemId(normalizeXiaohongshuCollectedItem(item)));
+}
+
+function itemId(item: WorkbenchBridgeCollectedItem): string {
+  return item.workId ? `${item.platformId}:${item.workId}` : `${item.platformId}:${encodeURIComponent(item.url.slice(0, 100))}`;
+}
 const STORE_MATERIALS = 'materials';
 
 function openMaterialsDb(): Promise<IDBDatabase> {
@@ -60,8 +72,20 @@ function openMaterialsDb(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_MATERIALS, { keyPath: 'id' });
         store.createIndex('by_owner', 'ownerUserId', { unique: false });
         store.createIndex('by_owner_platform', ['ownerUserId', 'platformId'], { unique: false });
-      } else if (oldVersion < 2) {
-        // v2: optional fallback fields on documents; no index change.
+      } else if (oldVersion < 3) {
+        const store = req.transaction!.objectStore(STORE_MATERIALS);
+        const cursor = store.openCursor();
+        cursor.onsuccess = () => {
+          const row = cursor.result;
+          if (!row) return;
+          const material = row.value as SavedMaterial;
+          if (typeof material.ownerUserId === 'number' && !material.id.startsWith(`${material.ownerUserId}|`)) {
+            const id = scopedId(material.ownerUserId, material.id);
+            store.put({ ...material, id });
+            row.delete();
+          }
+          row.continue();
+        };
       }
     };
   });
@@ -83,9 +107,7 @@ export class MaterialRepository {
   ): Promise<SavedMaterial> {
     const db = await openMaterialsDb();
     const normalized = normalizeXiaohongshuCollectedItem(item);
-    const stableId = normalized.workId
-      ? `${normalized.platformId}:${normalized.workId}`
-      : `${normalized.platformId}:${encodeURIComponent(normalized.url.slice(0, 100))}`;
+    const stableId = scopedId(userId, itemId(normalized));
 
     const material: SavedMaterial = {
       ...normalized,
@@ -99,7 +121,14 @@ export class MaterialRepository {
     };
 
     const tx = db.transaction(STORE_MATERIALS, 'readwrite');
-    tx.objectStore(STORE_MATERIALS).put(material);
+    const store = tx.objectStore(STORE_MATERIALS);
+    const existing = store.get(stableId);
+    existing.onsuccess = () => {
+      const prior = existing.result as SavedMaterial | undefined;
+      store.put({ ...prior, ...material, tags: prior?.tags, notes: prior?.notes,
+        batchId: material.batchId ?? prior?.batchId, batchTitle: material.batchTitle ?? prior?.batchTitle,
+        captureType: material.captureType ?? prior?.captureType, captureKeyword: material.captureKeyword ?? prior?.captureKeyword });
+    };
     await txDone(tx);
 
     return material;
@@ -110,44 +139,18 @@ export class MaterialRepository {
     items: WorkbenchBridgeCollectedItem[],
     batchMeta: MaterialBatchMeta,
   ): Promise<SavedMaterial[]> {
-    if (!items.length) return [];
-    const db = await openMaterialsDb();
-    const tx = db.transaction(STORE_MATERIALS, 'readwrite');
-    const store = tx.objectStore(STORE_MATERIALS);
-    const now = Date.now();
     const savedList: SavedMaterial[] = [];
-
-    for (const item of items) {
-      const normalized = normalizeXiaohongshuCollectedItem(item);
-      const stableId = normalized.workId
-        ? `${normalized.platformId}:${normalized.workId}`
-        : `${normalized.platformId}:${encodeURIComponent(normalized.url.slice(0, 100))}`;
-
-      const material: SavedMaterial = {
-        ...normalized,
-        id: stableId,
-        ownerUserId: userId,
-        updatedAt: now,
-        batchId: batchMeta.batchId,
-        batchTitle: batchMeta.batchTitle,
-        captureType: batchMeta.captureType,
-        captureKeyword: batchMeta.captureKeyword,
-      };
-
-      store.put(material);
-      savedList.push(material);
-    }
-
-    await txDone(tx);
+    for (const item of items) savedList.push(await this.saveCollectedItem(userId, item, batchMeta));
     return savedList;
   }
 
   async patchMaterialFallbacks(
+    userId: number,
     id: string,
     patch: { imageFallbackDataUrls?: (string | undefined)[]; coverFallbackDataUrl?: string },
   ): Promise<void> {
     const db = await openMaterialsDb();
-    const current = await this.getMaterial(id);
+    const current = await this.getMaterial(userId, id);
     if (!current) return
     const next: SavedMaterial = {
       ...current,
@@ -189,35 +192,36 @@ export class MaterialRepository {
     });
   }
 
-  async getMaterial(id: string): Promise<SavedMaterial | null> {
+  async getMaterial(userId: number, id: string): Promise<SavedMaterial | null> {
     const db = await openMaterialsDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_MATERIALS, 'readonly');
-      const req = tx.objectStore(STORE_MATERIALS).get(id);
-      req.onsuccess = () => resolve((req.result as SavedMaterial) || null);
+      const req = tx.objectStore(STORE_MATERIALS).get(id.startsWith(`${userId}|`) ? id : scopedId(userId, id));
+      req.onsuccess = () => resolve(req.result?.ownerUserId === userId ? req.result as SavedMaterial : null);
       req.onerror = () => reject(req.error);
     });
   }
 
-  async deleteMaterial(id: string): Promise<void> {
-    const db = await openMaterialsDb();
-    const tx = db.transaction(STORE_MATERIALS, 'readwrite');
-    tx.objectStore(STORE_MATERIALS).delete(id);
-    await txDone(tx);
+  async deleteMaterial(userId: number, id: string): Promise<void> {
+    await this.deleteMaterials(userId, [id]);
   }
 
-  async deleteMaterials(ids: string[]): Promise<void> {
-    if (!ids.length) return
+  async deleteMaterials(userId: number, ids: string[]): Promise<void> {
+    if (!ids.length) return;
     const db = await openMaterialsDb();
     const tx = db.transaction(STORE_MATERIALS, 'readwrite');
     const store = tx.objectStore(STORE_MATERIALS);
-    for (const id of ids) store.delete(id);
+    for (const id of ids) {
+      const key = id.startsWith(`${userId}|`) ? id : scopedId(userId, id);
+      const request = store.get(key);
+      request.onsuccess = () => { if (request.result?.ownerUserId === userId) store.delete(key); };
+    }
     await txDone(tx);
   }
 
   async deleteAllForUser(userId: number): Promise<void> {
     const list = await this.listMaterials(userId);
-    await this.deleteMaterials(list.map((m) => m.id));
+    await this.deleteMaterials(userId, list.map((m) => m.id));
   }
 }
 

@@ -7,7 +7,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SHOT_CATALOG, SHOT_CATEGORIES, type ShotDefinition } from '../../demos/registry.generated.ts'
 import { getShotAccessibleLabel, getShotCategoryDisplayName, getShotDisplayName } from '../../demos/localization.ts'
-import { getShotFrameCache } from '../../render/shot-cache.ts'
+import { ShotFrameCache } from '../../render/shot-cache.ts'
 import { LibraryAddButton } from '../shared/LibraryAddButton.tsx'
 import { LibrarySectionHeader } from '../shared/LibrarySectionHeader.tsx'
 
@@ -62,8 +62,7 @@ export function shotEditability(shot: Pick<ShotDefinition, 'editableKeys'>): Sho
   }
 }
 
-async function renderShotFrame(shot: ShotDefinition, frame: number): Promise<string | null> {
-  const cache = getShotFrameCache()
+async function renderShotFrame(cache: ShotFrameCache, shot: ShotDefinition, frame: number): Promise<string | null> {
   const canvas = await cache.getPreview({
     shotId: shot.shotId,
     frame: Math.min(frame, shot.durationInFrames - 1),
@@ -83,10 +82,12 @@ function ShotCard({
   shot,
   onPick,
   onDragStart,
+  getCache,
 }: {
   shot: ShotDefinition
   onPick?: (shot: ShotDefinition) => void
   onDragStart?: (shot: ShotDefinition) => void
+  getCache: () => ShotFrameCache
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
@@ -94,9 +95,17 @@ function ShotCard({
   const [isScrubbing, setIsScrubbing] = useState(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrubRafRef = useRef<number | null>(null)
-  const scrubFrameRef = useRef(0)
-  const scrubLastTickRef = useRef(0)
   const scrubActiveRef = useRef(false)
+  const requestRef = useRef<Promise<string | null> | null>(null)
+  const versionRef = useRef(0)
+  const requestFrame = useCallback((frame: number) => {
+    if (requestRef.current) return requestRef.current
+    const work = renderShotFrame(getCache(), shot, frame).finally(() => {
+      if (requestRef.current === work) requestRef.current = null
+    })
+    requestRef.current = work
+    return work
+  }, [getCache, shot])
 
   const theme = CATEGORY_THEMES[shot.category] ?? { accent: 'var(--primary)', label: '动效' }
   const durationSec = (shot.durationInFrames / 30).toFixed(1)
@@ -110,6 +119,7 @@ function ShotCard({
 
   const stopScrub = useCallback(() => {
     scrubActiveRef.current = false
+    versionRef.current++
     setIsScrubbing(false)
     if (scrubRafRef.current !== null) {
       cancelAnimationFrame(scrubRafRef.current)
@@ -124,29 +134,23 @@ function ShotCard({
     }
     scrubActiveRef.current = true
     setIsScrubbing(true)
-    scrubFrameRef.current = 0
-    scrubLastTickRef.current = 0
-
+    const version = ++versionRef.current
+    const startedAt = performance.now()
     const tick = (now: number) => {
-      if (!scrubActiveRef.current) return
-      if (!scrubLastTickRef.current) scrubLastTickRef.current = now
-      const elapsed = now - scrubLastTickRef.current
-      if (elapsed >= 1000 / SCRUB_FPS) {
-        scrubLastTickRef.current = now
-        const frame = scrubFrameRef.current
-        void renderShotFrame(shot, frame).then((src) => {
-          if (src && scrubActiveRef.current) setPreviewSrc(src)
-        })
-        scrubFrameRef.current += 1
-        if (scrubFrameRef.current >= shot.durationInFrames) {
-          stopScrub()
-          return
-        }
+      if (!scrubActiveRef.current || version !== versionRef.current) return
+      if (requestRef.current) {
+        scrubRafRef.current = requestAnimationFrame(tick)
+        return
       }
-      scrubRafRef.current = requestAnimationFrame(tick)
+      const frame = Math.floor((now - startedAt) * SCRUB_FPS / 1000) % shot.durationInFrames
+      void requestFrame(frame).then((src) => {
+        if (src && scrubActiveRef.current && version === versionRef.current) setPreviewSrc(src)
+      }).finally(() => {
+        if (scrubActiveRef.current && version === versionRef.current) scrubRafRef.current = requestAnimationFrame(tick)
+      })
     }
     scrubRafRef.current = requestAnimationFrame(tick)
-  }, [shot, stopScrub])
+  }, [shot, stopScrub, requestFrame])
 
   useEffect(() => {
     return () => stopScrub()
@@ -163,27 +167,25 @@ function ShotCard({
 
     if (previewSrc) return
 
+    let cancelled = false
     hoverTimerRef.current = setTimeout(() => {
-      let cancelled = false
       setIsLoading(true)
       const frame = Math.max(0, Math.floor(shot.durationInFrames * 0.45))
-      void renderShotFrame(shot, frame)
+      void requestFrame(frame)
         .then((src) => {
           if (!cancelled && src) setPreviewSrc(src)
         })
         .finally(() => {
           if (!cancelled) setIsLoading(false)
         })
-
-      return () => {
-        cancelled = true
-      }
     }, 150)
 
     return () => {
+      cancelled = true
+      setIsLoading(false)
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
     }
-  }, [isHovered, isScrubbing, previewSrc, shot])
+  }, [isHovered, isScrubbing, previewSrc, shot, requestFrame])
 
   const handleDragStart = (event: React.DragEvent) => {
     event.dataTransfer.setData(
@@ -341,6 +343,12 @@ export function ShotLibraryPanel({
   }
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const cacheRef = useRef<ShotFrameCache | null>(null)
+  const getCache = useCallback(() => cacheRef.current ??= new ShotFrameCache(), [])
+  useEffect(() => () => {
+    cacheRef.current?.dispose()
+    cacheRef.current = null
+  }, [])
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase()
@@ -409,8 +417,8 @@ export function ShotLibraryPanel({
           </p>
         ) : null}
 
-        {grouped.map((group) => {
-          const isCollapsed = collapsed[group.id]
+        {grouped.map((group, index) => {
+          const isCollapsed = collapsed[group.id] ?? (!query.trim() && index !== 0)
           const accent = CATEGORY_THEMES[group.id]?.accent
           return (
             <section key={group.id}>
@@ -419,12 +427,12 @@ export function ShotLibraryPanel({
                 count={group.shots.length}
                 expanded={!isCollapsed}
                 accentDot={accent}
-                onToggle={() => setCollapsed((prev) => ({ ...prev, [group.id]: !prev[group.id] }))}
+                onToggle={() => setCollapsed((prev) => ({ ...prev, [group.id]: !isCollapsed }))}
               />
               {!isCollapsed && (
                 <div className="vf-lib-shot-grid">
                   {group.shots.map((shot) => (
-                    <ShotCard key={shot.shotId} shot={shot} onPick={onPick} onDragStart={onDragStart} />
+                    <ShotCard key={shot.shotId} shot={shot} onPick={onPick} onDragStart={onDragStart} getCache={getCache} />
                   ))}
                 </div>
               )}

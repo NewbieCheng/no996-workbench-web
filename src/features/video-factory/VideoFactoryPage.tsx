@@ -8,6 +8,8 @@
 
 import {
   memo,
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -42,7 +44,6 @@ import {
   SfxLibraryPanel,
   AudioEnvelopePanel,
   KeyboardShortcutsPopover,
-  ExportPanel,
   CanvasRatioControl,
   IconTimelineBeatDetect,
   IconTimelineSaveDirty,
@@ -81,7 +82,8 @@ import {
   VideoFactoryPanelChromeToggle,
   exportDocumentJson,
 } from './FactoryToolbar'
-import { QuickAssemblyWizard } from './QuickAssemblyWizard'
+const QuickAssemblyWizard = lazy(() => import('./QuickAssemblyWizard').then(m => ({ default: m.QuickAssemblyWizard })))
+const ExportPanel = lazy(() => import('@no996/video-editor/panels/export/ExportPanel.tsx').then(m => ({ default: m.ExportPanel })))
 import { VoiceLibraryImportControl } from './VoiceLibraryImportControl'
 import { VfOverlayPortal } from './VfOverlayPortal'
 import { useFactoryProject } from './lib/use-factory-project'
@@ -91,6 +93,7 @@ import { getShotDisplayName } from '../../../packages/video-editor/src/demos/loc
 import { uploadAsset } from './lib/upload-asset'
 import { usePreviewAudio } from './lib/use-preview-audio'
 import { useAssetMediaCache } from '../../lib/video-editor/use-asset-media-cache.ts'
+import { mapPlaybackToSourceTimeUs } from '@no996/video-editor/core/speed/mapping.ts'
 import { deleteLibraryAsset } from './lib/delete-library-asset.ts'
 import { detectBeatsFromBlob, type BeatAnalysis } from './lib/beat-detect'
 import { buildDemoDocument } from './lib/demo-document'
@@ -129,7 +132,7 @@ export default function VideoFactoryPage() {
   const ipAudioTasks = useWorkbenchTasks({ kind: 'ip_video_audio' })
   const [remoteVoices, setRemoteVoices] = useState<VoiceOption[]>([])
   useEffect(() => {
-    if (userId == null) return
+    if (userId == null || !wizardOpen) return
     let active = true
     void listVoices()
       .then((result) => {
@@ -145,7 +148,7 @@ export default function VideoFactoryPage() {
     return () => {
       active = false
     }
-  }, [userId])
+  }, [userId, wizardOpen])
   const voiceOptions = remoteVoices
 
   /** 按 id 查任务：任务列表已由 useWorkbenchTasks 订阅，切页/刷新都能看到 */
@@ -409,7 +412,7 @@ export default function VideoFactoryPage() {
           )}
 
           {wizardOpen && project.editor && project.activeDoc ? (
-            <QuickAssemblyWizard
+            <Suspense fallback={<p className="vf-banner" role="status">正在加载创作向导…</p>}><QuickAssemblyWizard
               editor={project.editor}
               doc={project.activeDoc}
               voices={voiceOptions}
@@ -418,7 +421,7 @@ export default function VideoFactoryPage() {
               saveAssetBlob={project.saveAssetBlob}
               onDone={notifyVideoFactory}
               onClose={() => setWizardOpen(false)}
-            />
+            /></Suspense>
           ) : null}
 
           {exportOpen && project.activeDoc && project.editor ? (
@@ -439,12 +442,12 @@ export default function VideoFactoryPage() {
                     ×
                   </button>
                 </div>
-                <VideoFactoryExportPanel
+                <Suspense fallback={<p role="status">正在加载导出功能…</p>}><VideoFactoryExportPanel
                   editor={project.editor}
                   getAssetBlob={project.getAssetBlob}
                   ownerScope={userId != null ? String(userId) : ''}
                   flushSave={project.flushSave}
-                />
+                /></Suspense>
               </div>
             </div>
             </VfOverlayPortal>
@@ -619,25 +622,40 @@ function StudioBody({
 
   const {
     resolveAssetSource,
-    warmupDocumentAssets,
+    updatePreviewWindow,
     evictAsset,
-    loadAssetMedia,
+    videoElementsRef,
+    version: mediaVersion,
   } = useAssetMediaCache({ editor, getAssetBlob })
 
   useEffect(() => {
-    warmupDocumentAssets(docForAudio)
-  }, [docForAudio.revision, docForAudio, warmupDocumentAssets])
+    updatePreviewWindow(docForAudio, playheadUs)
+  }, [docForAudio, playheadUs, updatePreviewWindow])
+
+  // Loading completes asynchronously; a new resolver causes the paused stage to redraw.
+  const previewResolver = useMemo(() => (id: string) => resolveAssetSource(id), [resolveAssetSource, mediaVersion])
+
+  useEffect(() => {
+    const active = new Set<string>()
+    for (const track of docForAudio.tracks) {
+      if (track.hidden) continue
+      for (const element of track.elements) {
+        if (element.type !== 'video' || playheadUs < element.startUs || playheadUs >= element.startUs + element.durationUs) continue
+        const video = videoElementsRef.current.get(element.assetId)
+        if (!video) continue
+        active.add(element.assetId)
+        const target = Math.max(0, mapPlaybackToSourceTimeUs(element, playheadUs - element.startUs) / 1_000_000)
+        video.playbackRate = element.rate || 1
+        if (Math.abs(video.currentTime - target) > (isPlaying ? 0.12 : 0.015)) video.currentTime = Math.min(Number.isFinite(video.duration) ? Math.max(0, video.duration - 0.001) : target, target)
+        if (isPlaying && !element.freeze && !element.reverse) { if (video.paused) void video.play().catch(() => {}) } else video.pause()
+      }
+    }
+    for (const [id, video] of videoElementsRef.current) if (!active.has(id)) video.pause()
+  }, [docForAudio, playheadUs, isPlaying, mediaVersion, videoElementsRef])
 
   const handleUploadWithPreview = useCallback(
-    async (file: File) => {
-      const result = await onUploadAsset(file)
-      const asset = result as ProjectAsset
-      if (asset?.blobId) {
-        void loadAssetMedia(asset.id, asset.blobId)
-      }
-      return result
-    },
-    [onUploadAsset, loadAssetMedia],
+    async (file: File) => onUploadAsset(file),
+    [onUploadAsset],
   )
 
   const handleDeleteLibraryAsset = useCallback(
@@ -782,7 +800,7 @@ function StudioBody({
               isPlaying={isPlaying}
               onTogglePlay={togglePlay}
               onSeek={seek}
-              assetSourceResolver={resolveAssetSource}
+              assetSourceResolver={previewResolver}
               loop={loop}
               onToggleLoop={onToggleLoop}
               compactViewport

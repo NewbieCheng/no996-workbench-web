@@ -28,6 +28,7 @@ import type {
 } from './types.ts'
 import { ONE_SECOND_US, secondsToTimeUs } from '../core/time.ts'
 import { AUDIO_BITRATE, abortable, throwIfAborted, yieldTask } from './pcm.ts'
+import { BoundedByteStore } from './byte-store.ts'
 
 /** 真实编码入口与预检共用；缺能力必须失败，不能生成占位文件。 */
 export async function assertBrowserEncodingSupport(options: {
@@ -185,12 +186,12 @@ export class MediabunnyMediaAdapter implements MediaEngineAdapter {
     throwIfAborted(signal)
 
     {
-      const chunks: Uint8Array[] = []
+      const store = new BoundedByteStore()
       const streamTarget = new StreamTarget(
         new WritableStream<StreamTargetChunk>({
           write(chunk) {
             if (signal?.aborted) throw new DOMException('编码已取消', 'AbortError')
-            chunks.push(new Uint8Array(chunk.data))
+            store.write(chunk.position, chunk.data)
           },
         }),
         { chunked: true, chunkSize: 1024 * 1024 }
@@ -290,22 +291,18 @@ export class MediabunnyMediaAdapter implements MediaEngineAdapter {
         onProgress?.(0.95, '正在封装成片')
         await output.finalize()
 
+        throwIfAborted(signal)
         const mime = format === 'mp4' ? 'video/mp4' : 'video/webm'
-        const totalLen = chunks.reduce((acc, c) => acc + c.byteLength, 0)
-        const merged = new Uint8Array(totalLen)
-        let offset = 0
-        for (const c of chunks) {
-          merged.set(c, offset)
-          offset += c.byteLength
-        }
-
+        const blob = store.toBlob(mime)
+        if (!blob.size) throw new Error('视频封装结果为空')
         onProgress?.(1.0, '导出完成')
-        return new Blob([merged], { type: mime })
+        return blob
       } catch (err) {
         await (cancelTask ?? output.cancel().catch(() => {}))
         throw err
       } finally {
         signal?.removeEventListener('abort', cancelOnAbort)
+        store.clear()
       }
     }
 

@@ -176,7 +176,7 @@ npm run dev
 
 ## 已知问题
 
-- `/workbench/membership` 未登记进 `src/app/workbench-surface.ts` 的样式映射，该页不套用 fluid 布局修饰类。
+- `/workbench/membership` / `account` 在 `src/app/workbench-surface.ts` 只登记 `workbench-page--fluid`（非 `workbench-tool-page`）；创作工具页必须带 `workbench-tool-page`，否则顶栏会因滚动区默认 padding 下沉。
 - `GET /api/v1/auth/permissions` 已封装（`src/auth/permissions.ts`）但全仓无调用点；目前没有角色级路由守卫。
 - `scripts/local-api-smoke.mjs` 与 `scripts/set-prod-voice-clone-points.cjs` 含跨仓绝对路径（指向后端 `.env`），与「独立项目」约束冲突；属运维脚本，不影响安装与构建。
 - `src/services/voice-tts/` 为 `@deprecated` 兼容层，已无页面直接引用，仅服务旧库迁移，可后续移除。

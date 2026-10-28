@@ -15,12 +15,13 @@ import WorkflowRunCard from '../../components/agent/WorkflowRunCard'
 import type { AgentRunSnapshot } from '../../agent'
 import { PERSONA_FLOW_ID, PERSONA_STAGES } from './agent/persona-flow'
 import {
+  applySimpleInheritForAdvanced,
   createPersona,
   EMPTY_QUESTIONNAIRE,
-  inheritSimpleToAdvanced,
   listPersonas,
   normalizeQuestionnaire,
   projectLegacyUserForm,
+  questionnaireProgressForMode,
   renamePersona,
   setActivePersona,
   upsertPersona,
@@ -28,7 +29,6 @@ import {
   type PersonaQuestionnaire,
   type PersonaRecord,
 } from '../../services/persona'
-import { REQUIRED_QUESTIONNAIRE_KEYS } from '../../services/persona/questionnaire'
 import { getPersonaFence } from '../../prompts/persona'
 import type { AttachmentUploaderItem } from '@no996/ui/attachment-uploader'
 import { prepareAttachmentsFromItems } from '../../lib/chat-attachments/prepare'
@@ -74,6 +74,7 @@ export default function PersonaPage() {
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
   const [formCollapsed, setFormCollapsed] = useState(false)
   const [questionnaireStep, setQuestionnaireStep] = useState(0)
+  const [simpleStep, setSimpleStep] = useState(0)
   const [selected, setSelected] = useState<PersonaRecord | null>(null)
   const selectedIdRef = useRef<string | null>(null)
   selectedIdRef.current = selected?.id ?? null
@@ -146,13 +147,18 @@ export default function PersonaPage() {
 
   const applyRecord = useCallback((pick: PersonaRecord) => {
     setSelected(pick)
-    setUserForm(pick.formData && 'occupation' in pick.formData
-      ? normalizeQuestionnaire(pick.formData)
-      : questionnaireFromLegacyContent(pick.formData, pick.legacyContent ?? pick.content))
-    setPersonaMode(pick.mode ?? (pick.candidatesMarkdown ? 'advanced' : 'simple'))
+    const baseForm =
+      pick.formData && 'occupation' in pick.formData
+        ? normalizeQuestionnaire(pick.formData)
+        : questionnaireFromLegacyContent(pick.formData, pick.legacyContent ?? pick.content)
+    const nextMode = pick.mode ?? (pick.candidatesMarkdown ? 'advanced' : 'simple')
+    // 高级档默认带上简易版已填内容（只填空，不覆盖高级已有值）
+    setUserForm(nextMode === 'advanced' ? applySimpleInheritForAdvanced(baseForm) : baseForm)
+    setPersonaMode(nextMode)
     setPhase(phaseOf(pick))
     setPreviewCollapsed(false)
     setQuestionnaireStep(pick.questionnaireStep ?? 0)
+    setSimpleStep(0)
   }, [])
 
   const refresh = useCallback(async (preferredId?: string) => {
@@ -180,6 +186,7 @@ export default function PersonaPage() {
     setFormCollapsed(false)
     setPreviewCollapsed(false)
     setQuestionnaireStep(0)
+    setSimpleStep(0)
     setPageView('work')
     setTraceTaskId(null)
     setTracePayload(null)
@@ -266,22 +273,10 @@ export default function PersonaPage() {
   const handleSwitchMode = (nextMode: PersonaMode) => {
     if (nextMode === personaMode) return
     if (nextMode === 'advanced') {
-      const simple = projectLegacyUserForm(userForm)
-      const hasSimpleContent = Object.values(simple).some((v) => Boolean(v?.trim()))
-      if (hasSimpleContent) {
-        const inherited = inheritSimpleToAdvanced(simple, userForm)
-        setUserForm(inherited)
-        setFeedback('已将简易版填写内容继承至高级版')
-      }
+      // 切到高级版即自动继承简易字段（只填空）；用户清空后停留高级版不会反复回填
+      setUserForm((prev) => applySimpleInheritForAdvanced(prev))
     }
     setPersonaMode(nextMode)
-  }
-
-  const handleInheritFromSimple = () => {
-    const simple = projectLegacyUserForm(userForm)
-    const inherited = inheritSimpleToAdvanced(simple, userForm)
-    setUserForm(inherited)
-    setFeedback('已将简易版数据同步继承至高级版')
   }
 
   async function retryTraceGeneration() {
@@ -440,18 +435,11 @@ export default function PersonaPage() {
   const workPhase = personaBusy ? 'generating' : phase
   const candidatesMarkdown = selected?.candidatesMarkdown || tracePayload?.resultMarkdown || ''
 
-  const questionnaireFilledCount = useMemo(() => {
-    let filled = 0
-    for (const key of REQUIRED_QUESTIONNAIRE_KEYS) {
-      if (key === 'accountGoals') {
-        if (userForm.accountGoals.length > 0) filled += 1
-        continue
-      }
-      const value = userForm[key]
-      if (typeof value === 'string' && value.trim()) filled += 1
-    }
-    return filled
-  }, [userForm])
+  const questionnaireProgress = useMemo(
+    () => questionnaireProgressForMode(userForm, personaMode),
+    [userForm, personaMode],
+  )
+  const previewStep = personaMode === 'simple' ? simpleStep : questionnaireStep
 
   const workPanelsActive = pageView === 'work' && (!booting || Boolean(selected))
   const showQuestionnaire = !booting && !formCollapsed && workPhase === 'questionnaire'
@@ -471,8 +459,31 @@ export default function PersonaPage() {
       chrome="workbench-tool"
       titleExtra={
         <WorkbenchPageChromeLeading>
-          <AgentFlowExplain defs={PERSONA_STAGES} lang={isEn ? 'en' : 'zh'} />
+          {pageView === 'work' && showQuestionnaire ? (
+            <div className="persona-mode-toggle persona-mode-toggle--chrome" role="tablist" aria-label="人设模式选择">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={personaMode === 'simple'}
+                className={`persona-mode-toggle__item ${personaMode === 'simple' ? 'persona-mode-toggle__item--active' : ''}`}
+                onClick={() => handleSwitchMode('simple')}
+              >
+                简易版
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={personaMode === 'advanced'}
+                className={`persona-mode-toggle__item persona-mode-toggle__item--advanced ${personaMode === 'advanced' ? 'persona-mode-toggle__item--active' : ''}`}
+                onClick={() => handleSwitchMode('advanced')}
+              >
+                <Plus className="size-3 shrink-0" aria-hidden="true" />
+                <span>高级版</span>
+              </button>
+            </div>
+          ) : null}
           <WorkbenchPageViewTabs value={pageView} onChange={setPageView} historyLabel={t('recordsTab')} />
+          <AgentFlowExplain defs={PERSONA_STAGES} lang={isEn ? 'en' : 'zh'} />
         </WorkbenchPageChromeLeading>
       }
       actions={
@@ -515,7 +526,7 @@ export default function PersonaPage() {
                   >
                     <span>{t('preview.foldedTab')}</span>
                     <small>
-                      {questionnaireFilledCount}/{REQUIRED_QUESTIONNAIRE_KEYS.length}
+                      {questionnaireProgress.filled}/{questionnaireProgress.total}
                     </small>
                   </Button>
                 ) : null}
@@ -559,7 +570,8 @@ export default function PersonaPage() {
                 <PersonaWorkspacePreview
                   phase={workPhase}
                   questionnaire={userForm}
-                  questionnaireStep={questionnaireStep}
+                  mode={personaMode}
+                  questionnaireStep={previewStep}
                   isDefault={Boolean(selected?.isActive)}
                   saving={busy}
                   generating={personaBusy}
@@ -595,48 +607,13 @@ export default function PersonaPage() {
             <div className="persona-workspace__main">
               {showQuestionnaire ? (
                 <div className="persona-form-container">
-                  <div className="persona-mode-tabs">
-                    <div className="persona-mode-toggle" role="tablist" aria-label="人设模式选择">
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={personaMode === 'simple'}
-                        className={`persona-mode-toggle__item ${personaMode === 'simple' ? 'persona-mode-toggle__item--active' : ''}`}
-                        onClick={() => handleSwitchMode('simple')}
-                      >
-                        简易版
-                      </button>
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={personaMode === 'advanced'}
-                        className={`persona-mode-toggle__item persona-mode-toggle__item--advanced ${personaMode === 'advanced' ? 'persona-mode-toggle__item--active' : ''}`}
-                        onClick={() => handleSwitchMode('advanced')}
-                      >
-                        <Plus className="size-3 shrink-0" aria-hidden="true" />
-                        <span>高级版</span>
-                      </button>
-                    </div>
-                    {personaMode === 'advanced' ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        className="persona-inherit-btn"
-                        onClick={handleInheritFromSimple}
-                        title="将简易版中填写的行业、身份、核心业务等继承到高级问卷"
-                      >
-                        从简易版继承数据
-                      </Button>
-                    ) : null}
-                  </div>
-
                   {personaMode === 'simple' ? (
                     <ProfileFormView
                       key={`simple-${selected?.id ?? 'new-persona'}`}
                       isConfigured={Boolean(selected)}
                       initialData={projectLegacyUserForm(userForm)}
                       submitBusy={personaBusy || busy}
+                      onActiveStepChange={setSimpleStep}
                       onFormChange={(simpleData) => {
                         setUserForm((prev) => ({
                           ...prev,

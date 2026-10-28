@@ -46,7 +46,7 @@
 .ipt-brief-heading h2 { margin: 0 0 10px; font-size: clamp(23px,2.4vw,30px); line-height: 1.4; font-weight: 650; letter-spacing: -.02em; }
 .ipt-brief-heading p { margin: 0; color: var(--muted-foreground); font-size: 16px; line-height: 1.8; max-width: 56ch; }
 .ipt-brief-surface { background: var(--shell-surface-2); border: 1px solid var(--input); border-radius: var(--radius); overflow: hidden; transition: border-color .16s ease; }
-.ipt-brief-surface:focus-within { border-color: color-mix(in srgb,var(--primary) 60%,var(--input)); outline: 3px solid color-mix(in srgb,var(--primary) 8%,transparent); }
+.ipt-brief-surface:focus-within { border-color: var(--input); outline: none; box-shadow: none; }
 .ipt-brief-surface > textarea { min-height: 190px; max-height: 440px; padding: 22px 24px; border: 0; border-radius: 0; font-size: 16px; line-height: 1.95; resize: vertical; background: transparent; box-shadow: none; }
 .ipt-brief-surface > textarea:focus-visible { border: 0; box-shadow: none; outline: 0; }
 .ipt-brief-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 8px 16px 14px; }

@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { ColumnDivider } from '@no996/ui/column-divider'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@no996/ui/tooltip'
+import { HoverTip, Tooltip, TooltipContent, TooltipTrigger } from '@no996/ui/tooltip'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@no996/ui/select'
 import { cn } from '@no996/ui/utils'
 import { Input } from '@no996/ui/input'
@@ -1735,6 +1735,22 @@ export default function DigitalHumanPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <HoverTip label={t('newProject')}>
+                  <Button
+                    type="button"
+                    variant="toolbar"
+                    size="icon-sm"
+                    className="dh-header-project-settings"
+                    disabled={!!busy}
+                    aria-label={t('newProject')}
+                    onClick={() => {
+                      setCreateProjectInput('')
+                      setCreateProjectModal(true)
+                    }}
+                  >
+                    <Plus size={15} aria-hidden />
+                  </Button>
+                </HoverTip>
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
@@ -1750,15 +1766,6 @@ export default function DigitalHumanPage() {
                     <MoreHorizontal size={15} />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="dh-project-settings-menu">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setCreateProjectInput('')
-                        setCreateProjectModal(true)
-                      }}
-                    >
-                      <Plus size={14} className="mr-2" />
-                      {t('newProject')}
-                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
                         setRenameInput(project?.name || '')

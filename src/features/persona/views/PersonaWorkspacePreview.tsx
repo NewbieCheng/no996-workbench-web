@@ -17,13 +17,15 @@ import {
   type AccountCardModuleId,
 } from '../lib/account-card'
 import {
-  REQUIRED_QUESTIONNAIRE_KEYS,
   projectLegacyUserForm,
+  questionnairePreviewFieldsForMode,
+  questionnaireProgressForMode,
 } from '../../../services/persona/questionnaire'
-import type { PersonaQuestionnaire } from '../../../services/persona'
+import type { PersonaMode, PersonaQuestionnaire } from '../../../services/persona'
 import type { PackagingId, PositioningId } from '../../../services/persona/types'
 import { PersonaProfileCard } from './PersonaProfileCard'
 import { ProfileStreamingPanel } from './ProfileStreamingPanel'
+import { PERSONA_FORM_WIZARD_STEPS } from './ProfileFormView'
 import { QUESTIONNAIRE_STEPS } from './PersonaQuestionnaireView'
 
 export type PersonaWorkPhase = 'questionnaire' | 'generating' | 'select' | 'profile'
@@ -31,6 +33,7 @@ export type PersonaWorkPhase = 'questionnaire' | 'generating' | 'select' | 'prof
 type Props = {
   phase: PersonaWorkPhase
   questionnaire: PersonaQuestionnaire
+  mode?: PersonaMode
   questionnaireStep?: number
   isDefault: boolean
   saving?: boolean
@@ -43,20 +46,6 @@ type Props = {
   collapseDisabled?: boolean
   onToggleCollapse?: () => void
   onSetDefault?: () => void
-}
-
-function questionnaireProgress(form: PersonaQuestionnaire): { filled: number; total: number } {
-  const total = REQUIRED_QUESTIONNAIRE_KEYS.length
-  let filled = 0
-  for (const key of REQUIRED_QUESTIONNAIRE_KEYS) {
-    if (key === 'accountGoals') {
-      if (form.accountGoals.length > 0) filled += 1
-      continue
-    }
-    const value = form[key]
-    if (typeof value === 'string' && value.trim()) filled += 1
-  }
-  return { filled, total }
 }
 
 function SelectPreview({
@@ -250,6 +239,7 @@ function MainProfileTocNav({
 export function PersonaWorkspacePreview({
   phase,
   questionnaire,
+  mode = 'simple',
   questionnaireStep = 0,
   isDefault,
   saving,
@@ -265,13 +255,37 @@ export function PersonaWorkspacePreview({
 }: Props) {
   const { t } = useTranslation('persona')
   const legacyForm = useMemo(() => projectLegacyUserForm(questionnaire), [questionnaire])
-  const progress = useMemo(() => questionnaireProgress(questionnaire), [questionnaire])
-  const stepLabel = QUESTIONNAIRE_STEPS[Math.min(questionnaireStep, QUESTIONNAIRE_STEPS.length - 1)]
+  const progress = useMemo(
+    () => questionnaireProgressForMode(questionnaire, mode),
+    [questionnaire, mode],
+  )
+  const previewFields = useMemo(
+    () =>
+      questionnairePreviewFieldsForMode(questionnaire, mode, {
+        industry: t('preview.industry'),
+        role: t('preview.role'),
+        primaryBusiness: t('preview.primaryBusiness'),
+        targetClients: t('preview.targetClients'),
+        clientPainPoints: t('preview.clientPainPoints'),
+        desiredImage: t('preview.desiredImage'),
+        additionalInfo: t('preview.additionalInfo'),
+      }),
+    [questionnaire, mode, t],
+  )
+  const stepHint = useMemo(() => {
+    if (mode === 'simple') {
+      const step = PERSONA_FORM_WIZARD_STEPS[Math.min(questionnaireStep, PERSONA_FORM_WIZARD_STEPS.length - 1)]
+      return step ? t(step.labelKey) : undefined
+    }
+    const step = QUESTIONNAIRE_STEPS[Math.min(questionnaireStep, QUESTIONNAIRE_STEPS.length - 1)]
+    return step ? t(step.labelKey) : undefined
+  }, [mode, questionnaireStep, t])
 
   if (phase === 'generating') {
     return (
       <PersonaProfileCard
         formData={legacyForm}
+        previewFields={previewFields}
         markdown={candidatesMarkdown}
         isDefault={isDefault}
         saving={saving}
@@ -280,7 +294,7 @@ export function PersonaWorkspacePreview({
         progressMetrics={progress}
         summaryTitle={questionnaire.publicName.trim() || questionnaire.occupation.trim()}
         summaryTag={questionnaire.occupation.trim()}
-        stepHint={stepLabel ? t(stepLabel.labelKey) : undefined}
+        stepHint={stepHint}
         collapseDisabled={collapseDisabled}
         onTogglePreview={onToggleCollapse}
         onSetDefault={onSetDefault}
@@ -311,6 +325,7 @@ export function PersonaWorkspacePreview({
   return (
     <PersonaProfileCard
       formData={legacyForm}
+      previewFields={previewFields}
       markdown={profileMarkdown}
       isDefault={isDefault}
       saving={saving}
@@ -319,7 +334,7 @@ export function PersonaWorkspacePreview({
       progressMetrics={progress}
       summaryTitle={questionnaire.publicName.trim() || legacyForm.role.trim()}
       summaryTag={questionnaire.occupation.trim() || legacyForm.industry.trim()}
-      stepHint={stepLabel ? t(stepLabel.labelKey) : undefined}
+      stepHint={stepHint}
       collapseDisabled={collapseDisabled}
       onTogglePreview={onToggleCollapse}
       onSetDefault={onSetDefault}

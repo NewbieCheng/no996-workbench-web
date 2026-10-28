@@ -5,7 +5,7 @@ import { Button } from '@no996/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@no996/ui/card'
 import { ScrollArea } from '@no996/ui/scroll-area'
 import { ChevronDownIcon, EyeIcon, PanelLeftCloseIcon, PencilIcon } from 'lucide-react'
-import type { UserProfileFormData } from '../../../services/persona'
+import type { QuestionnairePreviewField, UserProfileFormData } from '../../../services/persona'
 import { ProfileStructuredPanel } from './ProfileStructuredEditor'
 import { ProfileStreamingPanel } from './ProfileStreamingPanel'
 
@@ -13,6 +13,8 @@ type ProfileContentMode = 'edit' | 'preview'
 
 type Props = {
   formData: UserProfileFormData
+  /** 左侧字段列表；不传时回退到简易 7 字段 */
+  previewFields?: QuestionnairePreviewField[]
   markdown?: string
   isDefault: boolean
   saving?: boolean
@@ -33,6 +35,7 @@ type Props = {
 
 export function PersonaProfileCard({
   formData,
+  previewFields,
   markdown = '',
   isDefault,
   saving = false,
@@ -61,19 +64,19 @@ export function PersonaProfileCard({
     setContentMode('preview')
   }, [archiveEditEnabled, markdown])
 
-  const fields = useMemo(
-    () => [
-      ['industry', t('preview.industry'), formData.industry],
-      ['role', t('preview.role'), formData.role],
-      ['primaryBusiness', t('preview.primaryBusiness'), formData.primaryBusiness],
-      ['targetClients', t('preview.targetClients'), formData.targetClients],
-      ['clientPainPoints', t('preview.clientPainPoints'), formData.clientPainPoints],
-      ['desiredImage', t('preview.desiredImage'), formData.desiredImage],
-      ['additionalInfo', t('preview.additionalInfo'), formData.additionalInfo],
-    ] as const,
-    [formData, t],
-  )
-  const filled = progressMetrics?.filled ?? fields.filter(([, , value]) => Boolean(value?.trim())).length
+  const fields = useMemo((): QuestionnairePreviewField[] => {
+    if (previewFields) return previewFields
+    return [
+      { id: 'industry', label: t('preview.industry'), value: formData.industry },
+      { id: 'role', label: t('preview.role'), value: formData.role },
+      { id: 'primaryBusiness', label: t('preview.primaryBusiness'), value: formData.primaryBusiness },
+      { id: 'targetClients', label: t('preview.targetClients'), value: formData.targetClients ?? '' },
+      { id: 'clientPainPoints', label: t('preview.clientPainPoints'), value: formData.clientPainPoints ?? '' },
+      { id: 'desiredImage', label: t('preview.desiredImage'), value: formData.desiredImage ?? '' },
+      { id: 'additionalInfo', label: t('preview.additionalInfo'), value: formData.additionalInfo ?? '' },
+    ]
+  }, [formData, previewFields, t])
+  const filled = progressMetrics?.filled ?? fields.filter((field) => Boolean(field.value?.trim())).length
   const progressTotal = progressMetrics?.total ?? fields.length
   const progressLabel = t('preview.progress', { filled, total: progressTotal })
   const displayRole = summaryTitle?.trim() || formData.role.trim() || t('preview.rolePlaceholder')
@@ -230,10 +233,10 @@ export function PersonaProfileCard({
           </div>
         ) : (
           <dl className="persona-profile-card__fields">
-            {fields.map(([key, label, value]) => (
-              <div key={key} className="persona-profile-card__field">
-                <dt>{label}</dt>
-                <dd>{value?.trim() || <span>{t('preview.waiting')}</span>}</dd>
+            {fields.map((field) => (
+              <div key={field.id} className="persona-profile-card__field">
+                <dt>{field.label}</dt>
+                <dd>{field.value?.trim() || <span>{t('preview.waiting')}</span>}</dd>
               </div>
             ))}
           </dl>

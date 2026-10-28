@@ -49,7 +49,7 @@ export function ExtensionMaterialDetailStage({
     const needsHydrate =
       !active.imageFallbackDataUrls?.some(Boolean) && !active.coverFallbackDataUrl
     if (!needsHydrate) return
-    void hydrateMaterialFallbacks(active.id).then(() => onAfterHydrate?.())
+    void hydrateMaterialFallbacks(active.ownerUserId, active.id).then(() => onAfterHydrate?.())
   }, [active?.id, onAfterHydrate])
 
   const statsChips = useMemo(() => {

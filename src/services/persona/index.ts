@@ -41,14 +41,21 @@ export {
   summarizeFromContent,
 } from './types'
 export {
+  applySimpleInheritForAdvanced,
+  hasSimplePersonaContent,
   inheritSimpleToAdvanced,
   isCompanyFormData,
   isQuestionnaireEmpty,
   missingRequiredQuestionnaireKeys,
   normalizeQuestionnaire,
   projectLegacyUserForm,
+  questionnairePreviewFieldsForMode,
+  questionnaireProgressForMode,
+  REQUIRED_QUESTIONNAIRE_KEYS,
+  SIMPLE_PREVIEW_KEYS,
   syncLegacyProjection,
 } from './questionnaire'
+export type { QuestionnairePreviewField } from './questionnaire'
 export type { PersonaRepository } from './repository'
 
 let repo: PersonaRepository | null = null

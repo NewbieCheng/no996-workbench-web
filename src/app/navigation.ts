@@ -80,8 +80,8 @@ export type NavItem = {
   brandIcon?: string
   path?: string
   availability: NavAvailability
-  /** Small label beside the title in the sidebar (e.g. Beta). */
-  badge?: 'beta'
+  /** Small label beside the title in the sidebar (e.g. Beta / New). */
+  badge?: 'beta' | 'new'
 }
 
 export const DESKTOP_ONLY_GROUP = '桌面端专属'
@@ -116,7 +116,7 @@ export const navigation: NavItem[] = [
     icon: Target,
     path: '/workbench/product-position',
     availability: 'demo',
-    badge: 'beta',
+    badge: 'new',
   },
   {
     id: 'titles',
@@ -182,7 +182,7 @@ export const navigation: NavItem[] = [
     brandIcon: WORKBENCH_BRAND_WECHAT_MOMENTS,
     path: '/workbench/moments',
     availability: 'demo',
-    badge: 'beta',
+    badge: 'new',
   },
   {
     id: 'voice',

@@ -55,7 +55,9 @@
 - `Tabs` + `TabsList variant="toolbar"` + `TabsTrigger`：36px 分段视图切换，内部选项30px；受控 `value` / `onValueChange`，键盘交互由 Base UI 提供。`WorkbenchPageViewTabs` 仅适配工作台文案、历史数量与既有面板 id。
 - `GlassPanel` / `GlassButton` / `GlassBadge`：使用 `packages/ui/src/glass-components.css` 和 `packages/ui/src/glass-tokens.css`。属于 Web 毛玻璃近似，不是 Apple 官方 Liquid Glass。常规工作台工具栏不必使用 3D 玻璃效果。
 - **墨囊 Toast**：`src/components/InkCapsuleToaster.tsx` + `src/styles/toast-inkcapsule.css`（全局 Sonner 皮肤）；业务侧优先 `src/lib/toast.ts` 的 `toastSuccess` / `toastError` / `toastWarning` / `toastInfo`，时长见 `src/lib/toast-durations.ts`。
+- **扩展素材导入**：`src/features/extension/materials/ExtensionMaterialImport.tsx` 通过 `materials.list` 分页预览，确认后通过 `materials.read` 读取所选正文并导入，使用 `materialRepository` 按用户隔离保存；插件能力仍需联调。
 - **扩展素材远程图**：`src/features/extension/materials/WorkbenchMediaImage.tsx`（B站 CDN 保留 Referer，其余 `no-referrer`；失败走 `extensionClient.fetchAsset` → blob URL）；公网正文图 `material-public-media.ts`（`getMaterialPublicImageUrls` / `getMaterialDisplaySrc`）；可选本机模糊兜底 `src/services/materials/material-asset-hydration.ts`（`hydrateMaterialFallbacks`，受 `material-settings` 开关控制）；预览式详情 `ExtensionMaterialDetailStage` + `MaterialMediaFrame` / `MaterialAttachmentStrip`；样式 `src/styles/extension-materials.css`（`wb-material-*` 卡片网格）。小红书标题/作者展示与入库规范化：`xhs-material-display.ts`（`resolveXiaohongshuDisplayTitle` / `normalizeXiaohongshuCollectedItem`，`material-media.ts` 与 `material-repository.ts` 消费）。
+- **视频封装随机写入**：`packages/video-editor/src/media/byte-store.ts` 的 `BoundedByteStore` 按位置处理数据块和回写，供快速导出、逐帧导出与 IP 视频编码复用；成片上限为 250 MiB。
 - **`Card`（`@no996/ui/card`）= `GlassPanel` 的结构化外壳**：`Card` / `CardHeader` / `CardContent` / `CardFooter` 负责分区与间距；面板级描边、模糊与 inset 高光一律由 `.glass-panel` 提供（默认 `glow={false}`，圆角 `--glass-panel-radius: 16px`）。业务页**禁止**再写 `border` / `box-shadow: var(--shadow-card)` / `bg-card/85` 等第二套「卡片皮」；无分区需求时可直接 `GlassPanel` 或 `GlassCard`。
 - **`WorkbenchUI.Panel`**：仍是 `Card` + 标题区，勿在 feature CSS 里用 `.wb-panel` 覆盖背景/圆角/阴影。
 - **脚本预览轨**：外层 `GlassPanel` 按视频橙色、直播青绿色提供无描边玻璃底色，内层 `.sl-wiz-rail__surface` 透明，避免双层背景形成色带。
@@ -758,10 +760,10 @@ type RetentionCurveProps = { rounds: ScriptRound[]; segments: ScriptSegment[] }
 
 **创作页顶栏（内容创作分组）**
 
-- `Page` 传 `chrome="workbench-tool"`：页头进 `ModuleLayout` `topChrome`（类名 `wb-page-top-chrome`），全宽、`sticky`、透明底；**不展示顶栏大号标题**（侧栏已有功能名）。`title` / `description` 仍保留在 `Page` 契约上供文案与后续用途。
-- 布局类：`wb-module-page-layout`（由 `Page` 自动合并到 `layoutClassName`）；路由面对应 `workbench-tool-page`（`src/app/workbench-surface.ts`）。
-- 样式：`src/styles/workbench-page-chrome.css`（由 `src/index.css` 引入）。
-- 左右插槽用 `WorkbenchPageChromeLeading` / `WorkbenchPageChromeActions`；配音、账号等非创作页仍用经典 `PageShell` 标题行。
+- `Page` 传 `chrome="workbench-tool"`：页头进 `ModuleLayout` `topChrome`（类名 `wb-page-top-chrome`），全宽、透明底；**不展示顶栏大号标题**（侧栏已有功能名）。`title` / `description` 仍保留在 `Page` 契约上供文案与后续用途。
+- **必登 surface（否则顶栏下沉）**：只写 `chrome="workbench-tool"` 不够。路由段必须写入 `src/app/workbench-surface.ts` → `WORKBENCH_SURFACE_BY_SEGMENT`，至少 `workbench-page--fluid workbench-tool-page`。漏登时 `.wb-page-area__scroll` 保留默认 `padding: 32px…`，`top-chrome` 会离开滚动区顶边（对照人设页）。`npm run test:docs` 会核对「导航里的 `/workbench/<segment>`」是否已登记。
+- 布局类：`wb-module-page-layout`（由 `Page` 自动合并到 `layoutClassName`）；样式真相：`src/styles/workbench-page-chrome.css`（由 `src/index.css` 引入）。
+- 左右插槽用 `WorkbenchPageChromeLeading` / `WorkbenchPageChromeActions`；`actions` 用后者包一层，**不要**把 `WorkbenchPageChromeActions` 塞进 `headerTrailing`。
 - **视频工厂满屏剪辑台**：`Page` 传 `enableContentWidthHandles={false}`、`minWidth={1280}`；路由面对应 `video-factory-workbench-page`（在 `.wb-page-area`）和 `.vf-studio--immersive`，样式见 `src/styles/video-factory.css`，负责隐藏列宽把手并设置内容列最小宽度。
 
 ```tsx
@@ -1207,12 +1209,17 @@ npm run test:flows   # 122 项
 
 > 这一轮真机复测抓到 3 个单测抓不到的问题（都在**呈现层**，静态断言看不见）：① `skip()` 残留上一轮的计时与提示词（见 §2.7）；② `titles-flow` 提前收敛时「编辑」永远停在 `idle`（见 `finish()`）；③ `AgentStageDetail` 压根不显示状态，被跳过的步骤和跑过的长得一样（见 §3.3）。三个都改成了**结构性**的修法（内核兜底 / 共用一份状态文案），而不是在调用点逐个打补丁。
 
-## 10. 产品定位与分析（2026-10-27）
+## 10. 产品定位与分析（2026-10-27；2026-10-28 顶栏切换 + 字段 AI）
 
-页面与设计说明见 `docs/product-positioning.md`。可直接复用的部分：
+页面与设计说明见 `docs/product-positioning.md`。**本页不再用左侧记录轨**：产品切换在 Page `top-chrome`；`actions` 顺序为自动保存（有状态才显示）→ 人设 → `+` 新建（仅图标）→ **生成定位分析（最右）**。表单渐进披露；字段壳 + `AIEditPopover` 对齐人设问卷。管理型「左轨 + 右内容」不是本页强制版式。
+
+可直接复用的部分：
 
 | 能力 | 入口 |
 | --- | --- |
+| 顶栏产品切换（条件搜索 ≥8 条、状态徽标、新建/删除） | `src/features/product-position/views/ProductSwitcher.tsx` |
+| 字段输入壳 + AI 优化 / 类型预设 | `src/features/product-position/views/ProductAssistField.tsx` |
+| 字段润色（演示样例 + 正式走 `polishProfileDocField`） | `src/features/product-position/agent/form-assist.ts` |
 | 模板驱动的 Markdown 报告解析（六章 / 固定栏目 / 动态表格 / 引用原话 / 未识别内容保留） | `src/features/product-position/lib/report-parser.ts`、结构清单 `src/features/product-position/lib/report-template.ts` |
 | 报告的章节与表达读取（一句话定位、卖点、介绍、购买理由、营销表达抽取） | `src/features/product-position/lib/report-view.ts` |
 | 资料充分性预检（无字数阈值、缺失可定位） | `src/features/product-position/lib/adequacy.ts` |

@@ -5,11 +5,13 @@ import { navigation, type NavItem } from '../../app/navigation'
 
 const BENTO_LAYOUT: Record<string, string> = {
   persona: 'home-bento-card--persona',
+  'product-position': 'home-bento-card--product',
   titles: 'home-bento-card--titles',
   'video-script': 'home-bento-card--video',
   'live-script': 'home-bento-card--live',
   xiaohongshu: 'home-bento-card--xhs',
   'wechat-article': 'home-bento-card--wechat',
+  moments: 'home-bento-card--moments',
 }
 
 const PERSONA_BARS = [

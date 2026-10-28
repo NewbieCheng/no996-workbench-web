@@ -177,6 +177,7 @@ TTS 返回的站内相对路径（如 `/media/audio/xxx.wav`）由 `src/api/medi
 | 方法 | 状态 | 说明 |
 |---|---|---|
 | `connection.getStatus` / `accounts.list` / `accounts.connect` | 已有 | 连接与账号态；网页只收脱敏后的账号状态与公开元数据 |
+| `materials.list` / `materials.read` | 网页与插件侧已接线，真实环境待联调 | `materials.list` 以 `{ offset, limit }` 分页返回不含正文的预览；用户确认后 `materials.read` 以 `{ ids }` 读取所选素材正文。导入当前账号的本机素材库，重复项跳过；旧插件提示更新。插件素材库本身为本机共享库，不按工作台账号隔离。 |
 | `collection.resolve` | 已有（已增强） | 单链解析：`{ url }` → `{ ok, item?, error? }`。`item.content` 填正文（非仅标题）；`imageUrls` 为**正文图**并与 `mediaLayout.bodyImageUrls` 对齐；可选 `likes` / `comments` / `collects` / `mediaLayout` |
 | `collection.search` | 新增 | 关键词批量（首期仅 `xiaohongshu`）：`{ platformId, keyword, limit: 5–20, filters? }` → `{ ok, items?, error? }`。`filters` 含 `minLikes` / `minComments` / `publishWithin` / `distance` / `collectMode` / `sortType` / `noteType` / `searchRange` |
 | `asset.fetch` | 新增 | 网页直连 CDN 常因 CORS 失败，改由扩展代拉：`{ url }` → `{ ok, blobBase64?, mime?, error? }`；`blobBase64` 是原始字节 base64（非 data URL） |

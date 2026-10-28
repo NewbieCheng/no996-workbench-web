@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNotifyOperationMessage } from '@/lib/toast'
 import { Loader2, Sparkles } from 'lucide-react'
+import { Button } from '@no996/ui/button'
 import { WizardSteps } from '@no996/ui/feedback'
 import { GlassPanel } from '@no996/ui'
 
@@ -48,6 +49,12 @@ export type InputWizardProps = {
   goOnLastStepOnly?: boolean
   /** 禁用「下一步」（例如第 1 步未填产品名） */
   nextDisabled?: boolean
+  /**
+   * 页脚导航按钮样式。
+   * `glass`：与人设简易版同款 `@no996/ui` Button（小尺寸玻璃主按钮）；
+   * `legacy`：保留脚本 Lab 等现有 `.wf-wizard__nav` 外观。
+   */
+  footerButtons?: 'legacy' | 'glass'
 }
 
 export function InputWizard({
@@ -72,12 +79,14 @@ export function InputWizard({
   footerLeadingSlot,
   goOnLastStepOnly = false,
   nextDisabled = false,
+  footerButtons = 'legacy',
 }: InputWizardProps) {
   useNotifyOperationMessage(error, 'error', 'input-wizard')
   const last = steps.length - 1
   const pending = Boolean(busy)
   const scriptLab = layout === 'scriptLab'
   const showGo = !goOnLastStepOnly || active === last
+  const glassFoot = footerButtons === 'glass'
 
   return (
     <GlassPanel
@@ -110,40 +119,81 @@ export function InputWizard({
       <div className={scriptLab ? 'wf-wizard__foot wf-wizard__foot--sticky' : 'wf-wizard__foot'}>
         {footerLeadingSlot}
         {active > 0 ? (
-          <button type="button" className="wf-wizard__nav" onClick={() => onStepChange(active - 1)}>
-            {backLabel}
-          </button>
+          glassFoot ? (
+            <Button type="button" variant="ghost" size="sm" onClick={() => onStepChange(active - 1)}>
+              {backLabel}
+            </Button>
+          ) : (
+            <button type="button" className="wf-wizard__nav" onClick={() => onStepChange(active - 1)}>
+              {backLabel}
+            </button>
+          )
         ) : null}
         <span className="wf-wizard__spacer" />
         {skipLabel && active < last ? (
-          <button type="button" className="wf-wizard__skip" disabled={pending} onClick={onGo}>
-            {skipLabel} →
-          </button>
+          glassFoot ? (
+            <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={onGo}>
+              {skipLabel} →
+            </Button>
+          ) : (
+            <button type="button" className="wf-wizard__skip" disabled={pending} onClick={onGo}>
+              {skipLabel} →
+            </button>
+          )
         ) : null}
         {active < last ? (
-          <button
-            type="button"
-            className="wf-wizard__nav"
-            disabled={nextDisabled || pending}
-            onClick={() => onStepChange(active + 1)}
-          >
-            {nextLabel}
-          </button>
+          glassFoot ? (
+            <Button
+              type="button"
+              size="sm"
+              className="min-w-[7rem] gap-2"
+              disabled={nextDisabled || pending}
+              onClick={() => onStepChange(active + 1)}
+            >
+              {nextLabel}
+            </Button>
+          ) : (
+            <button
+              type="button"
+              className="wf-wizard__nav"
+              disabled={nextDisabled || pending}
+              onClick={() => onStepChange(active + 1)}
+            >
+              {nextLabel}
+            </button>
+          )
         ) : null}
         {showGo ? (
-          <button
-            type="button"
-            className="wf-wizard__go"
-            disabled={goDisabled || pending}
-            onClick={onGo}
-          >
-            {pending ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-            )}
-            {pending ? busyLabel : goLabel}
-          </button>
+          glassFoot ? (
+            <Button
+              type="button"
+              size="sm"
+              className="min-w-[7rem] gap-2"
+              disabled={goDisabled || pending}
+              onClick={onGo}
+            >
+              {pending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              {pending ? busyLabel : goLabel}
+            </Button>
+          ) : (
+            <button
+              type="button"
+              className="wf-wizard__go"
+              disabled={goDisabled || pending}
+              onClick={onGo}
+            >
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+              )}
+              {pending ? busyLabel : goLabel}
+            </button>
+          )
         ) : null}
       </div>
     </GlassPanel>

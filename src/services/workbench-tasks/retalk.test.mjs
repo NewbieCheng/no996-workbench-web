@@ -185,6 +185,7 @@ test('recovery preserves accepted remote tasks and requeues only work that never
   installLocks()
   const { RetalkTaskObserver } = await load('./retalk-observer.ts')
   const f = fixture(); f.job.status = 'running'
+  globalThis.__retalkMock = { async get() { return { task_id: 'rt_saved', status: 'RUNNING', created_at: 'now' } } }
   const observer = new RetalkTaskObserver(f.repo, 1, () => true, () => {})
   await f.repo.patchPayload('p', { ...f.payload, taskId: 'rt_saved', status: 'RUNNING', submissionAttempted: true })
   await observer.recover()
@@ -193,6 +194,69 @@ test('recovery preserves accepted remote tasks and requeues only work that never
   await observer.recover()
   assert.equal(f.job.status, 'queued')
   observer.dispose()
+})
+
+test('recovery queries paused and expired observations once and restores the real result', async () => {
+  installLocks()
+  const { RetalkTaskObserver } = await load('./retalk-observer.ts')
+  const f = fixture(); f.job.status = 'running'
+  await f.repo.patchPayload('p', { ...f.payload, taskId: 'rt_saved', status: 'RUNNING', submissionAttempted: true, observationPaused: true, observationStartedAt: 0, lastCheckedAt: 0 })
+  let calls = 0
+  globalThis.__retalkMock = { async submit() { assert.fail('must not resubmit') }, async get(id) { calls++; assert.equal(id, 'rt_saved'); return { task_id: id, status: 'SUCCEEDED', video_url: '/media/result.mp4', created_at: 'now' } } }
+  const a = new RetalkTaskObserver(f.repo, 1, () => true, () => {})
+  const b = new RetalkTaskObserver(f.repo, 1, () => true, () => {})
+  await Promise.all([a.recover(), b.recover()])
+  assert.equal(calls, 1); assert.equal(f.job.status, 'succeeded')
+  assert.equal(f.payload.observationPaused, false); assert.equal(f.payload.result.video_url, '/media/result.mp4')
+  a.dispose(); b.dispose()
+})
+
+test('recovery restarts bounded observation for running tasks and keeps real errors', async () => {
+  installLocks()
+  const { RetalkTaskObserver } = await load('./retalk-observer.ts')
+  const f = fixture(); f.job.status = 'running'
+  await f.repo.patchPayload('p', { ...f.payload, taskId: 'rt_saved', status: 'RUNNING', submissionAttempted: true, observationPaused: true, observationStartedAt: 0 })
+  let fail = false; let calls = 0
+  globalThis.__retalkMock = { async get(id) { calls++; if (fail) throw new Error('network unavailable'); return { task_id: id, status: 'RUNNING', created_at: 'now' } } }
+  const observer = new RetalkTaskObserver(f.repo, 1, () => true, () => {})
+  const before = Date.now(); await observer.recover()
+  assert.equal(f.job.status, 'running'); assert.equal(f.payload.observationPaused, false)
+  assert.ok(f.payload.observationStartedAt >= before)
+  await observer.recover(); assert.equal(calls, 1)
+  await f.repo.patchPayload('p', { ...f.payload, observationPaused: true })
+  fail = true; await observer.recover()
+  assert.equal(f.job.status, 'running'); assert.equal(f.payload.observationError, 'network unavailable')
+  observer.dispose()
+})
+
+test('returning to a visible browser tab triggers a recovery query', async () => {
+  installLocks()
+  const { RetalkTaskObserver } = await load('./retalk-observer.ts')
+  const f = fixture(); f.job.status = 'running'
+  await f.repo.patchPayload('p', { ...f.payload, taskId: 'rt_saved', status: 'RUNNING', submissionAttempted: true, observationPaused: true })
+  let listener
+  globalThis.document = { hidden: false, addEventListener(_name, fn) { listener = fn }, removeEventListener() {} }
+  let resolveChanged
+  const changed = new Promise(resolve => { resolveChanged = resolve })
+  globalThis.__retalkMock = { async get(id) { return { task_id: id, status: 'FAILED', error: '生成失败', created_at: 'now' } } }
+  const observer = new RetalkTaskObserver(f.repo, 1, () => true, resolveChanged)
+  try {
+    listener(); await changed
+    assert.equal(f.job.status, 'failed'); assert.equal(f.job.errorMessage, '生成失败')
+  } finally { observer.dispose(); delete globalThis.document }
+})
+
+test('recovery skips uncertain submissions and other accounts', async () => {
+  installLocks()
+  const { RetalkTaskObserver } = await load('./retalk-observer.ts')
+  const f = fixture(); f.job.status = 'running'
+  await f.repo.patchPayload('p', { ...f.payload, submissionAttempted: true, submissionUncertain: true })
+  globalThis.__retalkMock = { async get() { assert.fail('must not query') }, async submit() { assert.fail('must not submit') } }
+  const observer = new RetalkTaskObserver(f.repo, 1, () => true, () => {})
+  await observer.recover(); assert.equal(f.job.status, 'running'); assert.equal(f.payload.submissionUncertain, true)
+  const other = new RetalkTaskObserver(f.repo, 2, () => true, () => {})
+  await other.recover()
+  observer.dispose(); other.dispose()
 })
 
 test('logout/dispose and other owners never issue remote requests; no locks fails closed', async () => {

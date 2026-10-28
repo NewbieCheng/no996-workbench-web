@@ -40,6 +40,7 @@ import {
   CAPTURE_SETTINGS_TRIGGER_CLASS,
   optionLabel,
 } from '../../../components/capture-settings-shared'
+import { XHS_CAPTURE_NOTE_TYPE_DEFAULT } from './xhs-keyword-filter-options'
 
 export type CaptureMode = 'keyword' | 'links'
 
@@ -249,7 +250,7 @@ export function ExtensionCapturePanel({
   const [publishTime, setPublishTime] = useState<string>('all')
 
   // 平台专属快捷字段
-  const [xhsNoteType, setXhsNoteType] = useState<string>('all')
+  const [xhsNoteType, setXhsNoteType] = useState<string>(XHS_CAPTURE_NOTE_TYPE_DEFAULT)
   const [xhsSearchRange, setXhsSearchRange] = useState<string>('all')
   const [douyinContentType, setDouyinContentType] = useState<string>('all')
   const [douyinVideoDuration, setDouyinVideoDuration] = useState<string>('all')
@@ -342,7 +343,7 @@ export function ExtensionCapturePanel({
         })
 
         for (const s of saved) {
-          void hydrateMaterialFallbacks(s.id)
+          void hydrateMaterialFallbacks(s.ownerUserId, s.id)
         }
 
         await onAfterCapture(batchId)
@@ -428,7 +429,7 @@ export function ExtensionCapturePanel({
       })
 
       for (const s of saved) {
-        void hydrateMaterialFallbacks(s.id)
+        void hydrateMaterialFallbacks(s.ownerUserId, s.id)
       }
 
       await onAfterCapture(batchId)

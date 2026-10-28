@@ -132,7 +132,7 @@ export function AIEditPopover({
                 onChange={(event) => setInstruction(event.target.value)}
                 onKeyDown={handlePromptKeyDown}
                 placeholder={labels.promptPlaceholder}
-                rows={2}
+                rows={3}
                 disabled={busy || disabled}
                 aria-label={labels.promptPlaceholder}
               />

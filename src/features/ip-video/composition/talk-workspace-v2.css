@@ -524,13 +524,11 @@
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
   transition: border-color .16s ease, box-shadow .16s ease;
 }
-.ipt-workspace--v2 .ipt-brief-surface:focus-within {
-  border-color: var(--border);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
-}
+.ipt-workspace--v2 .ipt-brief-surface:focus-within,
 .ipt-workspace--v2 .ipt-brief-surface:has(textarea:focus-visible) {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 28%, transparent);
-  outline-offset: 2px;
+  border-color: var(--border);
+  outline: none;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
 }
 .ipt-workspace--v2 .ipt-brief-surface textarea,
 .ipt-workspace--v2 .ipt-brief-surface [data-slot='textarea'] {

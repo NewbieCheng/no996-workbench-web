@@ -44,7 +44,7 @@ export async function executeSourceCreate(
 
   // 2. 如果指定了本地素材 ID
   if (payload.materialId && (!content || !title)) {
-    const mat = await materialRepository.getMaterial(payload.materialId)
+    const mat = await materialRepository.getMaterial(job.ownerUserId, payload.materialId)
     if (mat) {
       title = mat.title
       content = mat.content || mat.title || ''

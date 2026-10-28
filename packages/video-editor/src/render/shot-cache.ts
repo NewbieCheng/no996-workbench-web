@@ -18,7 +18,7 @@ export type ShotFrameRequest = {
 type CacheEntry = { canvas: HTMLCanvasElement; bytes: number; lastUsed: number }
 type RendererEntry = { renderer: DomFrameRenderer; lastUsed: number; active: number }
 const PREVIEW_WIDTH = 360
-const PREVIEW_BUDGET_BYTES = 128 * 1024 * 1024
+const PREVIEW_BUDGET_BYTES = 32 * 1024 * 1024
 const RENDERER_LIMIT = 12
 
 function stable(value: unknown): string {
@@ -62,7 +62,7 @@ export class ShotFrameCache {
       this.previewBytes += bytes
       this.evictFrames()
       return canvas
-    }).catch(error => { console.warn(`镜头缩略图失败 ${request.shotId}:`, error); return null }).finally(() => { this.pending.delete(key) })
+    }).catch(error => { console.warn(`镜头缩略图失败 ${request.shotId}:`, error); return null }).finally(() => { if (this.pending.get(key) === work) this.pending.delete(key) })
     this.pending.set(key, work)
     return work
   }
@@ -98,7 +98,11 @@ export class ShotFrameCache {
     this.evictRenderers(cache)
     try { return await entry.renderer.renderFrame(request.frame) }
     catch (error) { throw new Error(`镜头渲染失败（${request.shotId}，第 ${request.frame} 帧）：${error instanceof Error ? error.message : String(error)}`) }
-    finally { entry.active--; this.evictRenderers(cache) }
+    finally {
+      entry.active--
+      if (generation !== this.generation && entry.active === 0) entry.renderer.dispose()
+      this.evictRenderers(cache)
+    }
   }
 
   private evictRenderers(cache: Map<string, RendererEntry>) {
@@ -118,8 +122,8 @@ export class ShotFrameCache {
   }
   dispose() {
     this.generation++
-    for (const entry of this.renderers.values()) entry.renderer.dispose()
-    for (const entry of this.exportRenderers.values()) entry.renderer.dispose()
+    for (const entry of this.renderers.values()) if (!entry.active) entry.renderer.dispose()
+    for (const entry of this.exportRenderers.values()) if (!entry.active) entry.renderer.dispose()
     this.renderers.clear(); this.exportRenderers.clear(); this.pending.clear(); this.clearFrames()
   }
   clearFrames() { this.preview.clear(); this.previewBytes = 0 }

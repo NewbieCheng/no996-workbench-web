@@ -37,9 +37,9 @@ async function fetchImageDataUrl(url: string): Promise<string | undefined> {
   }
 }
 
-export async function hydrateMaterialFallbacks(materialId: string): Promise<void> {
+export async function hydrateMaterialFallbacks(userId: number, materialId: string): Promise<void> {
   if (!readMaterialPersistImages()) return
-  const material = await materialRepository.getMaterial(materialId)
+  const material = await materialRepository.getMaterial(userId, materialId)
   if (!material) return
 
   const layout = resolveMaterialMediaLayout(material)
@@ -50,7 +50,7 @@ export async function hydrateMaterialFallbacks(materialId: string): Promise<void
   const coverUrl = layout.coverUrls[0]
   const coverFallbackDataUrl = coverUrl ? await fetchImageDataUrl(coverUrl) : undefined
 
-  await materialRepository.patchMaterialFallbacks(materialId, {
+  await materialRepository.patchMaterialFallbacks(userId, materialId, {
     imageFallbackDataUrls,
     coverFallbackDataUrl,
   })
@@ -60,7 +60,7 @@ export async function clearAllMaterialFallbacks(userId: number): Promise<void> {
   const list = await materialRepository.listMaterials(userId)
   for (const m of list) {
     if (m.imageFallbackDataUrls?.length || m.coverFallbackDataUrl) {
-      await materialRepository.patchMaterialFallbacks(m.id, {
+      await materialRepository.patchMaterialFallbacks(userId, m.id, {
         imageFallbackDataUrls: [],
         coverFallbackDataUrl: undefined,
       })

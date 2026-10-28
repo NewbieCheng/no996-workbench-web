@@ -37,6 +37,17 @@ test('interrupted browser export is failed not silently requeued', () => {
   assert.match(next.errorMessage, /中断/)
 })
 
+test('shared video encoders honor random-access container writes', () => {
+  for (const path of [
+    '../../../packages/video-editor/src/core/export/composition-recorder.ts',
+    '../../../packages/video-editor/src/media/mediabunny-adapter.ts',
+  ]) {
+    const src = readFileSync(new URL(path, import.meta.url), 'utf8')
+    assert.match(src, /store\.write\(chunk\.position, chunk\.data\)/)
+    assert.match(src, /store\.toBlob\(/)
+  }
+})
+
 test('fast export bitrate is speed-first', () => {
   const src = readFileSync(new URL('../../../packages/video-editor/src/core/export/composition-recorder.ts', import.meta.url), 'utf8')
   assert.match(src, /export const FAST_EXPORT_VIDEO_BITRATE = 4_000_000/)

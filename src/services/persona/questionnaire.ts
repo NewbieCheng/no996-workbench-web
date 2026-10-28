@@ -5,6 +5,7 @@ import {
   type CitePermission,
   type PaidClientStatus,
   type PersonaFormData,
+  type PersonaMode,
   type PersonaQuestionnaire,
   type ShareWillingness,
   type UserProfileFormData,
@@ -74,6 +75,117 @@ export const REQUIRED_QUESTIONNAIRE_KEYS: Array<keyof PersonaQuestionnaire> = [
   'contentRedlines',
   'styleRedlines',
 ]
+
+/** 简易版左侧预览 / 进度用的 7 字段（与旧定位卡一致） */
+export const SIMPLE_PREVIEW_KEYS: Array<keyof UserProfileFormData> = [
+  'industry',
+  'role',
+  'primaryBusiness',
+  'targetClients',
+  'clientPainPoints',
+  'desiredImage',
+  'additionalInfo',
+]
+
+export type QuestionnairePreviewField = {
+  id: string
+  label: string
+  value: string
+}
+
+function isRequiredKeyFilled(
+  form: PersonaQuestionnaire,
+  key: keyof PersonaQuestionnaire,
+): boolean {
+  if (key === 'accountGoals') return form.accountGoals.length > 0
+  const value = form[key]
+  if (typeof value === 'string') return Boolean(value.trim())
+  return Boolean(value)
+}
+
+/** 按简易 / 高级模式统计已填必填项 */
+export function questionnaireProgressForMode(
+  form: PersonaFormData | null | undefined,
+  mode: PersonaMode,
+): { filled: number; total: number } {
+  if (mode === 'simple') {
+    const simple = projectLegacyUserForm(form)
+    let filled = 0
+    for (const key of SIMPLE_PREVIEW_KEYS) {
+      if (String(simple[key] ?? '').trim()) filled += 1
+    }
+    return { filled, total: SIMPLE_PREVIEW_KEYS.length }
+  }
+  const q = normalizeQuestionnaire(form)
+  let filled = 0
+  for (const key of REQUIRED_QUESTIONNAIRE_KEYS) {
+    if (isRequiredKeyFilled(q, key)) filled += 1
+  }
+  return { filled, total: REQUIRED_QUESTIONNAIRE_KEYS.length }
+}
+
+const PAID_STATUS_LABELS: Record<Exclude<PaidClientStatus, ''>, string> = {
+  yes: '有付费客户',
+  none: '暂无付费客户',
+  unsure: '不确定',
+}
+
+const ACCOUNT_GOAL_LABELS: Record<AccountGoal, string> = {
+  consult: '咨询获客',
+  service: '服务成交',
+  product: '产品销售',
+  influence: '影响力',
+  other: '其他',
+}
+
+function formatQuestionnaireFieldValue(
+  form: PersonaQuestionnaire,
+  key: keyof PersonaQuestionnaire,
+): string {
+  if (key === 'accountGoals') {
+    return form.accountGoals.map((goal) => ACCOUNT_GOAL_LABELS[goal] ?? goal).join('、')
+  }
+  if (key === 'paidStatus') {
+    return form.paidStatus ? PAID_STATUS_LABELS[form.paidStatus] ?? form.paidStatus : ''
+  }
+  const value = form[key]
+  return typeof value === 'string' ? value : ''
+}
+
+const QUESTIONNAIRE_LABEL_BY_KEY = new Map<keyof PersonaQuestionnaire, string>()
+
+function labelForQuestionnaireKey(key: keyof PersonaQuestionnaire): string {
+  if (QUESTIONNAIRE_LABEL_BY_KEY.size === 0) {
+    for (const [label, field] of QUESTIONNAIRE_LABELS) {
+      QUESTIONNAIRE_LABEL_BY_KEY.set(field, label)
+    }
+    QUESTIONNAIRE_LABEL_BY_KEY.set('paidStatus', '是否有付费客户')
+    QUESTIONNAIRE_LABEL_BY_KEY.set('accountGoals', '账号目标')
+  }
+  return QUESTIONNAIRE_LABEL_BY_KEY.get(key) ?? String(key)
+}
+
+/** 左侧预览字段列表：简易 7 项 / 高级 19 必填项 */
+export function questionnairePreviewFieldsForMode(
+  form: PersonaFormData | null | undefined,
+  mode: PersonaMode,
+  simpleLabels?: Partial<Record<keyof UserProfileFormData, string>>,
+): QuestionnairePreviewField[] {
+  if (mode === 'simple') {
+    const simple = projectLegacyUserForm(form)
+    return SIMPLE_PREVIEW_KEYS.map((key) => ({
+      id: key,
+      label: simpleLabels?.[key] ?? key,
+      value: String(simple[key] ?? ''),
+    }))
+  }
+  const q = normalizeQuestionnaire(form)
+  return REQUIRED_QUESTIONNAIRE_KEYS.map((key) => ({
+    id: String(key),
+    label: labelForQuestionnaireKey(key),
+    value: formatQuestionnaireFieldValue(q, key),
+  }))
+}
 
 function readString(src: Record<string, unknown>, key: string): string {
   const value = src[key]
@@ -212,7 +324,7 @@ export function projectLegacyUserForm(form: PersonaFormData | null | undefined):
   }
 }
 
-/** 简易版 7 字段一键继承到高级版 25 项问卷 */
+/** 简易版 7 字段继承到高级版：只填空，不覆盖已有值（含用户主动清空后的空值保护靠调用方只在切换/加载时触发一次） */
 export function inheritSimpleToAdvanced(
   simpleForm: Partial<UserProfileFormData> | null | undefined,
   existingAdvanced?: Partial<PersonaQuestionnaire> | null,
@@ -229,6 +341,26 @@ export function inheritSimpleToAdvanced(
     }
   }
   return normalizeQuestionnaire(result)
+}
+
+/** 简易版是否有可继承内容 */
+export function hasSimplePersonaContent(
+  form: Partial<UserProfileFormData> | PersonaFormData | null | undefined,
+): boolean {
+  const simple = projectLegacyUserForm(form as PersonaFormData)
+  return Object.values(simple).some((value) => Boolean(value?.trim()))
+}
+
+/**
+ * 进入高级版时自动继承：有简易内容则填空合并；无简易内容则原样规范化。
+ * 不覆盖高级版已填写字段；用户清空后不会在同一次停留高级版期间被反复回填。
+ */
+export function applySimpleInheritForAdvanced(
+  form: PersonaFormData | null | undefined,
+): PersonaQuestionnaire {
+  const current = normalizeQuestionnaire(form)
+  if (!hasSimplePersonaContent(current)) return current
+  return inheritSimpleToAdvanced(projectLegacyUserForm(current), current)
 }
 
 export function isQuestionnaireEmpty(form: PersonaQuestionnaire): boolean {

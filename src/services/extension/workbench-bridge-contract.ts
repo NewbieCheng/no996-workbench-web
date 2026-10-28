@@ -104,6 +104,8 @@ export type WorkbenchBridgeMethod =
   | 'connection.getStatus'
   | 'accounts.list'
   | 'accounts.connect'
+  | 'materials.list'
+  | 'materials.read'
   | 'collection.resolve'
   | 'collection.search'
   | 'asset.fetch'
@@ -114,6 +116,8 @@ export interface WorkbenchBridgeRequestPayloadMap {
   'connection.getStatus': Record<string, never>;
   'accounts.list': Record<string, never>;
   'accounts.connect': { platformId: WorkbenchBridgePlatformId };
+  'materials.list': { offset: number; limit: number };
+  'materials.read': { ids: string[] };
   'collection.resolve': { url: string };
   'collection.search': {
     platformId: WorkbenchBridgePlatformId;
@@ -132,6 +136,8 @@ export interface WorkbenchBridgeRequestPayloadMap {
 }
 
 export interface WorkbenchBridgeResponsePayloadMap {
+  'materials.list': { ok: boolean; items: Array<{ id: string; item: WorkbenchBridgeCollectedItem }>; hasMore: boolean; error?: string };
+  'materials.read': { ok: boolean; items: Array<{ id: string; item: WorkbenchBridgeCollectedItem }>; error?: string };
   'connection.getStatus': WorkbenchBridgeStatus;
   'accounts.list': { accounts: WorkbenchBridgeAccountSummary[] };
   'accounts.connect': { ok: boolean; message?: string };

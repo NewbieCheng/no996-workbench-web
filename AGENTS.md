@@ -52,12 +52,49 @@
 - **执行与记录**：用 `StageRunner`（`runModel` / `runModelWithTools` / `runTool` / `runAlgo`），它自动记录步骤状态、耗时、实际提示词与每步输出，页面无需自己拼装。注意「记录」不等于「展示」：提示词只进快照供本机排障，界面不得渲染（见上方「查看创作过程」的边界）。流程大图侧栏文案统一走 `src/agent/stage-output-preview.ts` 的 `resolveStageDisplayText` / `formatStageOutputPreview`。
 - **流式输出**：耗时步骤传 `onDelta` 即可让用户看到正文在长出来。**必须**经 `createDisplayDelta` 过滤后再给界面 —— flow 的 `onDelta` 入参是原始 JSON 增量，直接透出去会把花括号和字段名给用户看。
 - **提示词**：`renderTemplate(template, vars, { mark, empty })` 用 `«变量»` 占位；变量缺失时填 `empty`（默认 `无`），不留占位符。写进提示词前用 `withCommonRules` 追加通用约束。
-- **人设注入**：**消费方**三页（视频脚本 / 直播脚本 / 爆款标题）用同一个 `usePersonaInjection()` + 标题行右上角的 `PersonaInjectionToggle`（挂在 `Page` 的 `actions` 插槽；`titleExtra` 渲染在标题左侧，不是右上角）。人设页面本身**不注入**（它是定义方，不是消费方）。**默认开启**；关闭时页面传 `personaContent: undefined`，flow 必须**一个字都不注入**。字段的标签写在提示词模板里（`表达参考人设：«persona»`），flow 只传正文 —— 两处都加前缀会拼出双标题。人设只进提示词，绝不进流式展示。
+- **人设注入**：**消费方**页面（视频脚本 / 直播脚本 / 爆款标题 / 朋友圈 / 公众号 / 产品定位等）统一用 `usePersonaInjection()` 管状态 + 右上角 `PersonaBinding`（`src/components/agent/PersonaBinding.tsx`，挂在 `Page` 的 `actions` 插槽，样式复用 `.persona-injection`）。`PersonaInjectionToggle` 只在 IP 视频「高级设置」这类对话框里用，不再作为页头控件。**禁止在页面正文里自造「已关联人设档案 / 默认分身」卡片**——人设是本次生成的开关，属于页头工具区。人设页面本身**不注入**（它是定义方，不是消费方）。**默认开启**；关闭时页面传 `personaContent: undefined`，flow 必须**一个字都不注入**。字段的标签写在提示词模板里（`表达参考人设：«persona»`），flow 只传正文 —— 两处都加前缀会拼出双标题。人设只进提示词，绝不进流式展示。
 - **人设表单预填**（与注入并行、不替代）：启用注入且本机有选中档时，用定位卡片 `formData` 经 `deriveScriptPrefillPatch` / `deriveTitlesPrefillPatch`（`src/lib/persona-form-prefill.ts`）+ `usePersonaFormPrefill` **只填空**已空的表单项；用户已改的不覆盖；关注入不清空表单；换档对新档再填空。`desiredImage` 等语气字段只走 `personaContent` 注入，不写入脚本选填表。细则见 `docs/reusable-assets.md` §3.7。
 - **硬校验**：`runHardCheck` 是唯一合规判定入口（内置违禁词、医疗/收益承诺、虚假紧迫感、无来源数字、分段字数）。分段字数默认 1.3 倍容差；标题这类有硬上限的场景传 `segmentCharTolerance: 1`；`segmentId` 用显示序号，评审与必改清单才能定位到具体那一条。
 - **演示模式**：`createMockAgentClients({ mockResponder })`，应答器**由调用方显式传入业务上下文**（主题/读者/平台），禁止从提示词里正则抠字段 —— 提示词一改就会静默退化成占位符。
 - **无中间截断**：不要在解析阶段按上限截断文本冒充合格产物；超限交给硬校验判为需改项，由改写步骤定向收敛。
 - **收敛**：轮次上限 ≤ 3；留存曲线必须单调不增且起点 100；评分/点击率等预测值不得由随机或占位数派生。
+
+## 页面骨架与控件归属（所有模块统一，2026-10-27 沉淀；2026-10-28 补顶栏对齐）
+新页面**先套骨架，再填内容**；不允许每个模块自己发明页头、上传和人设控件。
+
+**骨架**：`Page`（`src/components/WorkbenchUI.tsx`，`chrome="workbench-tool"`，传 `moduleId` + `layoutClassName`），四个插槽各管一件事：
+
+| 插槽 | 放什么 | 现成件 |
+| --- | --- | --- |
+| `title` | 功能名（导航同名，2–4 字） | `Page` 自带（创作页顶栏用小标题，不靠大号 h2） |
+| `titleExtra`（标题右侧） | 流程说明、视图/历史切换、页内模式切换 | `AgentFlowExplain`、`WorkbenchPageViewTabs` |
+| `actions`（右上角） | 用 `WorkbenchPageChromeActions` 包一层：人设绑定、主操作、次要工具 | `PersonaBinding`、`Button`、`WorkbenchDevToolsMenu` |
+| `headerTrailing`（最右） | 极少数全局工具（一般不用） | 直接传节点，**不要**塞 `WorkbenchPageChromeActions` |
+
+**创作页顶栏贴齐（硬规则，漏登就会顶栏下沉 ~56px）**：
+
+- 只写 `chrome="workbench-tool"` **不够**。还必须在 `src/app/workbench-surface.ts` 的 `WORKBENCH_SURFACE_BY_SEGMENT` 登记路由段，至少含 `workbench-page--fluid workbench-tool-page`（可再加 `<name>-workbench-page` 供模块 CSS 挂载）。
+- 漏登时 `.wb-page-area` 没有 `workbench-tool-page`，`wb-page-area__scroll` 仍带默认 `padding: 32px 36px 48px`，顶栏 `top-chrome` 会离开滚动区顶边（人设页 `top≈38` 对齐，漏登页会漂到 `top≈94`）。
+- 对照正确页：人设卡（`persona`）。样式真相在 `src/styles/workbench-page-chrome.css`（`.wb-page-area.workbench-tool-page .wb-page-area__scroll { padding: 0 }`）。
+- **禁止**在模块 CSS 里再给 `__scroll` / `__top-chrome` 加顶 padding 去「对齐」——先查 surface 是否漏登。
+
+**控件归属规则**：
+
+- **人设** → 右上角 `PersonaBinding`（配 `usePersonaInjection`）。不要页面内再造「已关联人设 / 默认分身」卡片或按钮。
+- **上传附件** → `@no996/ui/attachment-uploader` 的 `AttachmentUploader`（`kind` / `accept` / `maxBytes` / `layout="list"` 或 `"grid"`）。不要手写拖拽区、文件 input 和文件列表。
+- **页签** → `@no996/ui/tabs` 的 `TabsList variant="toolbar"`；**表格** → `@no996/ui/data-table`；**表单项** → `@no996/ui` 的 `Field` / `Input` / `Textarea` / `Select`；**流程进度** → `AgentProgress` + `AgentFlowExplain`；**提示** → `toastSuccess` / `toastError`。以上都已在 `docs/reusable-assets.md` 登记，先查再写。
+- **产物呈现**：结构化产物按固定模板解析成视图模型再渲染（参考 `features/product-position/lib/report-parser.ts`），不要直接把 Markdown 原样丢给用户。
+- **版式**：需要「多记录常驻对照」时可用左轨（`minmax(220px, 280px)`）+ 右内容；**产品定位等以生成主任务为中心的页**改用主区顶栏切换器，不强制左轨。编号语言与首页 bento 一致（11px / 700 / letter-spacing .14em）。区块之间用 1px 分隔线，不用大卡片套整页。
+
+**新增一个左侧模块的最小清单**（照人设 / 标题页抄；**勿只抄页面 JSX 而漏 surface**）：
+
+1. `src/app/navigation.ts` 加导航项（`PageId`、路径、`availability`、`badge`）；`src/App.tsx` 加路由；`src/i18n/locales/*/workbench.json` 加 `nav*` 文案。
+2. **`src/app/workbench-surface.ts` 登记该路由段**（创作工具页：`workbench-page--fluid workbench-tool-page`；需要模块专属样式时再加 `<segment>-workbench-page`）。漏这一步顶栏必错位。
+3. 页面：`src/features/<name>/<Name>Page.tsx` + `views/` + `<name>.css`；`Page` 传 `chrome="workbench-tool"` + `moduleId`；页面只做装配，状态与副作用留在页面层。
+4. 数据与服务：`src/services/<name>/`（类型 + IndexedDB 仓储 + `ownerSub` 隔离），产物原文永久保留、失败不覆盖上一份有效结果。
+5. 生成：`features/<name>/agent/*-flow.ts`（`defineFlow` + `StageRunner`）并在 `src/features/agent-flows.ts` 注册；提示词放 `src/prompts/`。
+6. 后台任务：`WorkbenchTaskKind` 登记 → `executors/` 实现 → `WorkbenchTaskProvider` 暴露 `enqueue*` → `task-display` 补名称与完成提示 → 页面按 `taskId` 观察真实状态。
+7. 质量：纯逻辑补 `*.test.mjs` 并挂进 `package.json` 脚本；`scripts/agent-flow-check/entry.ts` 增加注册与离线端到端断言；`docs/<name>.md` 记录与原型差异；可复用件补进 `docs/reusable-assets.md`。
 
 ## 复杂创作页面布局与调试规范（2026-10-14 沉淀）
 - **输入向导整块折叠/展开**：
@@ -69,8 +106,13 @@
 
 ## UI 和质量
 - 延用本地 `src/index.css`、`src/App.css` 与 `src/styles/` 的品牌主题和排版；主题色、字体、radius 用本地 CSS 令牌。
-- 保持表单标签、键盘焦点、错误状态、加载/空态和减少动态效果支持（这些是长期要维持的体验基线，不是每个改动都要逐项重做的清单）。输入框与文本域聚焦不使用品牌色光圈或高亮特效；键盘焦点保留中性、清晰可见的提示，错误状态仍须可辨识。窄屏适配尽力而为，不追求全站像素级一致。
+- 保持表单标签、键盘焦点、错误状态、加载/空态和减少动态效果支持（这些是长期要维持的体验基线，不是每个改动都要逐项重做的清单）。输入框与文本域聚焦**不出现** outline / ring / 边框变色（含产品定位、小红书/公众号标题、IP 视频 brief 等）；靠光标表明焦点即可。按钮等非文本控件仍保留中性 `:focus-visible`；错误状态仍须可辨识。窄屏适配尽力而为，不追求全站像素级一致。
 - 改本仓 UI、组件、样式、文档可以直接动手。桌面 / 参考项目 / 后端 / 生产配置不要动。
 - 2026-10-07 用户已授权通过现有 SSH 密钥向部署主机发布独立演示站点 agent.no996ai.cn，内部监听 127.0.0.1:8897，并仅为该子域名申请 HTTPS 证书和新增 Nginx 配置。允许修改站点目录与该子域名的独立配置；禁止改官网、其他服务、后端、DNS 或防火墙。不处理或记录聊天中暴露的密码。**部署主机、SSH 用户、站点目录与证书路径只写在本地 `DEPLOYMENT.md`（不入库，见 `.gitignore`）；任何文档、脚本与示例中都不得出现真实主机地址或凭据。** 超出上述范围先列具体变更并取得确认。
 - 完成时按需验证、默认免测：文档/文案/注释/样式与局部页面小改直接免测，不跑 `typecheck`/`build`/回归测试；`npm run typecheck`、`npm run build`、`npm run test:agent`、`npm run test:voice-tts`（改了生成流程再加 `npm run test:flows`）仅在用户点名验证、提交/发版前、或改动触及构建与公共契约时再跑。收尾只报改了什么、跑了哪条（或免测）、结果是什么，不再每轮必跑。
 - 改了 agent 流程、硬校验、评分/留存算法或任务队列判定后，优先补对应断言（纯函数靠 `npm run test:agent` / `test:voice-tts` 兜住静默退化）；用户明确说免测时可不补，收尾如实说明即可。
+
+## 交付与提交（2026-10-27 约定）
+- 默认**只改本地工作区**：改完代码、`npm run typecheck` 能过即交付，**不要**自行 `git commit` / `git push` / 发版。用户明确说「提交 / 推送 / 上线」时再做，且提交信息写清改了什么。
+- 用户要求「先跑通、不用测试」时，按其指令执行：只保证编译与接线正确，不追加回归与真机验证；后续微调由用户逐条给出。
+- 汇报时只说：改了哪些文件、关键行为变化、跑了哪条检查（或免测）、还有哪些已知边界，不夸大验证范围。

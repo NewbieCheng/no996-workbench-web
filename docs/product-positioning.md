@@ -27,8 +27,10 @@
 ```
 src/features/product-position/
   ProductPositionPage.tsx        页面外壳、选择/自动保存/入队/回填
-  views/ProductRail.tsx          左侧记录轨（搜索、状态徽标、删除）
-  views/ProductInputForm.tsx     资料录入（人设条、基础信息、规格价格、附件、四问）
+  views/ProductSwitcher.tsx      Page 顶栏产品切换（下拉、条件搜索、新建/删除）
+  views/ProductAssistField.tsx   字段壳 + AIEditPopover / 类型预设
+  views/ProductInputForm.tsx     资料录入（首屏基本信息；附件与补充题默认折叠）
+  agent/form-assist.ts           单字段润色（demo / 正式）
   views/ProductReport.tsx        公共信息条 + 5 页签 + 定位分析详情 + 原文
   views/blocks/ReportBlocks.tsx  字段、引用、表格、可展开条目、复制按钮
   agent/product-position-flow.ts 5 阶段 flow（准备→撰写→校验→修复→整理）
@@ -42,8 +44,14 @@ src/prompts/product-positioning.ts  方法论要点 + 正式模板 + 提示词�
 src/services/workbench-tasks/executors/product-positioning.ts  后台执行器
 ```
 
-## 4. 生成链路
+**控件归属**（与 `AGENTS.md`「页面骨架与控件归属」一致）：
 
+- 顶栏 `actions`：自动保存状态（有变化才显示）→ 人设 → `+` 新建（仅图标）→ **生成定位分析（最右）**。
+- 人设绑定用通用 `PersonaBinding` + `usePersonaInjection()`；关闭即本次不注入。
+- 文本字段用 `ProductAssistField`（`AIEditPopover` + 可选 `FieldPresetPicker`）；附件用 `AttachmentUploader`（`kind="doc"`、txt/md/docx、4MB）。
+- 不恢复 sticky 第二顶栏；AI 只用 Popover Portal，避免全屏遮罩导致点不了。
+
+## 4. 生成链路
 | 阶段 | kind | 说明 |
 |---|---|---|
 | prepare-context | algo | 合并产品、四问、附件正文、人设问卷与 Profile；资料不足时直接以 `ProductInputInsufficientError` 停在模型之前 |

@@ -68,6 +68,7 @@ import {
 } from '../../../../components/capture-settings-shared'
 import {
   XHS_CAPTURE_MIN_COMMENTS_OPTIONS,
+  XHS_CAPTURE_NOTE_TYPE_DEFAULT,
   XHS_CAPTURE_NOTE_TYPE_OPTIONS,
   XHS_CAPTURE_SEARCH_RANGE_OPTIONS,
 } from '../../../extension/capture/xhs-keyword-filter-options'
@@ -188,7 +189,7 @@ export function StepSearchCollect({
   const [sortType, setSortType] = useState('most_liked')
   const [minLikes, setMinLikes] = useState('any')
   const [minComments, setMinComments] = useState('any')
-  const [xhsNoteType, setXhsNoteType] = useState('all')
+  const [xhsNoteType, setXhsNoteType] = useState(XHS_CAPTURE_NOTE_TYPE_DEFAULT)
   const [xhsSearchRange, setXhsSearchRange] = useState('all')
   const [publishTime, setPublishTime] = useState('all')
 

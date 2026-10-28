@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, FileText, Plus, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileText, Plus, Sparkles, X } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@no996/ui/dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@no996/ui/tooltip'
 import { Page } from '../../components/WorkbenchUI'
 import {
   WorkbenchPageChromeActions,
@@ -12,7 +12,7 @@ import { AgentFlowExplain } from '../../components/agent/AgentFlowExplain'
 import { AgentProgress } from '../../components/agent/AgentProgress'
 import { resolveAgentMode } from '../../agent'
 import type { AgentRunSnapshot } from '../../agent'
-import { toastError, toastSuccess } from '../../lib/toast'
+import { toastError } from '../../lib/toast'
 import {
   createEmptyProduct,
   deleteProduct as deleteProductRecord,
@@ -31,7 +31,9 @@ import {
   type ProductReportSnapshot,
   type ReportInputSnapshot,
 } from '../../services/product-position'
-import { getActivePersona, normalizeQuestionnaire } from '../../services/persona'
+import { normalizeQuestionnaire } from '../../services/persona'
+import { usePersonaInjection } from '../../components/agent/PersonaInjection'
+import { PersonaBinding } from '../../components/agent/PersonaBinding'
 import {
   useWorkbenchTaskActions,
   useWorkbenchTasks,
@@ -40,10 +42,12 @@ import {
 import { extractDocumentText, resolveDocumentKind } from '../../lib/chat-attachments/parse-document'
 import { PRODUCT_POSITIONING_STAGES } from './agent/product-position-flow'
 import { checkAdequacy } from './lib/adequacy'
-import { ProductRail } from './views/ProductRail'
+import { ProductSwitcher } from './views/ProductSwitcher'
 import { ProductInputForm } from './views/ProductInputForm'
 import { ProductReport } from './views/ProductReport'
 import './product-position.css'
+
+type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
 const AUTOSAVE_DELAY = 700
 const RUN_POLL_INTERVAL = 1200
@@ -60,15 +64,15 @@ function hasDraftContent(product: ProductRecord): boolean {
 
 /** 任务入队后，页面只观察真实状态；不伪造进度百分比。 */
 export default function ProductPositionPage() {
-  const navigate = useNavigate()
   const owner = useMemo(() => getProductPositionOwner(), [])
   const isMock = useMemo(() => resolveAgentMode() === 'demo', [])
   const tasks = useWorkbenchTasks({ kind: 'product_positioning' })
   const { enqueueProductPositioning, getPayload } = useWorkbenchTaskActions()
+  // 与爆款标题等创作页同一套人设绑定：右上角选择本次引用哪一档。
+  const personaInject = usePersonaInjection()
 
   const [items, setItems] = useState<ProductListItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draft, setDraft] = useState<ProductRecord | null>(null)
   const [report, setReport] = useState<ProductReportSnapshot | null>(null)
@@ -78,8 +82,8 @@ export default function ProductPositionPage() {
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [runSnapshot, setRunSnapshot] = useState<AgentRunSnapshot | null>(null)
-  const [personaName, setPersonaName] = useState<string | undefined>(undefined)
   const [showOriginal, setShowOriginal] = useState(false)
+  const [saveState, setSaveState] = useState<SaveState>('idle')
 
   const saveTimer = useRef<number | null>(null)
   const draftRef = useRef<ProductRecord | null>(null)
@@ -108,9 +112,8 @@ export default function ProductPositionPage() {
     let cancelled = false
     void (async () => {
       try {
-        const [rows, activePersona] = await Promise.all([refresh(), getActivePersona()])
+        const rows = await refresh()
         if (cancelled) return
-        setPersonaName(activePersona?.name)
         if (rows.length > 0) {
           const first = rows[0]
           setSelectedId(first.product.id)
@@ -130,9 +133,16 @@ export default function ProductPositionPage() {
 
   const persistDraft = useCallback(
     async (product: ProductRecord) => {
-      const saved = await saveProduct(product)
-      await refresh()
-      return saved
+      setSaveState('saving')
+      try {
+        const saved = await saveProduct(product)
+        await refresh()
+        setSaveState('saved')
+        return saved
+      } catch (error) {
+        setSaveState('error')
+        throw error
+      }
     },
     [refresh],
   )
@@ -141,8 +151,11 @@ export default function ProductPositionPage() {
     (next: ProductRecord) => {
       if (saveTimer.current != null) window.clearTimeout(saveTimer.current)
       if (!hasDraftContent(next)) return
+      setSaveState('saving')
       saveTimer.current = window.setTimeout(() => {
-        void persistDraft(next)
+        void persistDraft(next).catch(() => {
+          /* 状态已在 persistDraft 里标记 */
+        })
       }, AUTOSAVE_DELAY)
     },
     [persistDraft],
@@ -200,7 +213,7 @@ export default function ProductPositionPage() {
     setMode('input')
     setAnalysisError(null)
     setFormErrors({})
-    setQuery('')
+    setSaveState('saved')
   }, [owner, refresh])
 
   const removeProduct = useCallback(
@@ -282,23 +295,15 @@ export default function ProductPositionPage() {
     [updateDraft],
   )
 
-  const saveDraftManually = useCallback(async () => {
-    const current = draftRef.current
-    if (!current) return
-    if (saveTimer.current != null) window.clearTimeout(saveTimer.current)
-    await persistDraft(current)
-    toastSuccess('已保存草稿')
-  }, [persistDraft])
-
   const buildSnapshot = useCallback(async (product: ProductRecord): Promise<ReportInputSnapshot> => {
-    const active = await getActivePersona()
-    const persona = active
+    const record = personaInject.enabled ? personaInject.record : null
+    const persona = record
       ? {
-          id: active.id,
-          name: active.name,
-          updatedAt: active.updatedAt,
-          questionnaire: normalizeQuestionnaire(active.formData) as unknown as Record<string, string | string[]>,
-          content: active.content,
+          id: record.id,
+          name: record.name,
+          updatedAt: record.updatedAt,
+          questionnaire: normalizeQuestionnaire(record.formData) as unknown as Record<string, string | string[]>,
+          content: record.content,
         }
       : undefined
     return {
@@ -311,7 +316,7 @@ export default function ProductPositionPage() {
         text: file.text,
       })),
     }
-  }, [])
+  }, [personaInject.enabled, personaInject.record])
 
   const analyze = useCallback(async () => {
     const current = draftRef.current
@@ -425,32 +430,105 @@ export default function ProductPositionPage() {
       description="建产品档案，生成定位、优势与营销表达底稿"
       chrome="workbench-tool"
       titleExtra={
-        <WorkbenchPageChromeLeading>
+        <WorkbenchPageChromeLeading className="pp-chrome-leading">
+          {selected ? (
+            <>
+              <div className="pp-main__views" role="tablist" aria-label="产品视图">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'input'}
+                  className={`pp-view-tab${mode === 'input' ? ' is-active' : ''}`}
+                  onClick={() => setMode('input')}
+                >
+                  资料
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'report'}
+                  className={`pp-view-tab${mode === 'report' ? ' is-active' : ''}`}
+                  disabled={!report}
+                  onClick={() => report && setMode('report')}
+                >
+                  报告
+                  {report ? <span className="pp-view-tab__dot" aria-hidden="true" /> : null}
+                </button>
+              </div>
+              <PersonaBinding
+                options={personaInject.options}
+                value={personaInject.persona}
+                onChange={(persona) => personaInject.selectPersona(persona?.id ?? null)}
+              />
+              {isMock ? <span className="pp-badge pp-badge--demo">演示</span> : null}
+            </>
+          ) : null}
           <AgentFlowExplain defs={PRODUCT_POSITIONING_STAGES} lang="zh" />
         </WorkbenchPageChromeLeading>
       }
       actions={
         <WorkbenchPageChromeActions>
-          <Button type="button" variant="toolbar" size="sm" onClick={() => void createProduct()}>
-            <Plus aria-hidden="true" />
-            新建产品
-          </Button>
+          {selected && (saveState === 'saving' || saveState === 'saved' || saveState === 'error') ? (
+            <span className="pp-save-status" role="status">
+              {saveState === 'saving' ? (
+                '保存中…'
+              ) : saveState === 'saved' ? (
+                <>
+                  <CheckCircle2 size={13} className="text-emerald-500 shrink-0" aria-hidden="true" />
+                  已保存
+                </>
+              ) : (
+                '保存失败'
+              )}
+            </span>
+          ) : null}
+          {selected ? (
+            <ProductSwitcher
+              items={items}
+              selectedId={selectedId ?? undefined}
+              loading={loading}
+              currentName={selected.name}
+              onSelect={(id) => void selectProduct(id)}
+              onCreate={() => void createProduct()}
+              onDelete={(id) => void removeProduct(id)}
+            />
+          ) : null}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="toolbar"
+                  size="icon-sm"
+                  aria-label="新建产品"
+                  onClick={() => void createProduct()}
+                />
+              }
+            >
+              <Plus size={15} aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">新建产品</TooltipContent>
+          </Tooltip>
+          {selected && mode === 'input' ? (
+            <Button
+              type="button"
+              variant="generate"
+              size="sm"
+              onClick={() => void analyze()}
+              disabled={generating || !selected.name.trim()}
+              aria-busy={generating}
+              aria-label="生成产品定位与优势分析"
+            >
+              <Sparkles aria-hidden="true" />
+              {generating ? '正在生成…' : '生成定位分析'}
+            </Button>
+          ) : null}
         </WorkbenchPageChromeActions>
       }
       defaultWidth={1120}
       layoutClassName="pp-module-layout"
     >
       <div className="pp-page">
-        <ProductRail
-          items={items}
-          selectedId={selectedId ?? undefined}
-          query={query}
-          loading={loading}
-          onQueryChange={setQuery}
-          onSelect={(id) => void selectProduct(id)}
-          onDelete={(id) => void removeProduct(id)}
-        />
-
         <div className="pp-main">
           {!selected ? (
             <div className="pp-empty">
@@ -466,35 +544,6 @@ export default function ProductPositionPage() {
             </div>
           ) : (
             <>
-              <div className="pp-main__bar">
-                <div className="pp-main__title">
-                  <h2>{selected.name.trim() || '未命名产品'}</h2>
-                  {isMock ? <span className="pp-badge pp-badge--demo">演示</span> : null}
-                </div>
-                <div className="pp-main__views" role="tablist" aria-label="产品视图">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'input'}
-                    className={`pp-view-tab${mode === 'input' ? ' is-active' : ''}`}
-                    onClick={() => setMode('input')}
-                  >
-                    资料
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'report'}
-                    className={`pp-view-tab${mode === 'report' ? ' is-active' : ''}`}
-                    disabled={!report}
-                    onClick={() => report && setMode('report')}
-                  >
-                    报告
-                    {report ? <span className="pp-view-tab__dot" aria-hidden="true" /> : null}
-                  </button>
-                </div>
-              </div>
-
               {analysisError ? (
                 <div className="pp-alert" role="alert">
                   <AlertTriangle aria-hidden="true" />
@@ -535,16 +584,11 @@ export default function ProductPositionPage() {
               ) : (
                 <ProductInputForm
                   product={selected}
-                  personaName={personaName}
                   errors={formErrors}
-                  generating={generating}
-                  isMock={isMock}
+                  disabled={generating}
                   onChange={updateDraft}
                   onAddFiles={(files) => void addFiles(files)}
                   onRemoveAttachment={removeAttachment}
-                  onOpenPersona={() => navigate('/workbench/persona')}
-                  onSaveDraft={() => void saveDraftManually()}
-                  onGenerate={() => void analyze()}
                 />
               )}
 

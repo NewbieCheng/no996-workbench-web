@@ -15,6 +15,7 @@ import {
   type StreamTargetChunk,
 } from 'mediabunny'
 import { AUDIO_BITRATE, abortable, throwIfAborted, yieldTask, type PCM } from '../../media/pcm.ts'
+import { BoundedByteStore } from '../../media/byte-store.ts'
 
 export const FAST_EXPORT_VIDEO_BITRATE = 4_000_000
 
@@ -75,13 +76,13 @@ export async function recordComposition(input: RecordCompositionInput): Promise<
 async function recordWithWebCodecs(input: RecordCompositionInput): Promise<RecordCompositionResult> {
   const { canvas, durationMs, fps, pcm, signal, onProgress, onPaint } = input
   const totalFrames = Math.max(1, Math.round((durationMs / 1000) * fps))
-  const chunks: Uint8Array[] = []
+  const store = new BoundedByteStore()
   const output = new Output({
     target: new StreamTarget(
       new WritableStream<StreamTargetChunk>({
         write(chunk) {
           if (signal?.aborted) throw new DOMException('编码已取消', 'AbortError')
-          chunks.push(new Uint8Array(chunk.data))
+          store.write(chunk.position, chunk.data)
         },
       }),
       { chunked: true, chunkSize: 1024 * 1024 },
@@ -142,14 +143,17 @@ async function recordWithWebCodecs(input: RecordCompositionInput): Promise<Recor
     audioSource?.close()
     onProgress?.(0.95, '正在封装成片')
     await output.finalize()
-    const merged = mergeChunks(chunks)
+    throwIfAborted(signal)
+    const blob = store.toBlob('video/mp4')
+    if (!blob.size) throw new Error('视频封装结果为空')
     onProgress?.(1, '导出完成')
-    return { blob: new Blob([merged], { type: 'video/mp4' }), mime: 'video/mp4' }
+    return { blob, mime: 'video/mp4' }
   } catch (error) {
     await (cancelTask ?? output.cancel().catch(() => {}))
     throw error
   } finally {
     signal?.removeEventListener('abort', cancelOnAbort)
+    store.clear()
   }
 }
 
@@ -241,17 +245,6 @@ function pickRecorderMime(): string {
     'video/webm;codecs=vp8,opus',
     'video/webm',
   ].find((item) => MediaRecorder.isTypeSupported(item)) ?? ''
-}
-
-function mergeChunks(chunks: Uint8Array[]): Uint8Array<ArrayBuffer> {
-  const totalLen = chunks.reduce((acc, item) => acc + item.byteLength, 0)
-  const merged = new Uint8Array(totalLen)
-  let offset = 0
-  for (const item of chunks) {
-    merged.set(item, offset)
-    offset += item.byteLength
-  }
-  return merged
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {

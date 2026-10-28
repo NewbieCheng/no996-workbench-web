@@ -59,20 +59,27 @@ export class RetalkTaskObserver {
     this.changed()
   }
   async recover() {
-    const jobs = await this.repo.listJobsForUser(this.owner)
-    for (const job of jobs) {
-      if (!this.canRun()) return
-      if (job.kind !== 'digital_human_retalk' || job.status !== 'running') continue
-      await withTaskLock(`retalk-job:${job.id}`, async () => {
-        const current = await this.read(job.id)
-        if (!this.canRun() || current.job.status !== 'running') return
-        // A crash between the local running marker and the durable pre-request marker is safe to requeue.
-        if (!current.payload.taskId && !current.payload.submissionAttempted) {
-          await this.repo.patchJob(job.id, { status: 'queued', startedAt: undefined })
-          this.changed()
-        }
-      })
-    }
+    await withTaskLock(`retalk-observer:${this.owner}`, async () => {
+      const jobs = await this.repo.listJobsForUser(this.owner)
+      for (const job of jobs) {
+        if (!this.canRun()) return
+        if (job.ownerUserId !== this.owner || job.kind !== 'digital_human_retalk' || job.status !== 'running') continue
+        const shouldRefresh = await withTaskLock(`retalk-job:${job.id}`, async () => {
+          const current = await this.read(job.id)
+          if (!this.canRun() || current.job.status !== 'running') return false
+          // A crash before the durable pre-request marker is safe to requeue.
+          if (!current.payload.taskId && !current.payload.submissionAttempted) {
+            await this.repo.patchJob(job.id, { status: 'queued', startedAt: undefined })
+            this.changed()
+          }
+          return !!current.payload.taskId && !retalkIsTerminal(current.payload.status) &&
+            (current.payload.observationPaused || Date.now() - (current.payload.lastCheckedAt ?? 0) >= retalkPollDelay(current.payload.status))
+        })
+        // Manual refresh resets the observation window and queries even after a long absence.
+        // Failed queries retain the real error; one task must not block recovery of the others.
+        if (shouldRefresh && this.canRun()) await this.refresh(job.id).catch(() => undefined)
+      }
+    })
   }
   async submit(id: string, explicitRetry = false) {
     return withTaskLock(`retalk-job:${id}`, async () => {

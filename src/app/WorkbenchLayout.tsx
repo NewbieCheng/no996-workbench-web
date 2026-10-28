@@ -19,6 +19,7 @@ import WorkbenchOutlet from './WorkbenchOutlet'
 import { grantComponentCatalogAccess } from './private-component-catalog-access'
 import { workbenchSurfaceClassFromPathname } from './workbench-surface'
 import { Button } from '@no996/ui/button'
+import { GlassBadge } from '@no996/ui/GlassBadge'
 import { HoverTip } from '@no996/ui/tooltip'
 import {
   DropdownMenu,
@@ -395,7 +396,11 @@ function Sidebar({
           <span className="wb-nav-item wb-nav-item--desktop-only" aria-disabled="true">
             <WorkbenchNavIcon icon={item.icon} brandSrc={item.brandIcon} />
             <span>{label}</span>
-            {!iconRail && <span className="wb-desktop-badge">{t('desktopOnlyBadge')}</span>}
+            {!iconRail ? (
+              <GlassBadge dot={false} className="wb-desktop-badge wb-nav-glass-badge">
+                {t('desktopOnlyBadge')}
+              </GlassBadge>
+            ) : null}
           </span>
         </HoverTip>
       )
@@ -423,7 +428,14 @@ function Sidebar({
               <WorkbenchNavIcon icon={item.icon} brandSrc={item.brandIcon} />
               <span>{label}</span>
               {!iconRail && item.badge === 'beta' ? (
-                <span className="wb-nav-badge wb-nav-badge--beta">{t('navBetaBadge')}</span>
+                <GlassBadge dot={false} className="wb-nav-badge wb-nav-badge--beta wb-nav-glass-badge">
+                  {t('navBetaBadge')}
+                </GlassBadge>
+              ) : null}
+              {!iconRail && item.badge === 'new' ? (
+                <GlassBadge dot={false} className="wb-nav-badge wb-nav-badge--new wb-nav-glass-badge">
+                  {t('navNewBadge')}
+                </GlassBadge>
               ) : null}
             </>
           )}

@@ -42,6 +42,7 @@ import { clearAllMaterialFallbacks } from '../../services/materials/material-ass
 import { readMaterialPersistImages, writeMaterialPersistImages } from './materials/material-settings'
 import { toastInfo } from '../../lib/toast'
 import { ExtensionMaterialLibraryPanel, type GroupViewMode } from './materials/ExtensionMaterialLibraryPanel'
+import { ExtensionMaterialImport } from './materials/ExtensionMaterialImport'
 import { ExtensionCapturePanel, type CaptureMode } from './capture/ExtensionCapturePanel'
 
 // SVG illustration for Step 01: Open extension management
@@ -222,9 +223,13 @@ export default function ExtensionPage() {
 
   // 挂载初次加载及素材同步
   useEffect(() => {
+    let cancelled = false
+    setMaterials([])
+    setSelectedMaterialIds(new Set())
     if (userId != null) {
-      void materialRepository.listMaterials(userId).then(setMaterials)
+      void materialRepository.listMaterials(userId).then((list) => { if (!cancelled) setMaterials(list) })
     }
+    return () => { cancelled = true }
   }, [userId])
 
   // 实时探针：自动轮询 + 窗口聚焦监听，无需用户手动刷新网页
@@ -295,7 +300,8 @@ export default function ExtensionPage() {
   }
 
   const handleDeleteMaterials = async (ids: string[]) => {
-    await materialRepository.deleteMaterials(ids)
+    if (userId == null) return
+    await materialRepository.deleteMaterials(userId, ids)
     if (userId != null) {
       const updated = await materialRepository.listMaterials(userId)
       setMaterials(updated)
@@ -579,7 +585,7 @@ export default function ExtensionPage() {
                 {isConnected ? (
                   <div className="w-full py-2.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-semibold flex items-center justify-center gap-1.5">
                     <CheckCircle2 size={16} />{' '}
-                    {t('extension:connectedBadge', { version: status?.extensionVersion || '3.7.2' })}
+                    {t('extension:connectedBadge', { version: status?.extensionVersion || '3.7.4' })}
                   </div>
                 ) : (
                   <Button
@@ -815,6 +821,8 @@ export default function ExtensionPage() {
 
       {/* Tab 3: 本机纯素材资产库（多维分类与高颜值自媒体网格） */}
       {tab === 'materials' && (
+        <div className="space-y-4">
+        {userId != null && <ExtensionMaterialImport key={userId} userId={userId} onRefresh={refreshMaterials} />}
         <ExtensionMaterialLibraryPanel
           materials={materials}
           userId={userId}
@@ -827,6 +835,7 @@ export default function ExtensionPage() {
           onDeleteIds={handleDeleteMaterials}
           platformLabel={(platformId) => platformLabel(platformId, (k) => t(`extension:${k}`))}
         />
+        </div>
       )}
     </Page>
   )

@@ -819,6 +819,14 @@
   color: var(--foreground);
   background: transparent;
   box-sizing: border-box;
+  box-shadow: none;
+}
+
+.social-studio .editor-image-copy-title:focus,
+.social-studio .editor-image-copy-title:focus-visible {
+  border: none;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .social-studio .editor-image-copy-title::placeholder {
