@@ -26,6 +26,15 @@ const en: Record<string, string> = {
   '生成的是本地确定性样例，不调用真实模型、不扣积分。请核对内容后再使用。': 'This is a deterministic local demo. No model is called and no credits are charged. Review the content before use.',
 }
 export function usePanelCopy() { const { i18n } = useTranslation(); return (source: string) => i18n.language.startsWith('en') ? (en[source] ?? source) : source }
+/** `Children.map` always returns an array (even for one child). Components that
+ *  pass `children` into Base UI `render={…}` (e.g. HoverTip) need a single
+ *  ReactElement — restore that shape after mapping. */
+function mapChildrenPreserveShape(node: ReactNode, visitor: (child: ReactNode) => ReactNode): ReactNode {
+  const mapped = Children.map(node, visitor)
+  if (Array.isArray(mapped) && mapped.length === 1) return mapped[0]
+  return mapped
+}
+
 export function LocalizedPanelCopy({ children }: { children: ReactNode }) {
   const c = usePanelCopy()
   function visit(node: ReactNode): ReactNode {
@@ -33,14 +42,14 @@ export function LocalizedPanelCopy({ children }: { children: ReactNode }) {
       const trimmed = node.trim()
       return trimmed ? node.replace(trimmed, c(trimmed)) : node
     }
-    if (Array.isArray(node)) return Children.map(node, visit)
+    if (Array.isArray(node)) return mapChildrenPreserveShape(node, visit)
     if (!isValidElement<Record<string, unknown>>(node)) return node
     const props = { ...node.props }
     for (const key of ['title', 'description', 'label', 'hint', 'placeholder', 'aria-label', 'alt']) if (typeof props[key] === 'string') props[key] = c(props[key] as string)
     if (props.actions !== undefined) props.actions = visit(props.actions as ReactNode)
     if (Array.isArray(props.options)) props.options = (props.options as Array<Record<string, unknown>>).map(option => ({ ...option, label: typeof option.label === 'string' ? c(option.label) : option.label }))
-    if (props.children !== undefined) props.children = Children.map(props.children as ReactNode, visit)
+    if (props.children !== undefined) props.children = mapChildrenPreserveShape(props.children as ReactNode, visit)
     return cloneElement(node, props)
   }
-  return <div className="localized-panel-copy">{Children.map(children, visit)}</div>
+  return <div className="localized-panel-copy">{mapChildrenPreserveShape(children, visit)}</div>
 }

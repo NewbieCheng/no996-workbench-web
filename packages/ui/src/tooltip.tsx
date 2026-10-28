@@ -102,7 +102,16 @@ function HoverTip({
     if (suppressed) setHoverOpen(false)
   }, [suppressed])
 
-  if (!enabled || !label) return children
+  // LocalizedPanelCopy (and similar) may turn a single child into a 1-length
+  // array via Children.map; Base UI render= requires a real element.
+  const trigger = React.isValidElement(children)
+    ? children
+    : (React.Children.toArray(children).find(React.isValidElement) as
+        | React.ReactElement
+        | undefined)
+
+  if (!enabled || !label) return trigger ?? children
+  if (!trigger) return children
 
   return (
     <Tooltip
@@ -111,7 +120,7 @@ function HoverTip({
         if (!suppressed) setHoverOpen(next)
       }}
     >
-      <TooltipTrigger render={children} />
+      <TooltipTrigger render={trigger} />
       <TooltipContent side={side} sideOffset={sideOffset}>
         {label}
       </TooltipContent>

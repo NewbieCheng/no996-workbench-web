@@ -63,8 +63,12 @@ const focusClasses = 'focus-visible:outline-2 focus-visible:outline-offset-2 foc
 const reducedMotionClasses = 'motion-reduce:animate-none motion-reduce:transition-none motion-reduce:transform-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100'
 
 function DockTip({ label, motion, children }: { label: string; motion: boolean; children: React.ReactElement }) {
+  const trigger = React.isValidElement(children)
+    ? children
+    : (React.Children.toArray(children).find(React.isValidElement) as React.ReactElement | undefined)
+  if (!trigger) return children
   return <Tooltip>
-    <TooltipTrigger render={children} />
+    <TooltipTrigger render={trigger} />
     <TooltipContent className={cn('motion-reduce:animate-none! motion-reduce:transition-none!', !motion && 'animate-none! transition-none!')}>
       {label}
     </TooltipContent>

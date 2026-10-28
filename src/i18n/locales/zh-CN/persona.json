@@ -46,6 +46,7 @@
     "cardGoal": "目标",
     "foldedTab": "人设卡",
     "accountCardTitle": "账号卡预览",
+    "selectSummaryLead": "对照摘要，请在右侧勾选定位与包装后保存。",
     "resizeDivider": "调整人设预览与问卷宽度",
     "stepHint": "当前步骤：{{step}}",
     "progress": "已填写 {{filled}} / {{total}} 项",
@@ -342,16 +343,20 @@
     "share": { "public": "愿意公开", "private": "不愿公开", "unsure": "暂不确定" }
   },
   "select": {
-    "title": "选择定位方案和账号包装",
-    "lead": "两组选项相互独立。各选一项后即可保存为主 Profile。",
-    "advantages": "一、人物优势",
-    "audience": "二、目标人群与需求",
-    "pickPositioning": "选择一套定位方案",
-    "pickPackaging": "选择一套账号包装",
+    "title": "选定主定位与账号包装",
+    "lead": "两组各选一项，组成你的主 Profile。",
+    "contextSummary": "查看人物优势、人群与表达红线",
+    "advantages": "人物优势",
+    "audience": "目标人群与需求",
+    "pickPositioning": "定位方案",
+    "pickPackaging": "账号包装",
     "plan": "方案 {{id}}",
-    "redlines": "五、禁止事项与表达红线",
-    "saveMain": "保存所选组合为主 Profile",
-    "editQuestionnaire": "返回修改问卷",
+    "redlines": "表达红线",
+    "picksHint": "先选定位，再选包装",
+    "chipPositioning": "定位 · {{label}}",
+    "chipPackaging": "包装 · {{label}}",
+    "saveMain": "保存为主 Profile",
+    "editQuestionnaire": "改问卷",
     "parseFailed": "候选结果无法解析，请重新生成。"
   },
   "profile": {
@@ -362,13 +367,19 @@
     "mainPositioning": "主定位：{{plan}}",
     "mainPackaging": "主包装：{{style}}",
     "copy": "复制完整 Profile",
+    "copyShort": "复制",
+    "copied": "已复制",
+    "copiedShort": "已复制",
     "export": "导出 Profile 文档",
+    "exportShort": "导出",
     "exportName": "人设定位Profile",
     "editModule": "编辑本模块",
     "editing": "正在编辑本模块",
     "saveModule": "保存本模块",
     "saving": "保存中…",
     "lastSaved": "最近保存",
-    "changeCombo": "更换主定位或账号包装"
+    "changeCombo": "重选定位方案",
+    "chromeActions": "档案操作",
+    "moreActions": "更多操作"
   }
 }

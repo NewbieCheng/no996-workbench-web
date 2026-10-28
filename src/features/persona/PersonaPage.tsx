@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@no996/ui/button'
 import { ColumnDivider } from '@no996/ui/column-divider'
@@ -89,6 +89,10 @@ export default function PersonaPage() {
   const [traceTaskId, setTraceTaskId] = useState<string | null>(null)
   const [tracePayload, setTracePayload] = useState<PersonaGeneratePayload | null>(null)
   const [traceError, setTraceError] = useState('')
+  const [profileChromeActions, setProfileChromeActions] = useState<ReactNode>(null)
+  const handleProfileChromeActionsChange = useCallback((node: ReactNode | null) => {
+    setProfileChromeActions(node)
+  }, [])
   const abortRef = useRef<AbortController | null>(null)
   const { enqueuePersona, cancelTask, getPayload } = useWorkbenchTaskActions()
   const personaTasks = useWorkbenchTasks({ kind: 'persona_generate' })
@@ -223,6 +227,10 @@ export default function PersonaPage() {
       if (!applied) return
       setFormCollapsed(true)
       setPhase('select')
+      // 完成后收起过程条，避免「100% 已完成」挡住选方案主栏
+      setTraceTaskId(null)
+      setTracePayload(null)
+      setTraceError('')
     }).catch((e) => setError(e instanceof Error ? e.message : t('errorLoadFailed')))
   }, [personaTasks, refresh, selected, traceTaskId, t])
 
@@ -443,13 +451,27 @@ export default function PersonaPage() {
 
   const workPanelsActive = pageView === 'work' && (!booting || Boolean(selected))
   const showQuestionnaire = !booting && !formCollapsed && workPhase === 'questionnaire'
-  const showSelect =
-    workPhase === 'generating' || (workPhase === 'select' && formCollapsed)
+  // select 阶段始终露出可勾选主栏；生成中也用同一槽位做流式面板
+  const showSelect = workPhase === 'generating' || workPhase === 'select'
   const showMainProfile = workPhase === 'profile'
+  // 选方案阶段不挂左侧「账号卡预览」——与右侧选项重复；简易/高级共用同一决策页
+  const selectFocus = workPhase === 'select'
   const showPreview =
-    workPanelsActive && (personaBusy || formCollapsed || !previewCollapsed)
+    workPanelsActive &&
+    !selectFocus &&
+    (personaBusy || formCollapsed || !previewCollapsed)
   const splitActive =
     showPreview && (showQuestionnaire || showSelect || showMainProfile) && !previewCollapsed
+  // 仅生成中全屏左卡；select/profile 收起问卷时仍保持左右 split，主栏可见
+  const generatingFocus = personaBusy
+  // 成功后不挂过程条；失败/取消保留以便重试
+  const traceActive = Boolean(
+    traceTask &&
+      (traceStatus === 'queued' ||
+        traceStatus === 'running' ||
+        traceStatus === 'failed' ||
+        traceStatus === 'cancelled'),
+  )
 
   return (
     <Page
@@ -496,8 +518,9 @@ export default function PersonaPage() {
           </WorkbenchPageChromeActions>
         ) : pageView === 'work' ? (
           <WorkbenchPageChromeActions>
+            {workPhase === 'profile' && profileChromeActions ? profileChromeActions : null}
             <PersonaRecordsToolbar onCreate={beginNewPersona} />
-            {workPanelsActive && (formCollapsed || previewCollapsed) && !personaBusy ? (
+            {workPanelsActive && (formCollapsed || previewCollapsed) && !personaBusy && workPhase !== 'profile' ? (
               <>
                 {formCollapsed ? (
                   <Button
@@ -557,10 +580,11 @@ export default function PersonaPage() {
             className={[
               'persona-workspace',
               previewCollapsed ? 'persona-workspace--preview-collapsed' : '',
-              formCollapsed || personaBusy ? 'persona-workspace--form-collapsed' : '',
-              personaBusy ? 'persona-workspace--card-focus' : '',
+              generatingFocus ? 'persona-workspace--form-collapsed' : '',
+              generatingFocus ? 'persona-workspace--card-focus' : '',
+              selectFocus ? 'persona-workspace--select-focus' : '',
               splitActive ? 'persona-workspace--split' : '',
-              traceTask && traceStatus ? 'persona-workspace--has-trace' : '',
+              traceActive ? 'persona-workspace--has-trace' : '',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -703,11 +727,12 @@ export default function PersonaPage() {
                     setPhase('questionnaire')
                   }}
                   onSetDefault={selected && !selected.isActive ? () => void activatePersona(selected) : undefined}
+                  onChromeActionsChange={handleProfileChromeActionsChange}
                 />
               ) : null}
             </div>
 
-            {traceTask && traceStatus ? (
+            {traceActive && traceTask && traceStatus ? (
               <div className="persona-workspace__trace">
                 <WorkflowRunCard
                   title={t('title')}

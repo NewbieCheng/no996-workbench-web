@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@no996/ui/badge'
 import { Button } from '@no996/ui/button'
@@ -6,16 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@no996/ui/card'
 import { Textarea } from '@no996/ui/textarea'
 import { AIEditPopover } from '@no996/ui/ai-edit-popover'
 import {
-  ArrowLeftIcon,
   BookmarkCheckIcon,
   CheckIcon,
-  CopyIcon,
   DownloadIcon,
-  EyeIcon,
   PencilIcon,
-  SlidersHorizontalIcon,
-  SparklesIcon,
 } from 'lucide-react'
+import { PersonaProfileChromeActions } from './PersonaProfileChromeActions'
 import {
   PACKAGING_LABELS,
   POSITIONING_LABELS,
@@ -44,6 +40,8 @@ type Props = {
   onEditQuestionnaire?: () => void
   onSetDefault?: () => void
   legacyContent?: string
+  /** 把档案操作挂到页头 chrome；卸载时传 null */
+  onChromeActionsChange?: (node: ReactNode | null) => void
 }
 
 const MODULES: AccountCardModuleId[] = ['advantages', 'audience', 'positioning', 'packaging', 'redlines']
@@ -127,6 +125,7 @@ export function PersonaMainProfileView({
   onEditQuestionnaire,
   onSetDefault,
   legacyContent,
+  onChromeActionsChange,
 }: Props) {
   const { t } = useTranslation('persona')
   const parsed = useMemo(() => parseMainProfile(markdown), [markdown])
@@ -142,6 +141,21 @@ export function PersonaMainProfileView({
   // 历史遗留文本模式编辑
   const [editingLegacy, setEditingLegacy] = useState(false)
   const [legacyDraft, setLegacyDraft] = useState('')
+  const chromeActionsRef = useRef(onChromeActionsChange)
+  chromeActionsRef.current = onChromeActionsChange
+  const actionApiRef = useRef({
+    copyAll: async () => {},
+    toggleGlobalEdit: () => {},
+    setEditingLegacy,
+    setLegacyDraft,
+    onChangeCombo,
+    onEditQuestionnaire,
+    onSetDefault,
+    markdown: '',
+    exportName: '',
+    hasParsed: false,
+    editingLegacy: false,
+  })
 
   // AI 智能优化 Popover 相关状态
   const [polishingField, setPolishingField] = useState<string | null>(null)
@@ -333,6 +347,89 @@ export function PersonaMainProfileView({
     })
   }
 
+  const exportName =
+    personaName ||
+    fieldValue(parsed?.positioning, '基础身份') ||
+    t('profile.exportName', { defaultValue: '人设档案' })
+  const chromeEditing = parsed ? isGlobalEditing : editingLegacy
+  const chromeBusy = saving || (parsed ? activeEditingModule !== null && !isGlobalEditing : false)
+  const canChangeCombo = Boolean(parsed && onChangeCombo)
+  const canEditQuestionnaire = Boolean(onEditQuestionnaire)
+  const canSetDefault = Boolean(onSetDefault && !isDefault)
+
+  actionApiRef.current = {
+    copyAll,
+    toggleGlobalEdit,
+    setEditingLegacy,
+    setLegacyDraft,
+    onChangeCombo,
+    onEditQuestionnaire,
+    onSetDefault,
+    markdown,
+    exportName,
+    hasParsed: Boolean(parsed),
+    editingLegacy,
+  }
+
+  // 只把「会变的 UI 态」放进 deps；父级回调走 ref，避免 inline 函数导致无限 setState
+  useLayoutEffect(() => {
+    const publish = chromeActionsRef.current
+    if (!publish) return
+    if (!markdown.trim()) {
+      publish(null)
+      return
+    }
+    publish(
+      <PersonaProfileChromeActions
+        copied={copied}
+        editing={chromeEditing}
+        busy={chromeBusy}
+        canChangeCombo={canChangeCombo}
+        canEditQuestionnaire={canEditQuestionnaire}
+        canSetDefault={canSetDefault}
+        onCopy={() => void actionApiRef.current.copyAll()}
+        onExport={() => {
+          const api = actionApiRef.current
+          downloadMarkdown(api.markdown, `${api.exportName}-人设文档`)
+        }}
+        onToggleEdit={() => {
+          const api = actionApiRef.current
+          if (api.hasParsed) {
+            api.toggleGlobalEdit()
+            return
+          }
+          if (api.editingLegacy) {
+            api.setEditingLegacy(false)
+            return
+          }
+          api.setLegacyDraft(api.markdown)
+          api.setEditingLegacy(true)
+        }}
+        onChangeCombo={
+          canChangeCombo ? () => actionApiRef.current.onChangeCombo?.() : undefined
+        }
+        onEditQuestionnaire={
+          canEditQuestionnaire ? () => actionApiRef.current.onEditQuestionnaire?.() : undefined
+        }
+        onSetDefault={canSetDefault ? () => actionApiRef.current.onSetDefault?.() : undefined}
+      />,
+    )
+  }, [
+    canChangeCombo,
+    canEditQuestionnaire,
+    canSetDefault,
+    chromeBusy,
+    chromeEditing,
+    copied,
+    markdown,
+  ])
+
+  useEffect(() => {
+    return () => {
+      chromeActionsRef.current?.(null)
+    }
+  }, [])
+
   // 针对旧格式未解析成功的兜底呈现
   if (!parsed && markdown.trim()) {
     return (
@@ -355,42 +452,6 @@ export function PersonaMainProfileView({
             ) : null}
           </div>
         </header>
-
-        <div className="persona-main-toolbar">
-          <div className="persona-main-toolbar__actions">
-            <Button type="button" variant="outline" size="sm" onClick={() => void copyAll()}>
-              {copied ? <CheckIcon className="w-4 h-4 text-emerald-500 mr-1.5" /> : <CopyIcon className="w-4 h-4 mr-1.5" />}
-              {copied ? t('profile.copied', { defaultValue: '已复制' }) : t('profile.copy', { defaultValue: '复制完整 Profile' })}
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => downloadMarkdown(markdown, t('profile.exportName', { defaultValue: '人设档案' }))}>
-              <DownloadIcon className="w-4 h-4 mr-1.5" />
-              {t('profile.export', { defaultValue: '导出 Profile 文档' })}
-            </Button>
-            {onSetDefault && !isDefault ? (
-              <Button type="button" variant="outline" size="sm" onClick={onSetDefault}>
-                <SparklesIcon className="w-4 h-4 mr-1.5" />
-                {t('recordsSetDefault', { defaultValue: '设为默认人设' })}
-              </Button>
-            ) : null}
-            {!editingLegacy ? (
-              <Button type="button" variant="outline" size="sm" onClick={() => { setLegacyDraft(markdown); setEditingLegacy(true) }}>
-                <PencilIcon className="w-4 h-4 mr-1.5" />
-                {t('preview.editProfile', { defaultValue: '直接编辑' })}
-              </Button>
-            ) : (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setEditingLegacy(false)}>
-                <EyeIcon className="w-4 h-4 mr-1.5" />
-                {t('preview.viewMode', { defaultValue: '查看模式' })}
-              </Button>
-            )}
-            {onEditQuestionnaire ? (
-              <Button type="button" variant="ghost" size="sm" onClick={onEditQuestionnaire}>
-                <ArrowLeftIcon className="w-4 h-4 mr-1.5" />
-                {t('select.editQuestionnaire', { defaultValue: '返回修改问卷' })}
-              </Button>
-            ) : null}
-          </div>
-        </div>
 
         {editingLegacy ? (
           <Card className="persona-main-module">
@@ -479,98 +540,7 @@ export function PersonaMainProfileView({
         </div>
       </header>
 
-      {/* 统一操作工具栏 */}
-      <div className="persona-main-toolbar">
-        <div className="persona-main-toolbar__actions">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="persona-btn-action"
-            onClick={() => void copyAll()}
-          >
-            {copied ? (
-              <CheckIcon className="w-4 h-4 text-emerald-500 mr-1.5" />
-            ) : (
-              <CopyIcon className="w-4 h-4 mr-1.5" />
-            )}
-            <span>{copied ? t('profile.copied', { defaultValue: '已复制' }) : t('profile.copy', { defaultValue: '复制完整 Profile' })}</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="persona-btn-action"
-            onClick={() => downloadMarkdown(markdown, `${displayTitle}-人设文档`)}
-          >
-            <DownloadIcon className="w-4 h-4 mr-1.5" />
-            <span>{t('profile.export', { defaultValue: '导出 Profile 文档' })}</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant={isGlobalEditing ? 'secondary' : 'outline'}
-            size="sm"
-            className="persona-btn-action"
-            onClick={toggleGlobalEdit}
-          >
-            {isGlobalEditing ? (
-              <>
-                <EyeIcon className="w-4 h-4 mr-1.5" />
-                <span>{t('preview.viewMode', { defaultValue: '退出全篇编辑' })}</span>
-              </>
-            ) : (
-              <>
-                <PencilIcon className="w-4 h-4 mr-1.5" />
-                <span>{t('preview.editProfile', { defaultValue: '编辑全部模块' })}</span>
-              </>
-            )}
-          </Button>
-
-          {onChangeCombo ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="persona-btn-action"
-              onClick={onChangeCombo}
-            >
-              <SlidersHorizontalIcon className="w-4 h-4 mr-1.5" />
-              <span>{t('select.changeCombo', { defaultValue: '重选定位方案' })}</span>
-            </Button>
-          ) : null}
-
-          {onSetDefault && !isDefault ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="persona-btn-action"
-              onClick={onSetDefault}
-            >
-              <SparklesIcon className="w-4 h-4 mr-1.5" />
-              <span>{t('recordsSetDefault', { defaultValue: '设为默认人设' })}</span>
-            </Button>
-          ) : null}
-
-          {onEditQuestionnaire ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="persona-btn-action text-muted-foreground hover:text-foreground ml-auto"
-              disabled={isGlobalEditing || activeEditingModule !== null || saving}
-              onClick={onEditQuestionnaire}
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-1.5" />
-              <span>{t('select.editQuestionnaire', { defaultValue: '返回修改问卷' })}</span>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* 5 大核心模块卡片 */}
+      {/* 5 大核心模块卡片；复制/导出/编辑等已并入页头 chrome */}
       <div className="persona-modules-stack">
         {MODULES.map((id) => {
           const block = parsed[id]
@@ -636,13 +606,32 @@ export function PersonaMainProfileView({
 
                         return (
                           <div key={label} className="persona-editor-field">
-                            <div className="persona-editor-field__head">
-                              <span className="persona-editor-field__label">{label}</span>
-                              <div className="persona-editor-field__ai">
+                            <label className="persona-editor-field__label" htmlFor={`persona-edit-${id}-${label}`}>
+                              {label}
+                            </label>
+                            <div className="persona-q-field-input-control persona-q-field-input-control--multiline persona-editor-field__control">
+                              <Textarea
+                                id={`persona-edit-${id}-${label}`}
+                                rows={Math.min(6, Math.max(3, Math.ceil((currentValue || '').length / 45)))}
+                                value={currentValue}
+                                placeholder={t('profile.placeholderField', { defaultValue: '请输入内容...' })}
+                                disabled={isBusy}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                  setModuleDrafts((prev) => ({
+                                    ...prev,
+                                    [id]: {
+                                      ...(prev[id] || {}),
+                                      [label]: val,
+                                    },
+                                  }))
+                                }}
+                              />
+                              <div className="persona-q-field-input-control__actions">
                                 <AIEditPopover
                                   className="ai-edit-popover--profile"
                                   popoverClassName="ai-edit-popover--profile-field"
-                                  popoverSide="bottom"
+                                  popoverSide="top"
                                   popoverAlign="end"
                                   fieldLabel={label}
                                   value={currentValue}
@@ -658,22 +647,6 @@ export function PersonaMainProfileView({
                                 />
                               </div>
                             </div>
-                            <Textarea
-                              rows={Math.min(6, Math.max(2, Math.ceil((currentValue || '').length / 45)))}
-                              className="persona-editor-field__input"
-                              value={currentValue}
-                              placeholder={t('profile.placeholderField', { defaultValue: '请输入内容...' })}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                setModuleDrafts((prev) => ({
-                                  ...prev,
-                                  [id]: {
-                                    ...(prev[id] || {}),
-                                    [label]: val,
-                                  },
-                                }))
-                              }}
-                            />
                           </div>
                         )
                       })}
@@ -712,8 +685,8 @@ export function PersonaMainProfileView({
                     </div>
                   </div>
                 ) : (
-                  /* 浏览模式（网格卡片 + 展开收起长文本） */
-                  <div className="persona-fields-grid">
+                  /* 浏览模式：档案式字段列表，不再套内层边框卡 */
+                  <dl className="persona-fields-list">
                     {moduleFields(id).map((label) => {
                       const value = fieldValue(block, label)
                       return (
@@ -728,7 +701,7 @@ export function PersonaMainProfileView({
                         </div>
                       )
                     })}
-                  </div>
+                  </dl>
                 )}
               </CardContent>
             </Card>

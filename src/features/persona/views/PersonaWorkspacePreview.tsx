@@ -82,7 +82,11 @@ function SelectPreview({
         <CardTitle>{t('preview.accountCardTitle', { defaultValue: '候选方案对比' })}</CardTitle>
       </CardHeader>
       <CardContent className="persona-workspace-preview-card__body">
-        <p className="persona-workspace-preview-card__lead">{t('select.lead', { defaultValue: '已生成 3 组定位方案与包装建议' })}</p>
+        <p className="persona-workspace-preview-card__lead">
+          {t('preview.selectSummaryLead', {
+            defaultValue: '对照摘要，请在右侧勾选定位与包装后保存。',
+          })}
+        </p>
         <dl className="persona-workspace-preview-card__plans">
           {POSITIONING_IDS.map((id) => (
             <div

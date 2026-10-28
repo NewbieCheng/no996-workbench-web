@@ -11,6 +11,11 @@ cd "$stage"
 sha256sum -c "$stage/artifact.sha256"
 mkdir -p "$base/releases/$release"
 tar -xzf "$stage/artifact.tar.gz" -C "$base/releases/$release"
+# Preserve the independently distributed extension if this build does not include it.
+if [[ ! -f "$base/releases/$release/downloads/zhiyuan-extension.zip" && -f "$prev/downloads/zhiyuan-extension.zip" ]]; then
+  mkdir -p "$base/releases/$release/downloads"
+  cp -p "$prev/downloads/zhiyuan-extension.zip" "$base/releases/$release/downloads/zhiyuan-extension.zip"
+fi
 [[ -s "$base/releases/$release/index.html" ]]
 chmod -R a+rX "$base/releases/$release"
 ln -sfn "$base/releases/$release" "$base/current"
