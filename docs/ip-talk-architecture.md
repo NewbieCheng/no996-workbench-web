@@ -651,7 +651,7 @@ AI 应用、手工字幕、模板、舞台拖动和时间轴都使用同一公�
 - 布局、步骤状态和输入状态：`TalkWorkspace.tsx`。
 - 流水线定义：`talk-pipeline.ts`；六个步骤组件在 `composition/pipeline/`。
 - 高级设置弹窗：`pipeline/TalkAdvancedSettingsDialog.tsx`。
-- 第 5 步对象栏 / 检查器：`src/features/ip-video/composition/pipeline/TalkObjectRail.tsx`、`src/features/ip-video/composition/pipeline/TalkInspector.tsx`。
+- 第 5 步对象栏 / 检查器：`src/features/ip-video/composition/pipeline/TalkInspector.tsx`（原独立对象栏已并入检查器，分字幕 / 素材 / 镜头三个对象页签）。
 - 1:1 封面：`lib/cover.ts` 的 `createTalkCoverProject()` 与 `composition/pipeline/TalkCoverPanel.tsx`。
 - 布局样式：`talk-workspace-v2.css`；步骤文案：`composition/v2-locales/`；模板文案：`templates/locales/`。
 

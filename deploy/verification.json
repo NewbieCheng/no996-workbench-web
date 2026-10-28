@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-21T12:28:15.417Z",
+  "checkedAt": "2026-10-28T16:21:02.832Z",
   "results": [
     {
       "route": "/",
@@ -14,7 +14,7 @@
       "valid": true
     },
     {
-      "route": "/workbench",
+      "route": "/workbench/titles",
       "status": 200,
       "type": "text/html",
       "valid": true
@@ -26,25 +26,7 @@
       "valid": true
     },
     {
-      "route": "/workbench/titles",
-      "status": 200,
-      "type": "text/html",
-      "valid": true
-    },
-    {
-      "route": "/workbench/live-script",
-      "status": 200,
-      "type": "text/html",
-      "valid": true
-    },
-    {
-      "route": "/workbench/xiaohongshu",
-      "status": 200,
-      "type": "text/html",
-      "valid": true
-    },
-    {
-      "route": "/workbench/wechat-article",
+      "route": "/workbench",
       "status": 200,
       "type": "text/html",
       "valid": true
@@ -56,19 +38,19 @@
       "valid": true
     },
     {
-      "route": "/workbench/digital-human",
+      "route": "/workbench/wechat-article",
       "status": 200,
       "type": "text/html",
       "valid": true
     },
     {
-      "route": "/workbench/extension",
+      "route": "/workbench/xiaohongshu",
       "status": 200,
       "type": "text/html",
       "valid": true
     },
     {
-      "route": "/workbench/account",
+      "route": "/workbench/live-script",
       "status": 200,
       "type": "text/html",
       "valid": true
@@ -80,7 +62,19 @@
       "valid": true
     },
     {
-      "route": "/account",
+      "route": "/workbench/account",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/extension",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/workbench/digital-human",
       "status": 200,
       "type": "text/html",
       "valid": true
@@ -92,13 +86,19 @@
       "valid": true
     },
     {
-      "route": "/assets/index-DNAjZScc.js",
+      "route": "/account",
+      "status": 200,
+      "type": "text/html",
+      "valid": true
+    },
+    {
+      "route": "/assets/index-DJ_5FBxQ.js",
       "status": 200,
       "type": "application/javascript",
       "valid": true
     },
     {
-      "route": "/assets/index-CdYnIDrC.css",
+      "route": "/assets/index-C8WLvppI.css",
       "status": 200,
       "type": "text/css",
       "valid": true
