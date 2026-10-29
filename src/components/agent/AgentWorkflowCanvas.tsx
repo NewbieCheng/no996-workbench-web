@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { AgentRunSnapshot, AgentStageDef, AgentStageState } from '../../agent'
 import { resolveStageOutputLayers } from '../../agent/stage-output-preview'
+import { WorkflowCanvas } from '@no996/ui/workflow-canvas'
 import { WorkflowCanvasDialog } from '@no996/ui/workflow-canvas-dialog'
 import { resolveBranchNodeStatus } from '@no996/ui/workflow-canvas-model'
 import type {
@@ -21,6 +22,9 @@ export type AgentWorkflowCanvasProps = {
   /** 需要预先展示成功 / 兜底分支的阶段 id。 */
   branchStageIds?: readonly string[]
   onRetryStage?: (stageId: string) => void
+  /** 页内嵌入模式：直接渲染画布，不再套 Dialog。 */
+  embedded?: boolean
+  className?: string
 }
 
 type SearchBranch = { stageId: string; outcome: 'succeeded' | 'fallback' }
@@ -90,6 +94,8 @@ export function AgentWorkflowCanvas({
   streamingText,
   branchStageIds = [],
   onRetryStage,
+  embedded = false,
+  className,
 }: AgentWorkflowCanvasProps) {
   const { nodes, orderedDefs, searchBranches } = useMemo(() => {
     const sorted = [...defs].sort((a, b) => a.order - b.order)
@@ -203,6 +209,9 @@ export function AgentWorkflowCanvas({
             return lines.join('\n')
           }).join('\n\n')
         }
+        if (stage?.progress?.label) {
+          text = stage.progress.label
+        }
         startedAt = stage?.startedAt ?? 0
         finishedAt = stage?.finishedAt ?? 0
         if (status === 'running') currentRunning = node.id
@@ -254,6 +263,21 @@ export function AgentWorkflowCanvas({
     if (index === 0) return true
     const previousId = orderedDefs[index - 1]?.id
     return Boolean(previousId && snapshot?.checkpoints?.[previousId] !== undefined)
+  }
+
+  if (embedded) {
+    return (
+      <WorkflowCanvas
+        className={className}
+        title={title}
+        nodes={nodes}
+        runtimeState={runtimeState}
+        events={events}
+        activeNodeId={activeNodeId}
+        onRetryNode={onRetryStage}
+        canRetryNode={canRetryNode}
+      />
+    )
   }
 
   return (

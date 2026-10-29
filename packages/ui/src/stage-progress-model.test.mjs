@@ -45,6 +45,32 @@ test('stageProgressPercent 与步骤完成数一致', () => {
   assert.equal(stageProgressPercent(steps, [done('a'), done('b'), done('c'), done('d')]), 100)
 })
 
+test('阶段内进度（逐张生图 2/4）会推动百分比，但不越界', () => {
+  const steps = [step('a', 1), step('b', 2), step('c', 3), step('d', 4)]
+  const states = [
+    done('a'),
+    done('b'),
+    { id: 'c', status: 'running', progress: { done: 2, total: 4 } },
+  ]
+  assert.equal(stageProgressPercent(steps, states), 63)
+  assert.equal(
+    stageProgressPercent(steps, [
+      done('a'),
+      done('b'),
+      { id: 'c', status: 'running', progress: { done: 4, total: 4 } },
+    ]),
+    75,
+  )
+  assert.equal(
+    stageProgressPercent(steps, [
+      done('a'),
+      done('b'),
+      { id: 'c', status: 'running', progress: { done: 9, total: 4 } },
+    ]),
+    75,
+  )
+})
+
 test('空步骤列表返回 undefined，不抛错', () => {
   assert.equal(stageProgressText([], []), undefined)
 })

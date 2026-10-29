@@ -61,6 +61,7 @@ function toStates(stages: AgentStageState[]): StageProgressState[] {
     error: s.error,
     startedAt: s.startedAt,
     finishedAt: s.finishedAt,
+    progress: s.progress,
   }))
 }
 

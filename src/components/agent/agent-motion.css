@@ -1,0 +1,94 @@
+/* Agent 动效基线：流式打字、逐块浮现、模拟进度条。
+   设计原则文档：docs/agent-motion-design.md。 */
+
+.agent-streaming-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-wrap: pretty;
+  font-variant-numeric: tabular-nums;
+}
+
+.agent-streaming-char {
+  display: inline-block;
+  white-space: pre;
+  animation: agent-char-in 90ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  will-change: opacity, filter, transform;
+}
+
+@keyframes agent-char-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.14em);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* 逐块浮现：给每个区块加 style={{ animationDelay: `${i * 60}ms` }} */
+.agent-reveal {
+  animation: agent-reveal-in 280ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+
+@keyframes agent-reveal-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-streaming-char,
+  .agent-reveal {
+    animation: none;
+  }
+}
+
+/* 输入框：只靠光标和双环表达聚焦，不改变 outline/边框色。 */
+.social-studio-wizard input:focus-visible,
+.social-studio-wizard textarea:focus-visible,
+.social-studio input:focus-visible,
+.social-studio textarea:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary, #c25b3d) 38%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--primary, #c25b3d) 12%, transparent);
+}
+
+/* 暗色补偿：白字在深底上会显胖，正文/流式文字略降字重。 */
+:root.dark .agent-step-run__stream,
+:root.dark .sc-run-panel__text-body,
+:root.dark .agent-step-run__stage {
+  font-weight: 360;
+}
+
+/* 行内小图标与文字基线咬合。 */
+.agent-step-run__stage svg,
+.agent-streaming-text svg {
+  vertical-align: -0.125em;
+}
+
+/* 可复用的 0fr → 1fr 折叠（高度由 CSS 过渡，不靠 JS 算高）。 */
+.agent-grid-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.agent-grid-collapse[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.agent-grid-collapse > * {
+  min-height: 0;
+  overflow: hidden;
+}

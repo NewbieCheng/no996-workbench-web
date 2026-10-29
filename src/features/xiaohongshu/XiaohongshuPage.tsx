@@ -25,7 +25,7 @@ import { usePersonaFormPrefill } from '../../hooks/usePersonaFormPrefill'
 import { deriveSocialStudioPrefillPatch } from '../../lib/persona-form-prefill'
 import { useLocalAssets } from '../../services/local-assets'
 import { isWorkbenchAiDemoMode } from '../../api/workbench-ai'
-import { useWorkbenchTaskActions, useWorkbenchTasks } from '../../services/workbench-tasks'
+import { useWorkbenchTaskActions, useWorkbenchTasks, type WorkbenchTaskRecord } from '../../services/workbench-tasks'
 import { buildXhsSyncDraft } from '../../services/social-publish/build-sync-draft'
 import type { XhsPublishMode } from '../../services/social-publish/types'
 import { useSocialStudioPreviewPrefs } from '../social-studio/preview/useSocialStudioPreviewPrefs'
@@ -38,6 +38,7 @@ import {
   type SocialStudioBrief,
 } from '../social-studio/creative/social-studio-brief-types'
 import { useSocialStudioGenerate } from '../social-studio/useSocialStudioGenerate'
+import { SocialComposeRunPanel } from '../social-studio/run/SocialComposeRunPanel'
 import { useStudioStageView } from '../social-studio/useStudioStageView'
 import { useSocialStudioPublish } from '../social-studio/useSocialStudioPublish'
 import { useSocialStudioDraftPersist } from '../social-studio/useSocialStudioDraftPersist'
@@ -83,8 +84,8 @@ export default function XiaohongshuPage() {
   const images = useLocalAssets('image', imageSlotMax, 10)
   const imageUrls = useMemo(() => images.assets.map((a) => a.url), [images.assets])
   const displayTitle = title.trim() || brief.topic.trim() || t('socialPublish:defaultNoteTitle')
-  const { removeTask } = useWorkbenchTaskActions()
-  const tasks = useWorkbenchTasks({ kind: 'source_create' })
+  const { removeTask, getPayload } = useWorkbenchTaskActions()
+  const tasks = useWorkbenchTasks()
   const [pageView, setPageView] = useState<WorkbenchPageView>('work')
   const [wizardImageUrls, setWizardImageUrls] = useState<string[]>([])
   const [historyLayout, setHistoryLayout] = useState<WorkbenchTaskRecordLayout>('cards')
@@ -149,6 +150,7 @@ export default function XiaohongshuPage() {
     cancel,
     markGenerationReady,
     clearGenerationReady,
+    composeTask,
   } = generation
   const { stageView, setStageView, editLocked } = useStudioStageView(generating)
   const previewPrefs = useSocialStudioPreviewPrefs('xhs')
@@ -183,6 +185,47 @@ export default function XiaohongshuPage() {
     [markGenerationReady, patchBrief, setWorkMode],
   )
 
+  const openHistoryTask = useCallback(
+    async (task: WorkbenchTaskRecord) => {
+      try {
+        if (task.kind === 'social_compose') {
+          const data = await getPayload(task.payloadId) as { result?: WizardGeneratedResult | null } | null
+          if (!data?.result) {
+            toast.error(t('workbench:pageHistoryOpenFailed'))
+            return
+          }
+          setTitle(data.result.title)
+          setContent(data.result.content)
+          patchBrief({ topic: data.result.title, summary: data.result.summary })
+          if (data.result.imageUrls.length > 0) setWizardImageUrls(data.result.imageUrls)
+          setPageView('work')
+          setWorkMode('advanced')
+          setStageView('preview')
+          markGenerationReady()
+          return
+        }
+        const data = await getPayload(task.payloadId) as {
+          articleContent?: string
+          collectedContent?: string
+        } | null
+        const body = data?.articleContent?.trim() || data?.collectedContent?.trim() || ''
+        if (!body) {
+          toast.error(t('workbench:pageHistoryOpenFailed'))
+          return
+        }
+        setTitle(task.title)
+        setContent(body)
+        setPageView('work')
+        setWorkMode('advanced')
+        setStageView('preview')
+        markGenerationReady()
+      } catch {
+        toast.error(t('workbench:pageHistoryOpenFailed'))
+      }
+    },
+    [getPayload, markGenerationReady, patchBrief, setStageView, setWorkMode, t],
+  )
+
   const { clearPersistedDraft } = useSocialStudioDraftPersist({
     draftKey: 'xiaohongshu',
     title,
@@ -209,7 +252,12 @@ export default function XiaohongshuPage() {
   )
 
   const pageHistoryItems = useMemo(
-    () => tasks.filter((task) => task.meta?.targetType === 'xiaohongshu'),
+    () =>
+      tasks.filter(
+        (task) =>
+          task.meta?.targetType === 'xiaohongshu' &&
+          (task.kind === 'source_create' || task.kind === 'social_compose'),
+      ),
     [tasks],
   )
   const historyBadge = useMemo(
@@ -445,6 +493,38 @@ export default function XiaohongshuPage() {
     ]
   }, [handleContentModeChange, handleWizardComplete, images, reset, setBrief, setContent, setPrepCollapsed, setRewriteSession, setSelectedTitleIndex, setStageView, setTitle, setWizardImageUrls, setWorkMode, workMode])
 
+  const runPanel =
+    generating && !isRewriteMode && composeTask.task ? (
+      <SocialComposeRunPanel
+        title={`小红书图文 · ${contentMode === 'article' ? '长文' : '灵感创作'}`}
+        status={
+          composeTask.task.status === 'succeeded'
+            ? 'done'
+            : composeTask.task.status === 'failed'
+              ? 'failed'
+              : composeTask.task.status === 'cancelled'
+                ? 'cancelled'
+                : composeTask.task.status === 'queued'
+                  ? 'queued'
+                  : 'running'
+        }
+        snapshot={composeTask.snapshot}
+        chips={[contentMode === 'article' ? '长文' : '图文', `${brief.imageCount} 张配图`]}
+        streamingText={composeTask.streamingText || content}
+        submittedAt={composeTask.task.createdAt}
+        imagePlans={Array.from({ length: Math.min(4, brief.imageCount) }, (_, index) => ({
+          role: index === 0 ? 'cover' : 'section',
+        }))}
+        imageUrls={composeTask.result?.imageUrls ?? []}
+        imageProgress={composeTask.imageProgress}
+        textReady={composeTask.textReady}
+        running={composeTask.task.status === 'running'}
+        textOnly={contentMode === 'article'}
+        onCancel={cancel}
+        onRetry={() => void generate()}
+      />
+    ) : undefined
+
   const prepPanel = (
     <SocialStudioCreativePanel
       platform="xhs"
@@ -528,6 +608,8 @@ export default function XiaohongshuPage() {
           <WorkbenchTaskHistory
             items={pageHistoryItems}
             onRemove={removeTask}
+            onSelect={openHistoryTask}
+            openLabel={t('workbench:pageHistoryOpen')}
             emptyHint={t('workbench:pageHistoryEmpty')}
           />
         </WorkbenchPageHistoryPanel>
@@ -572,6 +654,7 @@ export default function XiaohongshuPage() {
           onRemoveImageAt={(index) => images.removeAt(index)}
           onReorderImages={(from, to) => images.reorder(from, to)}
           previewPrefs={previewPrefs}
+          runPanel={runPanel}
         />
       )}
     </Page>

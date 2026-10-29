@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Search,
@@ -252,6 +252,7 @@ export function ExtensionCapturePanel({
   // 目标条数
   const [limit, setLimit] = useState<number>(5)
   const [isSearching, setIsSearching] = useState(false)
+  const searchInFlightRef = useRef(false)
 
   // 排序与筛选（根据目标平台动态变化）
   const [sortType, setSortType] = useState<string>('most_liked')
@@ -312,11 +313,11 @@ export function ExtensionCapturePanel({
       return
     }
     const kw = keyword.trim()
-    if (!kw) return
+    if (!kw || searchInFlightRef.current) return
 
+    searchInFlightRef.current = true
     setError('')
     setIsSearching(true)
-    setLastBatchResult(null)
 
     const batchId = `batch_kw:${Date.now()}`
     const platformName =
@@ -377,6 +378,7 @@ export function ExtensionCapturePanel({
       setError(err instanceof Error ? err.message : t('captureFailedGeneric', { defaultValue: '关键词抓取失败，请检查扩展程序运行状态' }))
     } finally {
       setIsSearching(false)
+      searchInFlightRef.current = false
     }
   }
 
@@ -544,7 +546,7 @@ export function ExtensionCapturePanel({
               {isSearching ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  {t('capturing', { defaultValue: '抓取中...' })}
+                  {t('capturing', { defaultValue: platform === 'xiaohongshu' ? '正在小红书页面采集，完成后返回...' : '抓取中...' })}
                 </>
               ) : (
                 <>

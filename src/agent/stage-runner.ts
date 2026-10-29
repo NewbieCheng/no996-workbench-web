@@ -270,6 +270,27 @@ export class StageRunner {
     await this.emit()
   }
 
+  /**
+   * 阶段内细进度（例如逐张生图 2/4）。
+   *
+   * 只更新当前阶段的状态与可展示文案，不把阶段标成完成；完成后仍由 runTool/runAlgo
+   * 写 `status: 'done'` 并清掉该阶段的 progress。任务中心据此把总进度从
+   * 「阶段边界」推进到「阶段内部」，避免生图 4 张时百分比一直不动。
+   */
+  async setStageProgress(
+    stageId: string,
+    progress: { done: number; total: number; label?: string },
+  ): Promise<void> {
+    this.def(stageId)
+    const total = Math.max(0, Math.floor(progress.total))
+    const done = Math.max(0, Math.min(total, Math.floor(progress.done)))
+    await this.setStatus(stageId, {
+      status: 'running',
+      progress: { done, total, label: progress.label?.trim() || undefined },
+      headline: progress.label?.trim() || this.state(stageId).headline,
+    })
+  }
+
   /** 模型步骤：完整的 记录提示词 → 调用 → 解析 → 记输出 流程 */
   async runModel<T = string>(stageId: string, req: RunModelRequest<T>): Promise<T> {
     const def = this.def(stageId)
@@ -357,6 +378,7 @@ export class StageRunner {
         status: 'done',
         output: parsed,
         round: req.round ?? this.round,
+        progress: undefined,
         finishedAt: Date.now(),
       })
       return parsed
@@ -599,6 +621,7 @@ export class StageRunner {
         status: 'done',
         output: parsed,
         round: req.round ?? this.round,
+        progress: undefined,
         finishedAt: Date.now(),
       })
       return parsed
@@ -616,7 +639,7 @@ export class StageRunner {
         startedAt: Date.now(),
       })
       const out = await fn()
-      await this.setStatus(stageId, { status: 'done', output: out, finishedAt: Date.now() })
+      await this.setStatus(stageId, { status: 'done', output: out, progress: undefined, finishedAt: Date.now() })
       return out
     })
   }
@@ -632,7 +655,7 @@ export class StageRunner {
         startedAt: Date.now(),
       })
       const out = fn()
-      await this.setStatus(stageId, { status: 'done', output: out, finishedAt: Date.now() })
+      await this.setStatus(stageId, { status: 'done', output: out, progress: undefined, finishedAt: Date.now() })
       return out
     })
   }
@@ -656,6 +679,7 @@ export class StageRunner {
       streamingContent: undefined,
       streamingReasoningContent: undefined,
       reasoningHistory: undefined,
+      progress: undefined,
     })
   }
 

@@ -35,6 +35,7 @@ import { wechatPreviewShape } from '../social-studio/studio-mode'
 import { SocialStudioCreativePanel } from '../social-studio/creative/SocialStudioCreativePanel'
 import { createDefaultBrief, type SocialStudioBrief } from '../social-studio/creative/social-studio-brief-types'
 import { useSocialStudioGenerate } from '../social-studio/useSocialStudioGenerate'
+import { SocialComposeRunPanel } from '../social-studio/run/SocialComposeRunPanel'
 import { splitLeadingArticleHeading } from '../social-studio/creative/article-heading'
 import { useStudioStageView } from '../social-studio/useStudioStageView'
 import { useSocialStudioPublish } from '../social-studio/useSocialStudioPublish'
@@ -84,7 +85,7 @@ export default function WechatArticlePage() {
   const imageUrls = useMemo(() => images.assets.map((a) => a.url), [images.assets])
   const previewShape = wechatPreviewShape(contentMode)
   const { removeTask, getPayload } = useWorkbenchTaskActions()
-  const tasks = useWorkbenchTasks({ kind: 'source_create' })
+  const tasks = useWorkbenchTasks()
   const [pageView, setPageView] = useState<WorkbenchPageView>('work')
   const [wizardImageUrls, setWizardImageUrls] = useState<string[]>([])
   const [historyLayout, setHistoryLayout] = useState<WorkbenchTaskRecordLayout>('cards')
@@ -150,6 +151,7 @@ export default function WechatArticlePage() {
     generationReady,
     markGenerationReady,
     clearGenerationReady,
+    composeTask,
   } = generation
   const { stageView, setStageView, editLocked } = useStudioStageView(generating)
 
@@ -213,7 +215,12 @@ export default function WechatArticlePage() {
   )
 
   const pageHistoryItems = useMemo(
-    () => tasks.filter((task) => task.meta?.targetType === 'wechat-article'),
+    () =>
+      tasks.filter(
+        (task) =>
+          task.meta?.targetType === 'wechat-article' &&
+          (task.kind === 'source_create' || task.kind === 'social_compose'),
+      ),
     [tasks],
   )
   const historyBadge = useMemo(
@@ -223,6 +230,22 @@ export default function WechatArticlePage() {
 
   async function openHistoryTask(task: WorkbenchTaskRecord) {
     try {
+      if (task.kind === 'social_compose') {
+        const data = await getPayload(task.payloadId) as { result?: WizardGeneratedResult | null } | null
+        if (!data?.result) {
+          toast.error(t('workbench:pageHistoryOpenFailed'))
+          return
+        }
+        setTitle(data.result.title)
+        setContent(data.result.content)
+        patchBrief({ topic: data.result.title, summary: data.result.summary })
+        if (data.result.imageUrls.length > 0) setWizardImageUrls(data.result.imageUrls)
+        setPageView('work')
+        setWorkMode('advanced')
+        setStageView('preview')
+        markGenerationReady()
+        return
+      }
       const payload = await getPayload(task.payloadId) as SourceCreatePayload | null
       const contentFromPayload = payload?.articleContent?.trim()
         || payload?.sections?.map((section) => `## ${section.label}\n\n${section.content}`).join('\n\n').trim()
@@ -485,6 +508,38 @@ export default function WechatArticlePage() {
     ]
   }, [handleContentModeChange, handleWizardComplete, images, reset, setBrief, setContent, setLayoutView, setPrepCollapsed, setRewriteSession, setSelectedTitleIndex, setStageView, setTitle, setWeixinPublishMode, setWizardImageUrls, setWorkMode, workMode])
 
+  const runPanel =
+    generating && !isRewriteMode && composeTask.task ? (
+      <SocialComposeRunPanel
+        title={`公众号图文 · ${contentMode === 'article' ? '长文' : '灵感创作'}`}
+        status={
+          composeTask.task.status === 'succeeded'
+            ? 'done'
+            : composeTask.task.status === 'failed'
+              ? 'failed'
+              : composeTask.task.status === 'cancelled'
+                ? 'cancelled'
+                : composeTask.task.status === 'queued'
+                  ? 'queued'
+                  : 'running'
+        }
+        snapshot={composeTask.snapshot}
+        chips={[contentMode === 'article' ? '长文' : '图文', `${brief.imageCount} 张配图`]}
+        streamingText={composeTask.streamingText || content}
+        submittedAt={composeTask.task.createdAt}
+        imagePlans={Array.from({ length: Math.min(4, brief.imageCount) }, (_, index) => ({
+          role: index === 0 ? 'cover' : 'section',
+        }))}
+        imageUrls={composeTask.result?.imageUrls ?? []}
+        imageProgress={composeTask.imageProgress}
+        textReady={composeTask.textReady}
+        running={composeTask.task.status === 'running'}
+        textOnly={contentMode === 'article'}
+        onCancel={cancel}
+        onRetry={() => void generate()}
+      />
+    ) : undefined
+
   const prepPanel = (
     <SocialStudioCreativePanel
       platform="wechat"
@@ -624,6 +679,7 @@ export default function WechatArticlePage() {
           onReorderImages={(from, to) => images.reorder(from, to)}
           onPhoneSizeChange={setPhoneSize}
           weixinPublishMode={weixinPublishMode}
+          runPanel={runPanel}
         />
       )}
     </Page>

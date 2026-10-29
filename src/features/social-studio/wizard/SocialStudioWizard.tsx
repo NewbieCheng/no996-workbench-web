@@ -1,7 +1,15 @@
-import { useState, useCallback, useEffect, useRef, type MutableRefObject } from 'react'
-import { createAgentClients, isAbortError } from '../../../agent'
+import { useState, useCallback, useEffect, useMemo, useRef, type MutableRefObject } from 'react'
+import {
+  createAgentClients,
+  createMemorySink,
+  isAbortError,
+  type AgentRunSnapshot,
+} from '../../../agent'
+import { isWorkbenchAiDemoMode } from '../../../api/workbench-ai'
 import { runSocialWizardOutlineFlow } from '../agent/run-social-wizard-outline-flow'
-import { notifyOperationError } from '../../../lib/toast'
+import { SOCIAL_WIZARD_OUTLINE_FLOW_ID } from '../agent/wizard-outline-stages'
+import { runWizardCompose } from './wizard-generator'
+import { notifyOperationError, notifyOperationWarning } from '../../../lib/toast'
 import { normalizeOperationErrorMessage } from '../../../lib/normalize-operation-error'
 import type { WorkbenchBridgeCollectedItem } from '../../../services/extension/workbench-bridge-contract'
 import type {
@@ -22,8 +30,11 @@ import { StepSelectAngle } from './steps/StepSelectAngle'
 import { StepSelectTemplate } from './steps/StepSelectTemplate'
 import { StepCustomAdjust } from './steps/StepCustomAdjust'
 import { StepOutlinePlan } from './steps/StepOutlinePlan'
-import { StepGenerationProgress } from './steps/StepGenerationProgress'
-import { runWizardCompose } from './wizard-generator'
+import { SocialComposeRunPanel } from '../run/SocialComposeRunPanel'
+import { useSocialComposeTask } from '../run/useSocialComposeTask'
+import { useWorkbenchTaskActions } from '../../../services/workbench-tasks'
+import type { SocialComposeTaskPayload } from '../agent/task-types'
+import { classifySocialSource } from './source-kind'
 import './social-studio-wizard.css'
 
 export type SocialStudioWizardDevHandles = {
@@ -46,7 +57,6 @@ export function SocialStudioWizard({
   platform,
   onComplete,
   onExitToStudio,
-  onOpenHistory,
   initialBenchmark,
   devHandlesRef,
 }: SocialStudioWizardProps) {
@@ -87,17 +97,52 @@ export function SocialStudioWizard({
   })
   const [outlinePlanning, setOutlinePlanning] = useState(false)
   const [outlinePlanningError, setOutlinePlanningError] = useState<string | null>(null)
+  const [outlineSnapshot, setOutlineSnapshot] = useState<AgentRunSnapshot | null>(null)
   const outlineAbortRef = useRef<AbortController | null>(null)
+  const outlineSink = useMemo(() => createMemorySink(SOCIAL_WIZARD_OUTLINE_FLOW_ID), [])
 
+  useEffect(() => outlineSink.subscribe(setOutlineSnapshot), [outlineSink])
   useEffect(() => () => outlineAbortRef.current?.abort(), [])
 
   // 生成状态
   const [generating, setGenerating] = useState(false)
-  const [progressPercent, setProgressPercent] = useState(10)
   const [generatedImages, setGeneratedImages] = useState<string[]>([])
   const [stageLabel, setStageLabel] = useState('准备开始')
   const [isDone, setIsDone] = useState(false)
   const [finalResult, setFinalResult] = useState<WizardGeneratedResult | null>(null)
+  const [submittedAt, setSubmittedAt] = useState<number | undefined>(undefined)
+  const [textOnly, setTextOnly] = useState(false)
+  const [composeError, setComposeError] = useState('')
+
+  const targetType = platform === 'xhs' ? 'xiaohongshu' : 'wechat-article'
+  const { enqueueSocialCompose } = useWorkbenchTaskActions()
+  const compose = useSocialComposeTask({
+    targetType,
+    mode: 'wizard',
+    onResult: (result) => {
+      const next: WizardGeneratedResult = {
+        title: result.title,
+        content: result.content,
+        summary: result.summary,
+        imageUrls: result.imageUrls,
+        origin: result.origin,
+        selectedBenchmark: result.selectedBenchmark,
+        selectedAngle: result.selectedAngle,
+      }
+      setGeneratedImages(result.imageUrls)
+      setFinalResult(next)
+      setIsDone(true)
+      setGenerating(false)
+      setStageLabel('图文创作完成')
+    },
+    onText: (text) => setStageLabel(`正文已生成 ${text.length.toLocaleString('zh-CN')} 字，继续配图…`),
+    onError: (message) => {
+      setComposeError(message)
+      setGenerating(false)
+      setCurrentStep('outline')
+      notifyOperationError(message, { id: 'social-wizard-compose' })
+    },
+  })
 
   const patchCustomConfig = useCallback((patch: Partial<WizardCustomConfig>) => {
     setCustomConfig((prev) => ({ ...prev, ...patch }))
@@ -129,7 +174,6 @@ export function SocialStudioWizard({
         setGeneratedImages(result.imageUrls || [])
         setFinalResult(result)
         setIsDone(true)
-        setProgressPercent(100)
         setStageLabel('生成完成（调试模拟）')
         setCurrentStep('generating')
       },
@@ -178,6 +222,7 @@ export function SocialStudioWizard({
     setCurrentStep('outline')
     setOutlinePlanning(true)
     setOutlinePlanningError(null)
+    setOutlineSnapshot(null)
     try {
       const result = await runSocialWizardOutlineFlow({
         platform,
@@ -224,9 +269,10 @@ export function SocialStudioWizard({
             }
           },
         }),
+        sink: outlineSink.sink,
         signal: controller.signal,
       })
-      setOutlinePlan(result)
+      setOutlinePlan(textOnly ? { ...result, imagePlans: [] } : result)
     } catch (error) {
       if (isAbortError(error)) return
       const message = normalizeOperationErrorMessage(error instanceof Error ? error.message : String(error))
@@ -238,56 +284,112 @@ export function SocialStudioWizard({
         setOutlinePlanning(false)
       }
     }
-  }, [customConfig, origin, platform, selectedAngle, selectedBenchmark, selectedTemplate, topicForm])
+  }, [customConfig, origin, outlineSink, platform, selectedAngle, selectedBenchmark, selectedTemplate, textOnly, topicForm])
 
-  // 触发生成
+  // 触发生成：正式模式入队；演示模式仍在本页跑（演示不入队）。
   const startGenerating = useCallback(async () => {
-    if (!outlinePlan.suggestedTitles.length || !outlinePlan.sections.length || !outlinePlan.imagePlans.length) return
-    setCurrentStep('generating')
+    if (!outlinePlan.suggestedTitles.length || !outlinePlan.sections.length) return
+    if (!textOnly && !outlinePlan.imagePlans.length) return
+
+    const contentMode = platform === 'wechat' || textOnly ? 'article' : 'image_text'
+    const title =
+      outlinePlan.suggestedTitles[0]?.trim() ||
+      selectedBenchmark?.title?.trim() ||
+      topicForm.topic.trim() ||
+      (platform === 'wechat' ? '公众号图文创作' : '小红书图文创作')
+
+    const payload: SocialComposeTaskPayload = {
+      action: 'compose',
+      mode: 'wizard',
+      platform,
+      contentMode,
+      targetType,
+      origin,
+      benchmark: selectedBenchmark,
+      topicForm: origin === 'topic_ideation' ? topicForm : undefined,
+      selectedAngle: origin === 'topic_ideation' ? selectedAngle || undefined : undefined,
+      template: selectedTemplate,
+      customConfig,
+      outlinePlan,
+      personaContent: undefined,
+    }
+
+    setComposeError('')
+    setFinalResult(null)
+    setGeneratedImages([])
+    setIsDone(false)
     setGenerating(true)
-    setProgressPercent(15)
-    setStageLabel(origin === 'topic_ideation' ? '正在基于所选切入点策划完整图文...' : '正在拆解母本爆款脉络...')
+    setCurrentStep('generating')
+    setSubmittedAt(Date.now())
+    setStageLabel('正在提交图文生产任务…')
+
+    if (isWorkbenchAiDemoMode()) {
+      try {
+        const res = await runWizardCompose({
+          platform,
+          origin,
+          benchmark: selectedBenchmark,
+          topicForm: origin === 'topic_ideation' ? topicForm : undefined,
+          selectedAngle: origin === 'topic_ideation' ? selectedAngle || undefined : undefined,
+          template: selectedTemplate,
+          customConfig,
+          outlinePlan,
+          onProgress: (_percent, stage) => setStageLabel(stage),
+        })
+        setGeneratedImages(res.imageUrls)
+        setFinalResult(res)
+        setIsDone(true)
+        setStageLabel('图文创作完成（演示）')
+      } catch (error) {
+        if (!isAbortError(error)) {
+          const message = normalizeOperationErrorMessage(error instanceof Error ? error.message : String(error))
+          notifyOperationError(message, { id: 'social-wizard-compose' })
+        }
+      } finally {
+        setGenerating(false)
+      }
+      return
+    }
 
     try {
-      const res = await runWizardCompose({
-        platform,
-        origin,
-        benchmark: selectedBenchmark,
-        topicForm: origin === 'topic_ideation' ? topicForm : undefined,
-        selectedAngle: origin === 'topic_ideation' ? selectedAngle || undefined : undefined,
-        template: selectedTemplate,
-        customConfig,
-        outlinePlan,
-        onProgress: (percent, stage) => {
-          setProgressPercent(percent)
-          setStageLabel(stage)
-        },
+      const taskId = await enqueueSocialCompose({
+        payload,
+        route: platform === 'xhs' ? '/workbench/xiaohongshu' : '/workbench/wechat-article',
+        title,
+        subtitle: `${platform === 'xhs' ? '小红书' : '公众号'} · ${textOnly ? '只复刻文案' : '爆款复刻'}`,
       })
-      setGeneratedImages(res.imageUrls)
-      setFinalResult(res)
-      setIsDone(true)
-      setProgressPercent(100)
-      setStageLabel('图文创作完成')
+      compose.bindTask(taskId)
     } catch (error) {
-      if (!isAbortError(error)) {
-        const message = normalizeOperationErrorMessage(error instanceof Error ? error.message : String(error))
-        notifyOperationError(message, { id: 'social-wizard-compose' })
-      }
-      setFinalResult(null)
-      setIsDone(false)
-      setCurrentStep('outline')
-    } finally {
       setGenerating(false)
+      setCurrentStep('outline')
+      const message = normalizeOperationErrorMessage(error instanceof Error ? error.message : String(error))
+      notifyOperationError(message, { id: 'social-wizard-compose' })
     }
-  }, [customConfig, origin, outlinePlan, platform, selectedAngle, selectedBenchmark, selectedTemplate, topicForm])
+  }, [
+    compose,
+    customConfig,
+    enqueueSocialCompose,
+    origin,
+    outlinePlan,
+    platform,
+    selectedAngle,
+    selectedBenchmark,
+    targetType,
+    textOnly,
+    topicForm,
+  ])
 
   const handleEnterStudioWithResult = useCallback(() => {
     if (finalResult) {
       onComplete(finalResult)
-    } else {
-      onExitToStudio()
+      return
     }
-  }, [finalResult, onComplete, onExitToStudio])
+    // 没有成稿时绝不静默跳到空工作台；按钮本身也保持 disabled。
+    notifyOperationWarning('文案还在生成，完成后才能进入创作画布。', {
+      id: 'social-wizard-compose',
+      raw: true,
+    })
+  }, [finalResult, onComplete])
 
   return (
     <div
@@ -322,6 +424,7 @@ export function SocialStudioWizard({
             }}
             onCollected={(items, directAdvanceToTemplate) => {
               setOrigin('benchmark_clone')
+              setTextOnly(false)
               setCollectedItems(items)
               if (items.length > 0) {
                 const target = items[0]
@@ -356,7 +459,10 @@ export function SocialStudioWizard({
             <StepSelectBenchmark
               items={collectedItems}
               selectedItem={selectedBenchmark}
-              onSelect={(item) => setSelectedBenchmark(item)}
+              onSelect={(item) => {
+                setSelectedBenchmark(item)
+                setTextOnly(false)
+              }}
               onNext={() => setCurrentStep('template')}
               onBack={() => setCurrentStep('search')}
               queryText={selectedBenchmark?.title || '热门'}
@@ -371,6 +477,18 @@ export function SocialStudioWizard({
             selectedTemplate={selectedTemplate}
             onSelect={(t) => setSelectedTemplate(t)}
             onNext={() => setCurrentStep('custom')}
+            sourceKind={
+              origin === 'benchmark_clone'
+                ? classifySocialSource(selectedBenchmark)
+                : platform === 'wechat'
+                  ? 'article'
+                  : 'image_text'
+            }
+            onTextOnly={() => {
+              setTextOnly(true)
+              setOutlinePlan((prev) => ({ ...prev, imagePlans: [] }))
+              setCurrentStep('custom')
+            }}
             onBack={() => {
               if (origin === 'topic_ideation') {
                 setCurrentStep('benchmark')
@@ -403,19 +521,51 @@ export function SocialStudioWizard({
             planning={outlinePlanning}
             planningError={outlinePlanningError}
             onRetry={() => void planOutline()}
+            allowNoImages={textOnly}
+            snapshot={outlineSnapshot}
+            onCancel={() => outlineAbortRef.current?.abort()}
           />
         )}
 
         {currentStep === 'generating' && (
-          <StepGenerationProgress
-            platform={platform}
-            progressPercent={progressPercent}
-            generatedImageCount={generatedImages.length}
-            targetImageCount={outlinePlan.imagePlans.length}
-            currentStageLabel={stageLabel}
-            isDone={isDone}
-            onEnterStudio={handleEnterStudioWithResult}
-            onGoHistory={onOpenHistory}
+          <SocialComposeRunPanel
+            title={`${platform === 'xhs' ? '小红书' : '公众号'}图文 · ${textOnly ? '只复刻文案' : '爆款复刻'}`}
+            status={
+              composeError
+                ? 'failed'
+                : compose.task?.status === 'succeeded'
+                  ? 'done'
+                  : compose.task?.status === 'cancelled'
+                    ? 'cancelled'
+                    : compose.task?.status === 'queued'
+                      ? 'queued'
+                      : isDone
+                        ? 'done'
+                        : 'running'
+            }
+            snapshot={compose.snapshot}
+            chips={[
+              selectedTemplate.name,
+              textOnly ? '只复刻文案' : `${outlinePlan.imagePlans.length} 张配图`,
+              stageLabel,
+            ].filter(Boolean)}
+            streamingText={compose.streamingText || finalResult?.content || ''}
+            submittedAt={submittedAt}
+            imagePlans={outlinePlan.imagePlans}
+            imageUrls={generatedImages}
+            imageProgress={
+              compose.imageProgress.total > 0
+                ? compose.imageProgress
+                : { done: generatedImages.length, total: outlinePlan.imagePlans.length }
+            }
+            textReady={compose.textReady}
+            running={!isDone && !composeError && compose.task?.status !== 'queued'}
+            textOnly={textOnly}
+            onCancel={() => void compose.cancel()}
+            onRetry={() => void startGenerating()}
+            onEnter={handleEnterStudioWithResult}
+            enterLabel={isDone ? '立即进入创作画布' : '生成完成后进入画布'}
+            enterDisabled={!isDone}
           />
         )}
       </div>

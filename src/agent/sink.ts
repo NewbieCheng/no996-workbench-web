@@ -66,7 +66,9 @@ export function snapshotProgressSignature(snapshot: AgentRunSnapshot): string {
         (s) =>
           `${s.id}:${s.status}:${s.streamingContent?.length ?? 0}:${
             s.streamingReasoningContent?.length ?? 0
-          }:${s.searchAttempts?.map((a) => `${a.status}:${a.query}:${a.purpose ?? ''}:${a.resultCount ?? 0}:${a.error ?? ''}`).join(',') ?? ''}:${s.reasoningHistory?.map((item) => `${item.turn}:${item.text.length}`).join(',') ?? ''}:${
+          }:${s.progress?.done ?? 0}/${s.progress?.total ?? 0}:${s.progress?.label ?? ''}:${
+            s.searchAttempts?.map((a) => `${a.status}:${a.query}:${a.purpose ?? ''}:${a.resultCount ?? 0}:${a.error ?? ''}`).join(',') ?? ''
+          }:${s.reasoningHistory?.map((item) => `${item.turn}:${item.text.length}`).join(',') ?? ''}:${
             s.output === undefined || s.output === null ? 0 : 1
           }`,
       )
@@ -81,19 +83,28 @@ export function snapshotToMeta(snapshot: AgentRunSnapshot): Record<string, strin
     (s) => s.status === 'done' || s.status === 'skipped' || s.status === 'failed',
   ).length
   const running = snapshot.stages.find((s) => s.status === 'running')
+  const runningFraction =
+    running?.progress && running.progress.total > 0
+      ? Math.max(0, Math.min(1, running.progress.done / running.progress.total))
+      : running
+        ? 0.5
+        : 0
   const pct =
     snapshot.status === 'done'
       ? 100
       : snapshot.stages.length
-        ? Math.min(100, Math.round(((completed + (running ? 0.5 : 0)) / snapshot.stages.length) * 100))
+        ? Math.min(99, Math.round(((completed + runningFraction) / snapshot.stages.length) * 100))
         : 0
   return {
     status: snapshot.status,
     round: String(snapshot.round),
     stage: running?.id ?? '',
+    stageLabel: running?.progress?.label || running?.headline || '',
     stageIndex: String(running ? snapshot.stages.findIndex((s) => s.id === running.id) : completed),
     stageCount: String(snapshot.stages.length),
     doneCount: String(completed),
+    progressDone: String(running?.progress?.done ?? ''),
+    progressTotal: String(running?.progress?.total ?? ''),
     pct: String(pct),
     fallback: snapshot.fallback ? '1' : '0',
   }

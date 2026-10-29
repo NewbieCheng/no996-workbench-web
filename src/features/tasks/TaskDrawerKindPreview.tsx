@@ -44,7 +44,7 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
       setPayloadHint('')
       return
     }
-    if (task.kind !== 'text_sections' && task.kind !== 'source_create') return
+    if (task.kind !== 'text_sections' && task.kind !== 'source_create' && task.kind !== 'social_compose') return
     let cancelled = false
     void getPayload(task.payloadId).then((data) => {
       if (cancelled || !data || typeof data !== 'object') return
@@ -53,6 +53,12 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
         if (Array.isArray(sections) && sections.length > 0) {
           setPayloadHint(t('taskChipSectionCount', { count: sections.length }))
         }
+        return
+      }
+      if (task.kind === 'social_compose') {
+        const result = (data as { result?: { title?: string; imageUrls?: string[] } }).result
+        const title = result?.title?.trim()
+        if (title) setPayloadHint(t('taskChipSourceTitle', { title }))
         return
       }
       const title = (data as { collectedTitle?: string }).collectedTitle?.trim()
@@ -93,7 +99,7 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
   }
 
   if (running && isAgentLikeTask(task)) {
-    const stage = task.meta?.stage?.trim()
+    const stage = task.meta?.stageLabel?.trim() || task.meta?.stage?.trim()
     const stageLabel = stage ? t('taskStageRunning', { stage }) : t('taskGenerating')
     return (
       <div className="wb-task-drawer-preview">

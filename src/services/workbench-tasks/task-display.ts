@@ -33,6 +33,9 @@ export function taskModuleLabel(task: Pick<WorkbenchTaskRecord, 'kind' | 'meta'>
         : '朋友圈文案'
   }
   if (task.kind === 'script_generate') return task.meta?.mode === 'live' ? '直播脚本' : '视频脚本'
+  if (task.kind === 'social_compose') {
+    return task.meta?.platform === 'wechat' ? '公众号图文' : '小红书图文'
+  }
   if (task.kind === 'text_sections') {
     const fromMeta = task.meta?.toolId ? textToolTitle(task.meta.toolId) : undefined
     return fromMeta ?? '文案生成'
@@ -91,6 +94,13 @@ export function taskSuccessToast(kind: WorkbenchTaskKind, title: string, meta?: 
       const label = meta?.toolId ? textToolTitle(meta.toolId) : undefined
       return label ? `${label}已完成：${short}` : `文案生成已完成：${short}`
     }
+    case 'social_compose': {
+      if (meta?.failedImages && meta.failedImages !== '0') {
+        return `图文已生成（${meta.imageDone ?? '?'} 张配图，${meta.failedImages} 张失败）：${short}`
+      }
+      const count = meta?.imageDone && meta.imageDone !== '0' ? `（${meta.imageDone} 张配图）` : ''
+      return `${meta?.platform === 'wechat' ? '公众号' : '小红书'}图文已完成${count}：${short}`
+    }
     case 'source_create':
       return `创作已完成：${short}`
     case 'video_factory_export': {
@@ -103,4 +113,4 @@ export function taskSuccessToast(kind: WorkbenchTaskKind, title: string, meta?: 
 }
 
 export const QUEUED_FEATURE_HINT =
-  '人设定位、爆款标题、视频脚本、直播脚本、朋友圈运营、声音配音（演示页与待接入能力不入队）'
+  '人设定位、爆款标题、视频脚本、直播脚本、小红书/公众号图文、朋友圈运营、声音配音（演示页与待接入能力不入队）'

@@ -9,6 +9,8 @@ import {
   TEMPLATE_CATEGORY_TABS,
 } from '../cover-templates'
 import type { WorkbenchBridgeCollectedItem } from '../../../../services/extension/workbench-bridge-contract'
+import type { SocialComposeSourceKind } from '../../agent/task-types'
+import { sourceKindLabel, supportsImageTemplate } from '../source-kind'
 
 type StepSelectTemplateProps = {
   platform: 'xhs' | 'wechat'
@@ -17,6 +19,8 @@ type StepSelectTemplateProps = {
   onSelect: (tpl: StudioCoverTemplate) => void
   onNext: () => void
   onBack: () => void
+  sourceKind?: SocialComposeSourceKind
+  onTextOnly?: () => void
 }
 
 export function StepSelectTemplate({
@@ -26,8 +30,40 @@ export function StepSelectTemplate({
   onSelect,
   onNext,
   onBack,
+  sourceKind,
+  onTextOnly,
 }: StepSelectTemplateProps) {
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>('all')
+
+  if (sourceKind && !supportsImageTemplate(sourceKind)) {
+    return (
+      <div className="w-full max-w-3xl mx-auto py-10 px-4">
+        <div className="rounded-2xl border border-border/70 bg-card p-6 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary">步骤 3/6</span>
+            <span>素材类型不适用图文模板</span>
+          </div>
+          <h2 className="text-xl font-bold text-foreground">
+            这篇素材是{sourceKindLabel(sourceKind)}，不能直接套用图文排版
+          </h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            当前模板会把文案排进图片。{sourceKindLabel(sourceKind)}没有可复用的图文版式，
+            强行套模板会得到缺图或错版的成稿。你可以改选一篇图文笔记，或者只复刻文案。
+          </p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button variant="outline" onClick={onBack} className="rounded-xl">
+              重新选择图文笔记
+            </Button>
+            {onTextOnly ? (
+              <Button onClick={onTextOnly} className="rounded-xl">
+                只复刻文案（不生成排版配图）
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const baseTemplates = platform === 'xhs' ? STUDIO_COVER_TEMPLATES : WECHAT_COVER_TEMPLATES
   const filteredTemplates = activeCategory === 'all'

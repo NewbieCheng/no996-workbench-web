@@ -46,6 +46,21 @@ test('material capture session replaces previous batch', () => {
   assert.equal(read?.items.length, 0)
 })
 
+test('failed keyword capture can persist a terminal error state', () => {
+  clearMaterialCaptureSession()
+  const session = createEmptySession('keyword')
+  session.query = '测试词'
+  session.status = 'error'
+  session.error = '小红书采集等待超时'
+  session.progress = { done: 0, total: 5 }
+  writeMaterialCaptureSession(session)
+
+  const read = readMaterialCaptureSession()
+  assert.equal(read?.status, 'error')
+  assert.equal(read?.error, '小红书采集等待超时')
+  assert.deepEqual(read?.progress, { done: 0, total: 5 })
+})
+
 test('mergeItemIntoSession dedupes by url', () => {
   const session = createEmptySession('link')
   const item = {

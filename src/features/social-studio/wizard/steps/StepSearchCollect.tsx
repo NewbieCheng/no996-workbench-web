@@ -204,6 +204,7 @@ export function StepSearchCollect({
   const [keyword, setKeyword] = useState(initialKeyword)
   const [linkUrl, setLinkUrl] = useState('')
   const [loading, setLoading] = useState(false)
+  const searchInFlightRef = useRef(false)
 
   // 扩展插件状态与小红书登录态
   const [isConnected, setIsConnected] = useState(demoMode)
@@ -491,17 +492,22 @@ export function StepSearchCollect({
       return
     }
 
-    const ready = await ensureXhsExploreReady()
-    if (!ready) return
-
+    if (searchInFlightRef.current) return
+    searchInFlightRef.current = true
     setLoading(true)
+    const ready = await ensureXhsExploreReady()
+    if (!ready) {
+      setLoading(false)
+      searchInFlightRef.current = false
+      return
+    }
 
     const session = createEmptySession('keyword')
     session.query = kw
     session.status = 'running'
-    writeMaterialCaptureSession(session)
 
     try {
+      writeMaterialCaptureSession(session)
       const parsedLimit = clampCaptureLimit(limit)
       const items = demoMode
         ? await mockSearchWorks(kw, parsedLimit)
@@ -521,7 +527,11 @@ export function StepSearchCollect({
           })
 
       if (!items || items.length === 0) {
-        notifyOperationWarning('暂未抓取到相关内容，请尝试更换关键词或降低过滤条件', {
+        session.status = 'error'
+        session.error = '暂未抓取到相关内容，请尝试更换关键词或降低过滤条件'
+        session.progress = { done: 0, total: parsedLimit }
+        writeMaterialCaptureSession(session)
+        notifyOperationWarning(session.error, {
           id: WIZARD_SEARCH_TOAST_ID,
           raw: true,
         })
@@ -534,9 +544,14 @@ export function StepSearchCollect({
       }
     } catch (err: unknown) {
       const message = mapCaptureErrorMessage(err instanceof Error ? err.message : String(err))
+      session.status = 'error'
+      session.error = message
+      session.progress = { done: 0, total: clampCaptureLimit(limit) }
+      writeMaterialCaptureSession(session)
       notifyOperationError(`抓取失败: ${message}`, { id: WIZARD_SEARCH_TOAST_ID, raw: true })
     } finally {
       setLoading(false)
+      searchInFlightRef.current = false
     }
   }
 
@@ -1026,7 +1041,7 @@ export function StepSearchCollect({
                     {loading ? (
                       <>
                         <Loader2 size={14} className="animate-spin" />
-                        <span>后台采集中，无需切换标签…</span>
+                        <span>正在小红书页面采集，完成后返回…</span>
                       </>
                     ) : (
                       <>

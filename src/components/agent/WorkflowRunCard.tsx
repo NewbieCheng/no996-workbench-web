@@ -45,6 +45,8 @@ export type WorkflowRunCardProps = {
   progressFromSnapshot?: boolean
   /** 初始展开步骤列表（朋友圈生成页等需要一眼看到 1–5 步） */
   defaultStepsOpen?: boolean
+  /** 页内已经嵌入流程画布时隐藏卡片上的“工作流大图”按钮，避免重复入口。 */
+  hideCanvasButton?: boolean
   renderWorkflowCanvas?: (ctx: {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -107,6 +109,7 @@ export function WorkflowRunCard({
   progressFromSnapshot,
   defaultStepsOpen = false,
   renderWorkflowCanvas,
+  hideCanvasButton = false,
 }: WorkflowRunCardProps) {
   useNotifyOperationMessage(error, 'error', `wf-card-${title}`)
   const [stepsOpen, setStepsOpen] = useState(defaultStepsOpen)
@@ -146,7 +149,7 @@ export function WorkflowRunCard({
       const updateFromSnapshot = () => {
         const pct = stageProgressPercent(
           progressDefs.map((d) => ({ id: d.id, order: d.order, label: d.roleName })),
-          stages.map((s) => ({ id: s.id, status: s.status })),
+          stages.map((s) => ({ id: s.id, status: s.status, progress: s.progress })),
         )
         setProgressPct(pct)
       }
@@ -215,14 +218,16 @@ export function WorkflowRunCard({
           ) : null}
         </div>
         <div className="wf-card__head-actions" aria-label="生成操作">
-          <button
-            type="button"
-            className="wf-card__icon-btn"
-            onClick={() => setCanvasOpen(true)}
-            aria-label="查看工作流大图"
-          >
-            <Network size={17} aria-hidden="true" />
-          </button>
+          {hideCanvasButton ? null : (
+            <button
+              type="button"
+              className="wf-card__icon-btn"
+              onClick={() => setCanvasOpen(true)}
+              aria-label="查看工作流大图"
+            >
+              <Network size={17} aria-hidden="true" />
+            </button>
+          )}
           {canShowSteps ? (
             <button
               type="button"
@@ -313,7 +318,7 @@ export function WorkflowRunCard({
           ) : null}
         </div>
       ) : null}
-      {renderWorkflowCanvas ? (
+      {hideCanvasButton ? null : renderWorkflowCanvas ? (
         renderWorkflowCanvas({
           open: canvasOpen,
           onOpenChange: setCanvasOpen,

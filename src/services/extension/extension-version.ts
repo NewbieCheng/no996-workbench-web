@@ -2,7 +2,7 @@
  * 工作台要求的知源扩展最低版本。低于此版本应提示用户升级安装包。
  * 与插件 release-metadata.json / 下载包版本对齐。
  */
-export const REQUIRED_EXTENSION_VERSION = '3.7.6';
+export const REQUIRED_EXTENSION_VERSION = '3.7.7';
 
 /** 对外展示用的产品版本文案（未连上插件时的默认展示）。 */
 export const EXTENSION_PRODUCT_VERSION_LABEL = `v${REQUIRED_EXTENSION_VERSION}`;

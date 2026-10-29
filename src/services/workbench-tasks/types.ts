@@ -3,6 +3,11 @@ import type { EditorDocument } from '@no996/video-editor/core/project.ts'
 import type { AgentRunSnapshot } from '../../agent'
 import type { ToolId } from '../../prompts/text-tools'
 import type { StoredChatAttachment } from '../../lib/chat-attachments/prepare'
+import type {
+  SocialComposeMode,
+  SocialComposeResult,
+  SocialComposeTaskPayload,
+} from '../../features/social-studio/agent/task-types'
 import type { PersonaQuestionnaire } from '../persona'
 import type { ScriptConfig, ScriptGeneratePayload as ScriptGeneratePayloadBase } from '../../features/script-lab/agent/types'
 import type { TitleGeneratePayload as TitleGeneratePayloadBase, UserInputSpec } from '../../features/titles/agent/types'
@@ -57,6 +62,7 @@ export type WorkbenchTaskKind =
   | 'product_positioning'
   | 'text_sections'
   | 'source_create'
+  | 'social_compose'
   | 'script_generate'
   | 'titles_generate'
   | 'moments_plan'
@@ -218,6 +224,21 @@ export type EnqueueScriptGenerateInput = {
   route: string
   title: string
 }
+
+/** 图文生产任务（爆款复刻 / 灵感创作共用） */
+export type EnqueueSocialComposeInput = {
+  payload: SocialComposeTaskPayload
+  route: string
+  title: string
+  subtitle?: string
+}
+
+export type SocialComposeTaskResultPayload = SocialComposeTaskPayload & {
+  result?: SocialComposeResult
+  run?: AgentRunSnapshot | null
+}
+
+export type { SocialComposeMode, SocialComposeResult, SocialComposeTaskPayload }
 
 export type EnqueueSourceCreateInput = {
   sourceUrl?: string

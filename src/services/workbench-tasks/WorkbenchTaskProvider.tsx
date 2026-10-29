@@ -37,6 +37,7 @@ import type {
   EnqueuePersonaInput,
   EnqueueProductPositioningInput,
   EnqueueScriptGenerateInput,
+  EnqueueSocialComposeInput,
   EnqueueSourceCreateInput,
   EnqueueTitlesGenerateInput,
   EnqueueMomentsPlanInput,
@@ -90,6 +91,7 @@ type Actions = {
   enqueuePersona: (input: EnqueuePersonaInput) => Promise<string>
   enqueueProductPositioning: (input: EnqueueProductPositioningInput) => Promise<string>
   enqueueSourceCreate: (input: EnqueueSourceCreateInput) => Promise<string>
+  enqueueSocialCompose: (input: EnqueueSocialComposeInput) => Promise<string>
   enqueueScriptGenerate: (input: EnqueueScriptGenerateInput) => Promise<string>
   enqueueTitlesGenerate: (input: EnqueueTitlesGenerateInput) => Promise<string>
   enqueueMomentsPlan: (input: EnqueueMomentsPlanInput) => Promise<string>
@@ -374,6 +376,20 @@ export function WorkbenchTaskProvider({ children }: { children: ReactNode }) {
         } catch {
           /* noop */
         }
+        return job.id
+      },
+      async enqueueSocialCompose(input) {
+        if (userId == null) throw new Error('请先登录')
+        const repo = getRepo()
+        await repo.ensureMigrated()
+        const job = await repo.createSocialComposeJob(userId, input)
+        try {
+          await safeLoadJobs()
+          runnerRef.current?.kick()
+        } catch {
+          /* noop */
+        }
+        toastTaskEnqueued()
         return job.id
       },
       async enqueueScriptGenerate(input) {

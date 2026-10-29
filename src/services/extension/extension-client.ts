@@ -63,7 +63,7 @@ export class ExtensionClient {
 
       timer = setTimeout(() => {
         window.removeEventListener('message', handler);
-        reject(new Error('等待插件响应超时，请确认是否已安装并启用知源扩展'));
+        reject(new Error(`等待插件响应超时（${timeoutMs}ms）`));
       }, timeoutMs);
     });
   }
@@ -104,7 +104,7 @@ export class ExtensionClient {
     limit: number;
     filters?: WorkbenchBridgeKeywordCaptureFilters;
   }): Promise<WorkbenchBridgeCollectedItem[]> {
-    const resp = await this.request('collection.search', params, 120000);
+    const resp = await this.request('collection.search', params, 180000);
     if (!resp.ok || !resp.items) {
       throw new Error(resp.error || '关键词抓取失败');
     }

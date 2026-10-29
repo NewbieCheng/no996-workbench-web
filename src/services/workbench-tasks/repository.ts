@@ -5,6 +5,7 @@ import type {
   EnqueuePersonaInput,
   EnqueueProductPositioningInput,
   EnqueueScriptGenerateInput,
+  EnqueueSocialComposeInput,
   EnqueueSourceCreateInput,
   EnqueueTitlesGenerateInput,
   EnqueueMomentsPlanInput,
@@ -70,6 +71,10 @@ export type WorkbenchTaskRepository = {
   createSourceCreateJob(
     ownerUserId: number,
     input: EnqueueSourceCreateInput,
+  ): Promise<WorkbenchTaskRecord>
+  createSocialComposeJob(
+    ownerUserId: number,
+    input: EnqueueSocialComposeInput,
   ): Promise<WorkbenchTaskRecord>
   createScriptGenerateJob(
     ownerUserId: number,

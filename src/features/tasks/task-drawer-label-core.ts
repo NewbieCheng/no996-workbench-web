@@ -29,6 +29,7 @@ export function taskDrawerSubject(task: WorkbenchTaskRecord): string {
     case 'moments_plan':
     case 'moments_copy':
     case 'script_generate':
+    case 'social_compose':
     case 'text_sections':
     case 'source_create':
       return title
@@ -60,6 +61,7 @@ export function taskDrawerContext(task: WorkbenchTaskRecord): string | undefined
     case 'moments_plan':
     case 'moments_copy':
     case 'script_generate':
+    case 'social_compose':
     case 'text_sections':
     case 'source_create':
       return sub || undefined

@@ -12,6 +12,15 @@ type PlannedImageOverlay = {
   accentColor?: string
 }
 
+export type SocialImageProgress = {
+  done: number
+  total: number
+  /** 从 0 开始的图片序号 */
+  index: number
+  /** 成功时带回当前图片；失败时为空 */
+  url?: string
+}
+
 export type SocialImagePromptInput = {
   title: string
   visualDescriptions?: string[]
@@ -108,9 +117,11 @@ export async function generateSocialImages(input: {
   referenceImages?: readonly string[]
   signal?: AbortSignal
   onFailure?: (error: unknown, index: number) => void
+  onProgress?: (progress: SocialImageProgress) => void
 }): Promise<string[]> {
   const results: string[] = []
-  for (let index = 0; index < input.prompts.length; index += 1) {
+  const total = input.prompts.length
+  for (let index = 0; index < total; index += 1) {
     try {
       const reference = input.referenceImages?.[index] || input.referenceImages?.[0]
       const response = await generateAiImages({
@@ -121,10 +132,95 @@ export async function generateSocialImages(input: {
         signal: input.signal,
       })
       results.push(...response.imageUrls)
+      input.onProgress?.({
+        done: index + 1,
+        total,
+        index,
+        url: response.imageUrls[0],
+      })
     } catch (error) {
       if (input.signal?.aborted) throw error
       input.onFailure?.(error, index)
+      input.onProgress?.({ done: index + 1, total, index })
     }
+  }
+  return results
+}
+
+/** 只调生图模型，不叠加排版文字；供“逐张生图”阶段使用。 */
+export async function generateSocialImageArtwork(input: {
+  items: Array<{
+    prompt: string
+    size: string
+    referenceImage?: string
+  }>
+  signal?: AbortSignal
+  onFailure?: (error: unknown, index: number) => void
+  onProgress?: (progress: SocialImageProgress) => void
+}): Promise<Array<string | undefined>> {
+  const results: Array<string | undefined> = []
+  const total = input.items.length
+  for (let index = 0; index < total; index += 1) {
+    const item = input.items[index]
+    try {
+      const response = await generateAiImages({
+        prompt: item.prompt,
+        size: item.size,
+        n: 1,
+        image: item.referenceImage,
+        signal: input.signal,
+      })
+      results.push(response.imageUrls[0])
+      input.onProgress?.({
+        done: index + 1,
+        total,
+        index,
+        url: response.imageUrls[0],
+      })
+    } catch (error) {
+      if (input.signal?.aborted) throw error
+      input.onFailure?.(error, index)
+      results.push(undefined)
+      input.onProgress?.({ done: index + 1, total, index })
+    }
+  }
+  return results
+}
+
+/** 把规划好的标题/辅助文字叠到已生成画面上；供“排版合成”阶段使用。 */
+export async function composeSocialImageCards(input: {
+  items: Array<{
+    imageUrl: string | undefined
+    overlay: PlannedImageOverlay
+    outputSize: { width: number; height: number }
+  }>
+  signal?: AbortSignal
+  onFailure?: (error: unknown, index: number) => void
+  onProgress?: (progress: SocialImageProgress) => void
+}): Promise<Array<string | undefined>> {
+  const results: Array<string | undefined> = []
+  const total = input.items.length
+  for (let index = 0; index < total; index += 1) {
+    const item = input.items[index]
+    if (!item.imageUrl) {
+      results.push(undefined)
+      input.onProgress?.({ done: index + 1, total, index })
+      continue
+    }
+    try {
+      results.push(
+        await composeSocialImageCard({
+          imageUrl: item.imageUrl,
+          overlay: item.overlay,
+          size: item.outputSize,
+        }),
+      )
+    } catch (error) {
+      if (input.signal?.aborted) throw error
+      input.onFailure?.(error, index)
+      results.push(undefined)
+    }
+    input.onProgress?.({ done: index + 1, total, index, url: results[index] })
   }
   return results
 }
@@ -139,21 +235,27 @@ export async function generateSocialImageCards(input: {
   }>
   signal?: AbortSignal
   onFailure?: (error: unknown, index: number) => void
+  onProgress?: (progress: SocialImageProgress) => void
 }): Promise<Array<string | undefined>> {
-  const results: Array<string | undefined> = []
-  for (let index = 0; index < input.items.length; index += 1) {
-    const item = input.items[index]
-    try {
-      const response = await generateAiImages({ prompt: item.prompt, size: item.size, n: 1, image: item.referenceImage, signal: input.signal })
-      const imageUrl = response.imageUrls[0]
-      results.push(imageUrl ? await composeSocialImageCard({ imageUrl, overlay: item.overlay, size: item.outputSize }) : undefined)
-    } catch (error) {
-      if (input.signal?.aborted) throw error
-      input.onFailure?.(error, index)
-      results.push(undefined)
-    }
-  }
-  return results
+  const artwork = await generateSocialImageArtwork({
+    items: input.items.map((item) => ({
+      prompt: item.prompt,
+      size: item.size,
+      referenceImage: item.referenceImage,
+    })),
+    signal: input.signal,
+    onFailure: input.onFailure,
+  })
+  return composeSocialImageCards({
+    items: input.items.map((item, index) => ({
+      imageUrl: artwork[index],
+      overlay: item.overlay,
+      outputSize: item.outputSize,
+    })),
+    signal: input.signal,
+    onFailure: input.onFailure,
+    onProgress: input.onProgress,
+  })
 }
 
 /** Compose exact planned typography over generated artwork so the final image has legible copy. */

@@ -12,6 +12,8 @@ import {
   type IPVideoCreatePayload,
   type PersonaGeneratePayload,
   type ProductPositioningPayload,
+  type EnqueueSocialComposeInput,
+  type SocialComposeTaskPayload,
   type ScriptTaskPayload,
   type TaskBlobRecord,
   type TaskPayloadRecord,
@@ -713,6 +715,37 @@ export function createIndexedDbWorkbenchTaskRepository(): WorkbenchTaskRepositor
         },
       }
       await repo.putPayload({ id, kind: 'script_generate', data: payload })
+      await repo.putJob(job)
+      return job
+    },
+
+    async createSocialComposeJob(ownerUserId, input: EnqueueSocialComposeInput) {
+      await repo.ensureMigrated()
+      const id = newTaskId()
+      const payload: SocialComposeTaskPayload = { ...input.payload, run: null }
+      const modeLabel = input.payload.mode === 'wizard' ? '爆款复刻' : '灵感创作'
+      const actionLabel = input.payload.action === 'images_only' ? ' · 只生成配图' : ''
+      const job: WorkbenchTaskRecord = {
+        id,
+        ownerUserId,
+        kind: 'social_compose',
+        status: 'queued',
+        title: input.title,
+        subtitle: input.subtitle ?? `${modeLabel}${actionLabel}`,
+        route: input.route,
+        createdAt: Date.now(),
+        payloadId: id,
+        meta: {
+          targetType: input.payload.targetType,
+          platform: input.payload.platform,
+          mode: input.payload.mode,
+          action: input.payload.action,
+          status: 'queued',
+          textReady: '0',
+          pct: '0',
+        },
+      }
+      await repo.putPayload({ id, kind: 'social_compose', data: payload })
       await repo.putJob(job)
       return job
     },

@@ -1,8 +1,15 @@
 import { useState } from 'react'
-import { ArrowRightIcon, ArrowLeftIcon, SparklesIcon, CheckCircle2Icon, PlayIcon } from 'lucide-react'
+import { ArrowRightIcon, ArrowLeftIcon, SparklesIcon, CheckCircle2Icon } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { Input } from '@no996/ui/input'
 import { Textarea } from '@no996/ui/textarea'
+import type { AgentRunSnapshot } from '../../../../agent'
+import {
+  extractPartialFirstArrayString,
+  extractPartialJsonField,
+} from '../../../../agent/partial-json-field'
+import { AgentStepRunCard } from '../../../../components/agent/AgentStepRunCard'
+import { SOCIAL_WIZARD_OUTLINE_STAGES } from '../../agent/wizard-outline-stages'
 import type { WizardImagePlan, WizardOutlinePlan } from '../types'
 
 type StepOutlinePlanProps = {
@@ -14,6 +21,11 @@ type StepOutlinePlanProps = {
   planning?: boolean
   planningError?: string | null
   onRetry?: () => void
+  /** 视频/纯文本素材走“只复刻文案”时允许没有图片规划。 */
+  allowNoImages?: boolean
+  /** 第 5 步规划大纲的真实运行快照。 */
+  snapshot?: AgentRunSnapshot | null
+  onCancel?: () => void
 }
 
 export function StepOutlinePlan({
@@ -25,8 +37,23 @@ export function StepOutlinePlan({
   planning = false,
   planningError,
   onRetry,
+  allowNoImages = false,
+  snapshot,
+  onCancel,
 }: StepOutlinePlanProps) {
   const [selectedTitleIdx, setSelectedTitleIdx] = useState(0)
+  const outlineRaw = snapshot?.stages.find((stage) => stage.id === 'plan-outline')?.streamingContent ?? ''
+  const outlineTitle = extractPartialFirstArrayString(outlineRaw, 'suggestedTitles')
+  const outlineHook = extractPartialJsonField(outlineRaw, 'hook')
+  const outlineStreamText = [
+    outlineTitle ? `候选标题：${outlineTitle}` : '',
+    outlineHook ? `开篇钩子：${outlineHook}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+  const outlineStreamHint = outlineRaw
+    ? `已接收 ${outlineRaw.length.toLocaleString('zh-CN')} 字，正在解析标题、钩子与分段…`
+    : '正在等待模型返回规划内容…'
 
   function updateImagePlan(index: number, patch: Partial<WizardImagePlan>) {
     const imagePlans = [...outline.imagePlans]
@@ -66,10 +93,12 @@ export function StepOutlinePlan({
             <ArrowLeftIcon className="size-3.5 mr-1" />
             <span>上一步</span>
           </Button>
-          <Button size="sm" onClick={onNext} disabled={planning || Boolean(planningError) || !outline.sections.length || !outline.imagePlans.length} className="rounded-xl gap-1.5 font-medium bg-primary text-primary-foreground">
-            <PlayIcon className="size-3.5 fill-current" />
-            <span>立即开始生成</span>
-          </Button>
+          {onRetry ? (
+            <Button variant="outline" size="sm" onClick={onRetry} disabled={planning} className="rounded-xl gap-1.5">
+              <SparklesIcon className="size-3.5" />
+              <span>重新规划</span>
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -85,7 +114,11 @@ export function StepOutlinePlan({
               <p className="text-xs text-muted-foreground">每张图的标题、说明和角标会由工作台排版叠加，保证文字准确清晰。</p>
             </div>
             {outline.imagePlans.map((image, index) => (
-              <article key={image.index} className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-2">
+              <article
+                key={image.index}
+                className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-2 agent-reveal"
+                style={{ animationDelay: `${140 + index * 70}ms` }}
+              >
                 <div className="space-y-2">
                   <div className="text-xs font-semibold text-foreground">图片 {image.index} · {image.role === 'cover' ? '封面' : `正文图${image.sectionIndex ? `（第 ${image.sectionIndex} 段）` : ''}`}</div>
                   <label className="block space-y-1 text-[11px] text-muted-foreground">画面内容
@@ -109,10 +142,19 @@ export function StepOutlinePlan({
         </section>
       ) : null}
 
-      {planning ? (
-        <div role="status" className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-8 text-sm text-muted-foreground">
-          <SparklesIcon className="size-4 animate-pulse text-primary" />AI 正在规划大纲、钩子、分段草案与视觉描述…
-        </div>
+      {planning || planningError ? (
+        <AgentStepRunCard
+          title={platform === 'xhs' ? '规划小红书图文大纲' : '规划公众号长文大纲'}
+          status={planningError ? 'failed' : 'running'}
+          snapshot={snapshot}
+          defs={SOCIAL_WIZARD_OUTLINE_STAGES}
+          streamingText={outlineStreamText}
+          streamHint={outlineStreamHint}
+          emptyHint="模型正在返回标题、钩子与分段规划；完成后会显示为可编辑表单。"
+          detailTitle="内容规划 · 执行过程"
+          onCancel={onCancel}
+          onRetry={onRetry}
+        />
       ) : null}
       {planningError && !planning ? (
         <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
@@ -123,7 +165,7 @@ export function StepOutlinePlan({
 
       {!planning && !planningError ? <>
       {/* 推荐爆款标题候选 */}
-      <div className="p-5 rounded-2xl border border-border/70 bg-card shadow-sm space-y-3">
+      <div className="p-5 rounded-2xl border border-border/70 bg-card shadow-sm space-y-3 agent-reveal">
         <div className="flex items-center gap-2">
           <SparklesIcon className="size-4 text-primary" />
           <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
@@ -136,11 +178,12 @@ export function StepOutlinePlan({
             return (
               <div
                 key={t}
+                style={{ animationDelay: `${idx * 55}ms` }}
               onClick={() => {
                   setSelectedTitleIdx(0)
                   onChange({ suggestedTitles: [t, ...outline.suggestedTitles.filter((_, titleIndex) => titleIndex !== idx)] })
                 }}
-                className={`p-3 rounded-xl border text-xs font-medium cursor-pointer transition-all flex items-center justify-between ${
+                className={`p-3 rounded-xl border text-xs font-medium cursor-pointer transition-all flex items-center justify-between agent-reveal ${
                   isSelected
                     ? 'border-primary bg-primary/5 text-foreground ring-1 ring-primary/30 font-semibold'
                     : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
@@ -155,7 +198,7 @@ export function StepOutlinePlan({
       </div>
 
       {/* Hook 黄金前三秒开头 */}
-      <div className="p-4 rounded-xl border border-border/60 bg-muted/30 space-y-1.5">
+      <div className="p-4 rounded-xl border border-border/60 bg-muted/30 space-y-1.5 agent-reveal" style={{ animationDelay: '70ms' }}>
         <span className="text-[11px] font-semibold text-primary uppercase">Hook 黄金吸睛导语</span>
         <Textarea value={outline.hook} onChange={(event) => onChange({ hook: event.target.value })} rows={2} className="text-xs bg-transparent border-0 focus-visible:ring-1 resize-y" aria-label="开篇钩子" />
       </div>
@@ -170,7 +213,8 @@ export function StepOutlinePlan({
           {outline.sections.map((sec, idx) => (
             <div
               key={sec.index}
-              className="p-4 rounded-xl border border-border/70 bg-card shadow-sm space-y-2"
+              className="p-4 rounded-xl border border-border/70 bg-card shadow-sm space-y-2 agent-reveal"
+              style={{ animationDelay: `${120 + idx * 70}ms` }}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="size-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0">
@@ -207,7 +251,7 @@ export function StepOutlinePlan({
       </div>
 
       {/* 底部行动号召 CTA */}
-      <div className="p-4 rounded-xl border border-border/60 bg-muted/30 flex items-center justify-between text-xs">
+      <div className="p-4 rounded-xl border border-border/60 bg-muted/30 flex items-center justify-between text-xs agent-reveal" style={{ animationDelay: '180ms' }}>
         <div className="space-y-0.5">
           <span className="text-[11px] font-semibold text-primary">行动号召 (CTA)</span>
           <Textarea value={outline.conclusion} onChange={(event) => onChange({ conclusion: event.target.value })} rows={2} className="text-xs bg-transparent border-0 focus-visible:ring-1 resize-y" aria-label="结尾行动号召" />
@@ -220,7 +264,7 @@ export function StepOutlinePlan({
         <Button variant="outline" onClick={onBack} className="rounded-xl">
           上一步
         </Button>
-        <Button onClick={onNext} disabled={planning || Boolean(planningError) || !outline.sections.length || !outline.imagePlans.length} className="rounded-xl gap-2 font-medium bg-primary text-primary-foreground shadow-sm hover:shadow">
+        <Button onClick={onNext} disabled={planning || Boolean(planningError) || !outline.sections.length || (!allowNoImages && !outline.imagePlans.length)} className="rounded-xl gap-2 font-medium bg-primary text-primary-foreground shadow-sm hover:shadow">
           <SparklesIcon className="size-4" />
           <span>确认大纲并启动生成</span>
           <ArrowRightIcon className="size-4" />

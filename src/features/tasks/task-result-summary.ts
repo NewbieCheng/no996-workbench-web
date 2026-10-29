@@ -43,6 +43,18 @@ export function taskResultSummaryChips(task: WorkbenchTaskRecord): TaskSummaryCh
         chips.push({ id: 'sections', messageKey: 'taskChipSectionCount', values: { count: m.sectionCount } })
       }
       break
+    case 'social_compose':
+      if (m.imageDone) {
+        chips.push({
+          id: 'images',
+          messageKey: 'taskChipSocialImages',
+          values: { count: m.imageDone },
+        })
+      }
+      if (m.failedImages && m.failedImages !== '0') {
+        chips.push({ id: 'imageFailures', messageKey: 'taskChipSocialImageFailures', tone: 'warn', values: { count: m.failedImages } })
+      }
+      break
     case 'source_create':
       if (m.collectedTitle) {
         chips.push({ id: 'title', messageKey: 'taskChipSourceTitle', values: { title: m.collectedTitle } })
@@ -92,6 +104,7 @@ export function isAgentLikeTask(task: WorkbenchTaskRecord): boolean {
     task.kind === 'moments_copy' ||
     task.kind === 'persona_generate' ||
     task.kind === 'text_sections' ||
+    task.kind === 'social_compose' ||
     task.kind === 'source_create'
   )
 }

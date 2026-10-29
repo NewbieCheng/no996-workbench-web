@@ -1232,3 +1232,34 @@ npm run test:flows   # 122 项
 | 后台任务 kind `product_positioning` 与执行器 | `src/services/workbench-tasks/executors/product-positioning.ts` |
 
 测试：`report-parser.test.mjs` / `adequacy.test.mjs` 挂 `npm run test:agent`；`product-position` 的注册与演示端到端断言在 `scripts/agent-flow-check/entry.ts`（`npm run test:flows`）。
+
+## 11. 图文生产任务（2026-10-29：爆款复刻 + 灵感创作统一入队）
+
+页面与流程说明见 `docs/social-wizard.md`。爆款复刻与灵感创作共用 `social_compose` 后台任务，
+演示模式不入队。
+
+可直接复用的部分：
+
+| 能力 | 入口 |
+| --- | --- |
+| 统一图文生产 flow（6 阶段，含逐张生图） | `src/features/social-studio/agent/social-compose-production-flow.ts` |
+| 任务类型、payload、结果类型 | `src/features/social-studio/agent/task-types.ts` |
+| 任务执行器 | `src/services/workbench-tasks/executors/social-compose.ts` |
+| 页面观察任务（轮询快照/正文/结果） | `src/features/social-studio/run/useSocialComposeTask.ts` |
+| 运行面板（复用 WorkflowRunCard + 内嵌流程拓扑 + 配图板） | `src/features/social-studio/run/SocialComposeRunPanel.tsx` |
+| 右侧逐张配图槽位 | `src/features/social-studio/run/ImageGenerationBoard.tsx` |
+| 非图文素材判定 | `src/features/social-studio/wizard/source-kind.ts` |
+| 阶段内细进度（2/4 张） | `StageRunner.setStageProgress()` + `AgentStageState.progress` |
+
+`WorkflowRunCard` 新增 `hideCanvasButton`，`AgentWorkflowCanvas` 新增 `embedded`；两者都是可选参数，
+现有页面无需修改。`StageProgressState.progress` 也是可选字段，任务中心与页面共用同一套百分比。
+
+### 11.1 单步运行卡（2026-10-29）
+
+| 能力 | 入口 |
+| --- | --- |
+| 单步进度条 + 右侧过程抽屉 + 可展示流式摘要 | `src/components/agent/AgentStepRunCard.tsx` |
+| 从流式 JSON 中抽取半截字符串字段（如规划钩子/候选标题） | `src/agent/partial-json-field.ts` |
+
+`AgentStepRunCard` 只消费 `AgentRunSnapshot`，复用 `AgentProgress` 与 `stageProgressPercent`；
+第 5 步内容规划已接入，后续 AI 单步直接复用，不要再写 spinner。

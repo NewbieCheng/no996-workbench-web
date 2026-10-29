@@ -1,0 +1,349 @@
+.agent-step-run {
+  border: 1px solid var(--border, #e7e2da);
+  border-radius: 16px;
+  /* 过程卡同样用实底，避免透出后面的长表单。 */
+  background: var(--background, #fbfbfc);
+  overflow: hidden;
+}
+
+.agent-step-run__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.agent-step-run__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary, #c25b3d) 12%, transparent);
+  color: var(--primary, #c25b3d);
+  flex: 0 0 auto;
+}
+
+.agent-step-run__head-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agent-step-run__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.agent-step-run__title-row strong {
+  font-size: 13px;
+  color: var(--foreground, #2e2a24);
+}
+
+.agent-step-run__status,
+.agent-step-run__step {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--muted, #f4f0e9);
+  color: var(--muted-foreground, #8a8175);
+}
+
+.agent-step-run__stage {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted-foreground, #8a8175);
+}
+
+.agent-step-run__meter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.agent-step-run__meter {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted, #f1ece3);
+}
+
+.agent-step-run__meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary, #c25b3d);
+  transition: width 240ms ease;
+}
+
+.agent-step-run__pct {
+  min-width: 34px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary, #c25b3d);
+}
+
+.agent-step-run__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.agent-step-run__detail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border, #e7e2da);
+  border-radius: 9px;
+  background: var(--background, #fff);
+  color: var(--foreground, #2e2a24);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.agent-step-run__detail-btn:hover {
+  border-color: color-mix(in srgb, var(--primary, #c25b3d) 35%, var(--border, #e7e2da));
+}
+
+.agent-step-run__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border, #e7e2da);
+  border-radius: 9px;
+  background: var(--background, #fff);
+  color: var(--muted-foreground, #8a8175);
+  cursor: pointer;
+}
+
+.agent-step-run__icon--danger {
+  color: var(--destructive, #a33a2b);
+}
+
+.agent-step-run__portal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.agent-step-run__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(34, 28, 22, 0.28);
+  cursor: pointer;
+}
+
+.agent-step-run__drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 94vw);
+  display: flex;
+  flex-direction: column;
+  /* 面板必须是实底：半透明会让背景内容透上来，看不清流式文字。 */
+  background: var(--background, #fbfbfc);
+  box-shadow: -18px 0 48px rgba(40, 30, 20, 0.18);
+  animation: agent-step-run-slide 180ms ease-out;
+  isolation: isolate;
+}
+
+.agent-step-run__drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 10px;
+  border-bottom: 1px solid var(--border, #eee9e1);
+}
+
+.agent-step-run__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--primary, #c25b3d);
+}
+
+.agent-step-run__drawer-head h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+  color: var(--foreground, #2e2a24);
+}
+
+.agent-step-run__drawer-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px 4px;
+}
+
+.agent-step-run__drawer-meter .agent-step-run__meter {
+  flex: 1;
+}
+
+.agent-step-run__drawer-meter strong {
+  font-size: 12px;
+  color: var(--primary, #c25b3d);
+}
+
+.agent-step-run__drawer-stage {
+  margin: 0;
+  padding: 0 18px 10px;
+  font-size: 12px;
+  color: var(--muted-foreground, #8a8175);
+}
+
+.agent-step-run__drawer-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 18px 18px;
+}
+
+.agent-step-run__stream-line {
+  height: 3px;
+  margin: 0 18px 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary, #c25b3d) 14%, transparent);
+}
+
+.agent-step-run__stream-line > span {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--primary, #c25b3d), transparent);
+  animation: agent-step-run-stream 1.4s ease-in-out infinite;
+}
+
+.agent-step-run__stream-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 0 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground, #8a8175);
+}
+
+.agent-step-run__stream-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--muted-foreground, #8a8175);
+}
+
+.agent-step-run__stream-state[data-running] {
+  color: var(--primary, #c25b3d);
+}
+
+.agent-step-run__stream-state[data-running]::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: agent-step-run-dot 1s ease-in-out infinite;
+}
+
+.agent-step-run__stream {
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--muted, #f7f4ef);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--foreground, #2e2a24);
+  min-height: 64px;
+}
+
+.agent-step-run__empty {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted-foreground, #8a8175);
+}
+
+.agent-step-run__drawer-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 18px;
+  border-top: 1px solid var(--border, #eee9e1);
+}
+
+.agent-step-run__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border, #e7e2da);
+  border-radius: 10px;
+  background: var(--background, #fff);
+  color: var(--foreground, #2e2a24);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@keyframes agent-step-run-stream {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes agent-step-run-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes agent-step-run-slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-step-run__drawer {
+    animation: none;
+  }
+}

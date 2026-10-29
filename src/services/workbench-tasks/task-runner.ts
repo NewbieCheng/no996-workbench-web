@@ -5,6 +5,7 @@ import { toastError, toastSuccess } from '../../lib/toast'
 import { executePersonaGenerate } from './executors/persona-generate'
 import { executeProductPositioning } from './executors/product-positioning'
 import { executeScriptGenerate } from './executors/script-generate'
+import { executeSocialCompose } from './executors/social-compose'
 import { executeSourceCreate } from './executors/source-create'
 import { executeIPVideoCreate } from './executors/ip-video-create'
 import { executeTitlesGenerate } from './executors/titles-generate'
@@ -152,6 +153,8 @@ export class WorkbenchTaskRunner {
             await executeProductPositioning(this.repo, job, ac.signal)
           } else if (job.kind === 'source_create') {
             await executeSourceCreate(this.repo, job, ac.signal)
+          } else if (job.kind === 'social_compose') {
+            await executeSocialCompose(this.repo, job, ac.signal)
           } else if (job.kind === 'script_generate') {
             await executeScriptGenerate(this.repo, job, ac.signal)
           } else if (job.kind === 'ip_video_create') {

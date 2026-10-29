@@ -46,6 +46,8 @@ export type XiaohongshuInspirationStudioPanelProps = {
   onRemoveImageAt: (index: number) => void
   onReorderImages: (from: number, to: number) => void
   previewPrefs: ReturnType<typeof useSocialStudioPreviewPrefs>
+  /** 图文生产任务运行中时替换舞台区；不传则保持原来的编辑/预览。 */
+  runPanel?: ReactNode
 }
 
 /** 小红书 · 灵感创作双栏工作台（独立板块） */
@@ -82,6 +84,7 @@ export function XiaohongshuInspirationStudioPanel({
   onRemoveImageAt,
   onReorderImages,
   previewPrefs,
+  runPanel,
 }: XiaohongshuInspirationStudioPanelProps) {
   const { t } = useTranslation('socialPublish')
 
@@ -114,6 +117,8 @@ export function XiaohongshuInspirationStudioPanel({
       }
       stage={
         <SocialStudioStageFrame generating={generating}>
+          {generating && runPanel && !isRewriteMode ? runPanel : (
+            <>
           {generating && isRewriteMode ? (
             <RewriteGenerationOverlay
               platform="xhs"
@@ -151,6 +156,8 @@ export function XiaohongshuInspirationStudioPanel({
             onPhoneSizeChange={previewPrefs.setPhoneSize}
             xhsPublishMode={effectiveXhsMode}
           />
+            </>
+          )}
         </SocialStudioStageFrame>
       }
       prepHead={<span className="text-sm font-semibold">{t('prepPanelTitle')}</span>}

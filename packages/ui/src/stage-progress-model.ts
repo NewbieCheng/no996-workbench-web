@@ -29,6 +29,12 @@ export type StageProgressState = {
   error?: string
   startedAt?: number
   finishedAt?: number
+  /** 阶段内细进度（如逐张生图 2/4）；只影响运行中那一步的百分比，不改变阶段状态。 */
+  progress?: {
+    done: number
+    total: number
+    label?: string
+  }
 }
 
 export type StageProgressProps = {
@@ -93,8 +99,17 @@ export function stageProgressPercent(steps: StageProgressStep[], states: StagePr
   const { ordered, stateOf } = normalizeSteps(steps, states)
   const doneCount = ordered.filter((s) => stateOf(s.id).status === 'done').length
   if (doneCount >= total) return 100
-  const running = ordered.some((s) => stateOf(s.id).status === 'running')
-  if (running) return Math.min(99, Math.round(((doneCount + 0.5) / total) * 100))
+  const running = ordered
+    .map((s) => ({ step: s, state: stateOf(s.id) }))
+    .find((item) => item.state.status === 'running')
+  if (running) {
+    const progress = running.state.progress
+    const fraction =
+      progress && progress.total > 0
+        ? Math.max(0, Math.min(1, progress.done / progress.total))
+        : 0.5
+    return Math.min(99, Math.round(((doneCount + fraction) / total) * 100))
+  }
   if (doneCount > 0) return Math.round((doneCount / total) * 100)
   return 0
 }

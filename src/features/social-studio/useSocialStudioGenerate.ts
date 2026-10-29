@@ -14,6 +14,10 @@ import {
 } from '../../services/social-studio/generate-social-images'
 import { prepareAttachmentsFromItems } from '../../lib/chat-attachments/prepare'
 import type { AttachmentUploaderItem } from '@no996/ui/attachment-uploader'
+import { isWorkbenchAiDemoMode } from '../../api/workbench-ai'
+import { useWorkbenchTaskActions } from '../../services/workbench-tasks'
+import type { SocialComposeTaskPayload } from './agent/task-types'
+import { useSocialComposeTask } from './run/useSocialComposeTask'
 import { readMaterialCaptureSession } from './material-import/material-capture-session-store'
 import type { SocialStudioBrief, SocialStudioPlatform } from './creative/social-studio-brief-types'
 import type { SocialContentMode } from './studio-types'
@@ -58,6 +62,38 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
   const clearGenerationReady = useCallback(() => setGenerationReady(false), [])
   const composeSink = useMemo(() => createMemorySink(SOCIAL_COMPOSE_FLOW_ID), [])
   const rewriteSink = useMemo(() => createMemorySink(SOCIAL_REWRITE_FLOW_ID), [])
+  const { enqueueSocialCompose } = useWorkbenchTaskActions()
+  const activeActionRef = useRef<'compose' | 'images_only'>('compose')
+  const targetType = options.platform === 'xhs' ? 'xiaohongshu' : 'wechat-article'
+
+  const composeTask = useSocialComposeTask({
+    targetType,
+    mode: 'studio',
+    onText: (text) => {
+      if (activeActionRef.current === 'compose') options.setContent(text)
+    },
+    onResult: (result) => {
+      if (activeActionRef.current === 'compose') {
+        options.onTitle(result.title)
+        options.setContent(result.content)
+        options.onSummary?.(result.summary)
+      }
+      if (result.imageUrls.length > 0) {
+        options.onGeneratedImages?.(result.imageUrls)
+      }
+      setGenerationReady(true)
+      setGenerating(false)
+      setStageLabel('')
+      if (result.warnings?.length) {
+        notifyOperationWarning(result.warnings[0], { id: 'social-generate', raw: true })
+      }
+    },
+    onError: (message) => {
+      setGenerating(false)
+      setStageLabel('')
+      notifyOperationError(message, { id: 'social-generate' })
+    },
+  })
 
   const isRewriteMode =
     options.contentMode === 'article' && Boolean(options.sourceBody?.trim()) && options.rewriteSettings
@@ -65,10 +101,11 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
   const cancel = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
+    void composeTask.cancel()
     setGenerating(false)
     setStageLabel('')
     setRewriteProgress(0)
-  }, [])
+  }, [composeTask])
 
   const generate = useCallback(async () => {
     if (isRewriteMode && options.rewriteSettings && options.onRewriteSession) {
@@ -139,6 +176,50 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
       notifyOperationWarning(t('briefTopicRequired'), { id: 'social-generate', raw: true })
       return
     }
+
+    // 正式模式：统一入队。演示模式继续走下面的页内流程（演示不入队，也不伪造云端结果）。
+    if (!isWorkbenchAiDemoMode()) {
+      setGenerationReady(false)
+      setGenerating(true)
+      setStageLabel('正在提交图文生产任务…')
+      activeActionRef.current = 'compose'
+      options.onRewriteSession?.(null)
+      options.setContent('')
+      options.onTitle(topic.split('\n')[0]?.slice(0, 200) || topic.slice(0, 200))
+
+      try {
+        const chatAttachments = options.attachmentItems?.length
+          ? await prepareAttachmentsFromItems(options.attachmentItems, {
+              onNotice: (message) => notifyOperationWarning(message, { raw: true }),
+            })
+          : undefined
+        const payload: SocialComposeTaskPayload = {
+          action: 'compose',
+          mode: 'studio',
+          platform: options.platform,
+          contentMode: options.contentMode,
+          targetType,
+          brief: options.brief,
+          personaContent: options.personaContent,
+          chatAttachments,
+        }
+        const taskId = await enqueueSocialCompose({
+          payload,
+          route: options.platform === 'xhs' ? '/workbench/xiaohongshu' : '/workbench/wechat-article',
+          title: topic.split('\n')[0]?.slice(0, 60) || '图文创作',
+          subtitle: `${options.platform === 'xhs' ? '小红书' : '公众号'} · 灵感创作`,
+        })
+        composeTask.bindTask(taskId)
+      } catch (error) {
+        setGenerating(false)
+        setStageLabel('')
+        notifyOperationError(error instanceof Error ? error.message : String(error), {
+          id: 'social-generate',
+        })
+      }
+      return
+    }
+
     setGenerationReady(false)
     setGenerating(true)
     setStageLabel('')
@@ -249,12 +330,44 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
       setStageLabel('')
       abortRef.current = null
     }
-  }, [composeSink, isRewriteMode, options, rewriteSink, t])
+  }, [composeSink, composeTask, enqueueSocialCompose, isRewriteMode, options, rewriteSink, t, targetType])
 
   /** 仅生成配图，不重写正文（已有文章时用）。 */
   const generateImagesOnly = useCallback(async () => {
     if (!options.onGeneratedImages) {
       notifyOperationWarning('当前模式不支持单独生成配图。', { id: 'social-generate', raw: true })
+      return
+    }
+    if (!isWorkbenchAiDemoMode()) {
+      setGenerating(true)
+      setStageLabel('正在提交配图生成任务…')
+      activeActionRef.current = 'images_only'
+      try {
+        const payload: SocialComposeTaskPayload = {
+          action: 'images_only',
+          mode: 'studio',
+          platform: options.platform,
+          contentMode: options.contentMode,
+          targetType,
+          brief: options.brief,
+          personaContent: options.personaContent,
+          existingTitle: options.sourceTitle,
+          existingContent: options.sourceBody,
+        }
+        const taskId = await enqueueSocialCompose({
+          payload,
+          route: options.platform === 'xhs' ? '/workbench/xiaohongshu' : '/workbench/wechat-article',
+          title: (options.sourceTitle || options.brief.topic || '图文创作').slice(0, 60),
+          subtitle: `${options.platform === 'xhs' ? '小红书' : '公众号'} · 只生成配图`,
+        })
+        composeTask.bindTask(taskId)
+      } catch (error) {
+        setGenerating(false)
+        setStageLabel('')
+        notifyOperationError(error instanceof Error ? error.message : String(error), {
+          id: 'social-generate',
+        })
+      }
       return
     }
     const targetCount = Math.min(Math.max(1, options.brief.imageCount || 1), 4)
@@ -301,7 +414,7 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
       setStageLabel('')
       abortRef.current = null
     }
-  }, [options, t])
+  }, [composeTask, enqueueSocialCompose, options, t, targetType])
 
   return {
     generating,
@@ -314,5 +427,6 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
     generationReady,
     markGenerationReady,
     clearGenerationReady,
+    composeTask,
   }
 }

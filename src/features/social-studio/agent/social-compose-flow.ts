@@ -38,7 +38,7 @@ export type SocialComposeFlowResult = {
   imagePrompts: string[]
 }
 
-async function resolveReference(
+export async function resolveReference(
   platform: SocialStudioPlatform,
   brief: SocialStudioBrief,
   sessionItem: WorkbenchBridgeCollectedItem | null | undefined,
@@ -95,7 +95,7 @@ export async function runSocialComposeFlow(input: RunSocialComposeFlowInput): Pr
 
   let reference: ResolvedReference | null = null
 
-  await runner.runAlgo('resolve-reference', async () => {
+  await runner.runTool('resolve-reference', async () => {
     input.onStageLabel?.('正在解析参考素材…')
     reference = await resolveReference(input.platform, input.brief, input.sessionItem, input.clients, input.signal)
     return reference
@@ -127,7 +127,7 @@ export async function runSocialComposeFlow(input: RunSocialComposeFlowInput): Pr
   let imagePrompts: string[] = []
   if (needImageStep) {
     input.onStageLabel?.('正在准备配图提示…')
-    imagePrompts = await runner.runAlgo('compose-images', async () => buildSocialImagePrompts({
+    imagePrompts = await runner.runAlgo('plan-images', () => buildSocialImagePrompts({
       title: input.brief.topic,
       style: `${input.brief.expressionStyle}, ${input.brief.voiceTone}`,
       count: 1,

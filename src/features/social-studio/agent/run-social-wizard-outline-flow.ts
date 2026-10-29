@@ -1,4 +1,4 @@
-import { createStageRunner, type AgentClients } from '../../../agent'
+import { createStageRunner, type AgentClients, type AgentSink } from '../../../agent'
 import type { WorkbenchBridgeCollectedItem } from '../../../services/extension/workbench-bridge-contract'
 import type { StudioCoverTemplate, WizardCustomConfig, WizardOutlinePlan, CreationOrigin, IdeationTopicForm, TopicAngleOption } from '../wizard/types'
 import { parseWizardOutline } from './wizard-outline-parse'
@@ -15,6 +15,7 @@ export type RunSocialWizardOutlineFlowInput = {
   customConfig: WizardCustomConfig
   template: StudioCoverTemplate
   clients: AgentClients
+  sink?: AgentSink
   signal?: AbortSignal
 }
 
@@ -59,6 +60,7 @@ export async function runSocialWizardOutlineFlow(input: RunSocialWizardOutlineFl
     flowId: SOCIAL_WIZARD_OUTLINE_FLOW_ID,
     stages: SOCIAL_WIZARD_OUTLINE_STAGES,
     clients: input.clients,
+    sink: input.sink,
     signal: input.signal,
   })
   return runner.runModel('plan-outline', {

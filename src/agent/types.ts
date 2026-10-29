@@ -61,6 +61,16 @@ export type AgentStageState = {
   streamingReasoningContent?: string
   /** 多轮联网搜索的查询目的、关键词与结果状态；不包含原始搜索返回。 */
   searchAttempts?: AgentSearchAttempt[]
+  /**
+   * 阶段内的细进度（例如逐张生图 2/4）。
+   * 只描述当前阶段完成了多少，不改变阶段本身的 kind；任务中心会把它折算进总百分比。
+   */
+  progress?: {
+    done: number
+    total: number
+    /** 可展示的细进度文案，例如「正在生成第 2/4 张配图」 */
+    label?: string
+  }
   /** 多轮工具交互中已结束的模型请求的思考过程；保留供流程画布回看 */
   reasoningHistory?: Array<{ turn: number; text: string }>
   startedAt?: number

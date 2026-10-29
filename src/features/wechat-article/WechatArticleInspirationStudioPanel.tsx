@@ -60,6 +60,8 @@ export type WechatArticleInspirationStudioPanelProps = {
   onReorderImages: (from: number, to: number) => void
   onPhoneSizeChange: (size: PhoneFrameSize) => void
   weixinPublishMode: WeixinPublishMode
+  /** 图文生产任务运行中时替换舞台区；不传则保持原来的编辑/预览。 */
+  runPanel?: ReactNode
 }
 
 /** 公众号 · 灵感创作双栏工作台（独立板块） */
@@ -101,6 +103,7 @@ export function WechatArticleInspirationStudioPanel({
   onReorderImages,
   onPhoneSizeChange,
   weixinPublishMode,
+  runPanel,
 }: WechatArticleInspirationStudioPanelProps) {
   const { t } = useTranslation('socialPublish')
 
@@ -135,6 +138,8 @@ export function WechatArticleInspirationStudioPanel({
       }
       stage={
         <SocialStudioStageFrame generating={generating}>
+          {generating && runPanel && !isRewriteMode ? runPanel : (
+            <>
           {generating && isRewriteMode ? (
             <RewriteGenerationOverlay
               platform="wechat"
@@ -172,6 +177,8 @@ export function WechatArticleInspirationStudioPanel({
             onPhoneSizeChange={onPhoneSizeChange}
             weixinPublishMode={weixinPublishMode}
           />
+            </>
+          )}
         </SocialStudioStageFrame>
       }
       prepHead={<span className="text-sm font-semibold">{t('prepPanelTitle')}</span>}

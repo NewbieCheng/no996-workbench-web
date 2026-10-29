@@ -37,6 +37,7 @@ export function taskMatchesKindFilter(task: WorkbenchTaskRecord, kind: TaskCente
   if (kind === 'persona') return task.kind === 'persona_generate'
   return (
     task.kind === 'text_sections' ||
+    task.kind === 'social_compose' ||
     task.kind === 'source_create' ||
     task.kind === 'moments_plan' ||
     task.kind === 'moments_copy'
