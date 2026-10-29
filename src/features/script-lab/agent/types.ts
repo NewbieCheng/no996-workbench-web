@@ -66,7 +66,11 @@ export function strengthLabel(value: number): ScriptStrengthLabel {
 
 export type ScriptConfig = {
   mode: ScriptMode
-  /** 唯一必填 */
+  /**
+   * 唯一必填。
+   *
+   * 宿主锁定：策划/编剧只能用用户填写的这个值，模型返回的 product 一律不采用。
+   */
   product: string
   intro?: string
   durationSec: number

@@ -7,7 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@no996/ui
 import { Input } from '@no996/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@no996/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@no996/ui/tabs'
-import { useWorkbenchTaskActiveCount, useWorkbenchTasks } from '../../services/workbench-tasks'
+import {
+  useWorkbenchTaskActions,
+  useWorkbenchTaskActiveCount,
+  useWorkbenchTasks,
+} from '../../services/workbench-tasks'
 import { QUEUED_FEATURE_HINT } from '../../services/workbench-tasks/task-display'
 import { TaskDrawerSection } from './TaskDrawerSection'
 import {
@@ -64,6 +68,7 @@ export function TaskCenterDrawer({
 }) {
   const { t } = useTranslation('workbench')
   const tasks = useWorkbenchTasks()
+  const { refreshTasks } = useWorkbenchTaskActions()
   const [statusFilter, setStatusFilter] = useState<TaskCenterStatusFilter>('all')
   const [kindFilter, setKindFilter] = useState<TaskCenterKindFilter>('all')
   const [query, setQuery] = useState('')
@@ -75,8 +80,11 @@ export function TaskCenterDrawer({
     if (!open) {
       setSearchOpen(false)
       setFilterOpen(false)
+      return
     }
-  }, [open])
+    // 打开面板时先拉一次最新进度，避免看到打开前的旧快照。
+    void refreshTasks().catch(() => undefined)
+  }, [open, refreshTasks])
 
   useEffect(() => {
     if (searchOpen) {

@@ -236,6 +236,7 @@
     "round": "Round {{count}}",
     "demoBadge": "Demo data",
     "fallbackBadge": "Some steps used fallback results",
+    "assumptionLead": "Agent note: ",
     "compliancePassed": "Compliance check passed",
     "complianceNeedsRevision": "{{count}} compliance items need revision",
     "personaInjected": "Persona included",

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { BUILTIN_BANNED_WORDS, hardCheckSummary, runHardCheck } from './hard-check.ts'
+import { BUILTIN_BANNED_WORDS, hardCheckSummary, mentionsSubject, runHardCheck } from './hard-check.ts'
 
 test('runHardCheck flags builtin banned words and locates the segment', () => {
   const result = runHardCheck({
@@ -96,6 +96,44 @@ test('runHardCheck flags fake offer when user has no stock/offer info', () => {
   })
   assert.equal(result.pass, false)
   assert.ok(result.hits.some((h) => h.rule === 'fake-offer'))
+})
+
+test('subjectRequired 时完全不提产品/主题要判跑题', () => {
+  const result = runHardCheck({
+    text: '今天聊一个通用的时间管理方法，先记三天再说。',
+    segments: [{ id: 'seg-1', text: '今天聊一个通用的时间管理方法，先记三天再说。' }],
+    subject: '儿童保温杯',
+    subjectRequired: true,
+  })
+  assert.equal(result.pass, false)
+  const hit = result.hits.find((h) => h.rule === 'subject-drift')
+  assert.ok(hit)
+  assert.equal(hit.segmentId, 'seg-1')
+  assert.match(hit.detail, /儿童保温杯/)
+  assert.deepEqual(result.mustFixIds, ['seg-1'])
+})
+
+test('subjectRequired 时提到产品全名或关键片段都算相关', () => {
+  const full = runHardCheck({ text: '这个儿童保温杯适合三岁宝宝。', subject: '儿童保温杯', subjectRequired: true })
+  assert.equal(full.pass, true)
+
+  // 产品名被写成后半截（保温杯）也算围绕主体，不因省略定语误判
+  const short = runHardCheck({ text: '这个保温杯适合三岁宝宝。', subject: '儿童保温杯', subjectRequired: true })
+  assert.equal(short.pass, true)
+})
+
+test('subjectRequired=false 时主体缺失不判失败（人设/观点类由评审判断）', () => {
+  const result = runHardCheck({
+    text: '今天聊一个通用的时间管理方法。',
+    subject: '儿童保温杯',
+    subjectRequired: false,
+  })
+  assert.equal(result.pass, true)
+})
+
+test('mentionsSubject 忽略空格、标点与产品名分隔符', () => {
+  assert.equal(mentionsSubject('今天讲水煮肉片 调料包的做法', '水煮肉片·调料包'), true)
+  assert.equal(mentionsSubject('今天讲完全无关的内容', '水煮肉片·调料包'), false)
 })
 
 test('hardCheckSummary never claims pass on failures', () => {

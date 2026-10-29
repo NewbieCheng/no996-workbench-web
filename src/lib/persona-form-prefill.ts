@@ -67,21 +67,15 @@ export function deriveScriptPrefillPatch(
 
   if (isUserForm(record)) {
     const form = record.formData
+    // 只预填「受众侧」字段。
+    // intro（产品一句话介绍）与 sellingPoints（卖点）是本次产品的专属事实，
+    // 不是人设自己的主营业务；从人设自动填进来会让用户换个产品后，
+    // 正文仍然在讲人设的生意（2026-10-29 修复）。
     fill('audience', profileField(record, 'audience', '核心客户') || audienceFromUser(form))
     fill('pain', profileField(record, 'audience', '三大痛点') || form.clientPainPoints?.trim() || normalizeQuestionnaire(form).clientSituations)
-    fill('intro', profileField(record, 'positioning', '产品承接') || form.primaryBusiness?.trim() || normalizeQuestionnaire(form).products)
-    const extra =
-      profileField(record, 'positioning', '差异化价值') ||
-      form.additionalInfo?.trim() ||
-      normalizeQuestionnaire(form).differentiation
-    if (extra) fill('sellingPoints', extra)
   } else if (isCompanyForm(record)) {
     const form = record.formData
     fill('audience', audienceFromCompany(form))
-    fill('intro', form.mainBusiness?.trim())
-    fill('sellingPoints', form.competitiveEdge?.trim())
-    const extra = form.additionalInfo?.trim()
-    if (extra && !patch.sellingPoints) fill('sellingPoints', extra)
   }
 
   return {

@@ -75,18 +75,25 @@ export function snapshotProgressSignature(snapshot: AgentRunSnapshot): string {
 }
 
 export function snapshotToMeta(snapshot: AgentRunSnapshot): Record<string, string> {
-  const done = snapshot.stages.filter((s) => s.status === 'done').length
+  // skipped 也是「这一步已经处理完」（例如评审无需修改时会跳过编辑）。
+  // 只数 done 会让进度永远差几格，任务结束前停在 75%/87% 之类的位置。
+  const completed = snapshot.stages.filter(
+    (s) => s.status === 'done' || s.status === 'skipped' || s.status === 'failed',
+  ).length
   const running = snapshot.stages.find((s) => s.status === 'running')
-  const pct = snapshot.stages.length
-    ? Math.min(100, Math.round(((done + (running ? 0.5 : 0)) / snapshot.stages.length) * 100))
-    : 0
+  const pct =
+    snapshot.status === 'done'
+      ? 100
+      : snapshot.stages.length
+        ? Math.min(100, Math.round(((completed + (running ? 0.5 : 0)) / snapshot.stages.length) * 100))
+        : 0
   return {
     status: snapshot.status,
     round: String(snapshot.round),
     stage: running?.id ?? '',
-    stageIndex: String(running ? snapshot.stages.findIndex((s) => s.id === running.id) : done),
+    stageIndex: String(running ? snapshot.stages.findIndex((s) => s.id === running.id) : completed),
     stageCount: String(snapshot.stages.length),
-    doneCount: String(done),
+    doneCount: String(completed),
     pct: String(pct),
     fallback: snapshot.fallback ? '1' : '0',
   }

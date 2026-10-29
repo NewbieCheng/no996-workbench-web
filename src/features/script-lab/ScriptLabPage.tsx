@@ -62,6 +62,7 @@ import Teleprompter from './components/Teleprompter'
 import { buildScriptMarkdown, scriptMarkdownFilename } from './lib/script-markdown'
 import { buildTeleprompterHtml, teleprompterFilename } from './lib/export-teleprompter'
 import { deriveScriptPrefillPatch } from '../../lib/persona-form-prefill'
+import { generationSignature } from './lib/config-signature'
 import { usePersonaFormPrefill } from '../../hooks/usePersonaFormPrefill'
 import { useWorkbenchSessionTask } from '../../hooks/useWorkbenchSessionTask'
 import { ResultActions } from '../../components/WorkbenchUI'
@@ -249,6 +250,9 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
     setStreamText('')
     if (result.config) setConfig(result.config)
     setError('')
+    // 成稿出现后收起输入向导：页面只保留过程与成稿，避免上下两套内容同时占屏。
+    // 需要改设置/重新生成时，页头的「展开输入配置」仍可恢复。
+    setInputCollapsed(true)
     return true
   }, [])
 
@@ -287,6 +291,7 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
     setStreamText('')
     setError('')
     setStep(0)
+    setInputCollapsed(false)
     setSubmittedAt(undefined)
   }, [mode, clearSession])
 
@@ -426,6 +431,7 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
       })
       setPayload(result)
       setSnapshot(result.run ?? null)
+      setInputCollapsed(true)
     } catch (e) {
       if (isAbortError(e)) return
       setError(e instanceof Error ? e.message : ts('runtime.generationFailed'))
@@ -480,6 +486,7 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
         })
         setPayload(result)
         setSnapshot(result.run ?? null)
+        setInputCollapsed(true)
       } catch (e) {
         if (isAbortError(e)) return
         setError(e instanceof Error ? e.message : ts('runtime.resumeFailed'))
@@ -573,7 +580,7 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
 
   const finalRound = rounds.at(-1)
   const running = busy || queueBusy
-  const stale = Boolean(payload) && config.product.trim() !== (payload?.config.product ?? '').trim()
+  const stale = payload ? generationSignature(config) !== generationSignature(payload.config) : false
   /**
    * 「跑起来之后失败」才交给失败卡片；「产品名为空」这类表单错误留在向导页脚。
    * 区分依据：产品名校验在 start() 最前面 return，不会写 submittedAt；
@@ -886,6 +893,13 @@ export default function ScriptLabPage({ mode }: { mode: ScriptMode }) {
                   </span>
                   {payload.config.personaContent ? <span className="sl-badge">{ts('runtime.personaInjected')}</span> : null}
                 </div>
+
+                {payload.brief?.assumption ? (
+                  <p className="sl-note">
+                    {ts('runtime.assumptionLead')}
+                    {payload.brief.assumption}
+                  </p>
+                ) : null}
 
                 <AgentMetrics
                   label={ts('runtime.metrics')}

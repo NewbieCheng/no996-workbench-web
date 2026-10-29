@@ -236,6 +236,7 @@
     "round": "第 {{count}} 轮",
     "demoBadge": "演示数据",
     "fallbackBadge": "部分步骤使用备用结果",
+    "assumptionLead": "Agent 说明：",
     "compliancePassed": "合规校验通过",
     "complianceNeedsRevision": "合规校验有 {{count}} 处待修改",
     "personaInjected": "已注入人设",

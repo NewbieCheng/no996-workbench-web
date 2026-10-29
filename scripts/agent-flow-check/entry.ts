@@ -557,9 +557,56 @@ async function main() {
     const reviewerPrompt = (result.run?.stages ?? []).find((stage) => stage.id === 'reviewer')?.actualPrompt ?? ''
     check('目的升级：编剧提示词注入转化型方法', /【转化型方法】/.test(writerPrompt))
     check('目的升级：编剧提示词带本次素材', writerPrompt.includes('一份 12 节通勤穿搭清单'))
+    check('目的升级：编剧提示词带完整产品名', writerPrompt.includes(cfg.product))
+    check('目的升级：本次素材块包含产品名', /本次素材[\s\S]*通勤穿搭/.test(writerPrompt))
     check('目的升级：评审提示词注入转化型口径', /【转化型评审重点】/.test(reviewerPrompt))
+    check('目的升级：评审提示词能看见产品名', reviewerPrompt.includes(cfg.product))
   }
 
+
+  /* -------- 策划员返回占位词/改写时，宿主必须锁定用户填写的产品与人群 -------- */
+  {
+    const cfg: ScriptConfig = {
+      mode: 'video',
+      product: '儿童保温杯',
+      audience: '三岁宝宝的家长',
+      platform: '抖音',
+      durationSec: 60,
+      goal: '获客',
+      strength: 50,
+      structure: { kind: 'auto' },
+    }
+    const base = createMockAgentClients({
+      mockResponder: createScriptMockResponder({ product: cfg.product, mode: 'video' }),
+    })
+    const clients = {
+      ...base,
+      chat: {
+        complete: async (req: { stageHint?: string }) => {
+          const result = await base.chat.complete(req as never)
+          if (req.stageHint !== 'planner') return result
+          const parsed = JSON.parse(result.content) as Record<string, unknown>
+          return {
+            ...result,
+            content: JSON.stringify({
+              ...parsed,
+              // 模拟模型照抄示例或擅自改写：宿主不能采用这些值
+              product: '产品',
+              audience: '人群',
+              pain: '痛点',
+              sellingPoints: '卖点',
+            }),
+          }
+        },
+      },
+    }
+    const result = await runScriptFlow({ config: cfg, clients })
+    const writerPrompt = (result.run?.stages ?? []).find((s) => s.id === 'writer')?.actualPrompt ?? ''
+    check('锁定输入：策划返回「产品」时编剧仍用用户产品名', writerPrompt.includes('儿童保温杯'))
+    check('锁定输入：编剧提示词不出现被改写的「产品/主题：产品」', !writerPrompt.includes('产品/主题：产品'))
+    check('锁定输入：策划返回「人群」时编剧仍用用户人群', writerPrompt.includes('三岁宝宝的家长'))
+    check('锁定输入：brief 的产品名来自用户输入', result.brief?.product === '儿童保温杯')
+  }
 
   /* -------- 直播自定义结构：UI 选择后必须原样进入生成与结果 -------- */
   {
@@ -567,6 +614,7 @@ async function main() {
     const cfg: ScriptConfig = {
       mode: 'live',
       product: '早八通勤穿搭',
+      intro: '一杯咖啡的时间就能穿好，适合赶早班的人',
       audience: '上班族',
       platform: '抖音直播',
       durationSec: 900,
@@ -588,6 +636,9 @@ async function main() {
     check('直播自定义结构：结构师提示词包含用户结构', customNames.every((name) => structurerPrompt.includes(name)))
     const writerPrompt = (result.run?.stages ?? []).find((s) => s.id === 'writer')?.actualPrompt ?? ''
     check('直播自定义结构：编剧提示词包含宿主章节 id 与名称', customNames.every((name) => writerPrompt.includes(name)) && writerPrompt.includes('id: seg-1'))
+    check('直播：编剧提示词带完整产品名', writerPrompt.includes(cfg.product))
+    check('直播：编剧提示词带产品一句话介绍', writerPrompt.includes(cfg.intro ?? ''))
+    check('直播：编剧提示词带本次素材块', /本次素材/.test(writerPrompt) && writerPrompt.includes(cfg.product))
   }
   /* -------- 稳定性与兜底（2026-10-12 真机缺陷回归） -------- */
   {
@@ -641,12 +692,19 @@ async function main() {
     await runScriptFlow({ config: cfg, clients: recording })
 
     const modelStages = seen.filter((s) => s.stageHint !== 'autofill')
+    // 评审是独立评审，不继承人设背景（改用只含本次主体的评审背景）；其余步骤必须带。
+    const personaStages = modelStages.filter((s) => s.stageHint !== 'reviewer')
     check('稳定性：脚本流程至少发了 4 次模型调用', modelStages.length >= 4, `${modelStages.length} 次`)
-    // 背景人设作为身份事实注入，且**不能漏掉任何一步**（漏传在真机上表现为「评审突然不知道我是谁」）
     check(
-      '稳定性：每一步都带上背景人设（无一步遗漏）',
-      modelStages.length > 0 && modelStages.every((s) => (s.background ?? '').includes(BACKGROUND_MARK)),
-      `${modelStages.filter((s) => (s.background ?? '').includes(BACKGROUND_MARK)).length}/${modelStages.length}`,
+      '稳定性：除独立评审外，每一步都带上背景人设（无一步遗漏）',
+      personaStages.length > 0 && personaStages.every((s) => (s.background ?? '').includes(BACKGROUND_MARK)),
+      `${personaStages.filter((s) => (s.background ?? '').includes(BACKGROUND_MARK)).length}/${personaStages.length}`,
+    )
+    check(
+      '稳定性：独立评审不继承人设背景',
+      !modelStages
+        .filter((s) => s.stageHint === 'reviewer')
+        .some((s) => (s.background ?? '').includes(BACKGROUND_MARK)),
     )
     // 风格人设不得被当成身份背景（两路内容不同，串了就说明 flow 取错了字段）
     check('稳定性：风格人设不被当成背景上下文', !modelStages.some((s) => (s.background ?? '').includes(PERSONA_MARK)))

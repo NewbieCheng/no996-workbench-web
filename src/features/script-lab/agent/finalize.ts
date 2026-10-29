@@ -78,6 +78,17 @@ export type FinalizeInput = {
   allowedNumberSources: string
 }
 
+/**
+ * 本次任务是否必须围绕产品/主题展开。
+ *
+ * 2026-10-29 起，视频与直播只要填了产品/主题，就要求正文至少出现它
+ * （完整名称或一个关键片段）。人设型、观点型也不例外：主体可以抽象，
+ * 但不能整篇写成一个与它无关的东西。评审仍会检查语义相关性。
+ */
+export function requiresSubject(config: ScriptConfig): boolean {
+  return Boolean(config.product.trim())
+}
+
 export type FinalizeResult = {
   segments: ScriptSegment[]
   hardCheck: HardCheckResult
@@ -112,6 +123,8 @@ export function finalizeScript(input: FinalizeInput): FinalizeResult {
     lengthCountMode: isVideo ? 'spoken' : 'raw',
     segmentCharBudgets: targetChars ? segmentCharBudgets(segments, targetChars) : undefined,
     allowedNumberSources: input.allowedNumberSources,
+    subject: config.product,
+    subjectRequired: requiresSubject(config),
   })
 
   return { segments, hardCheck, targetChars }

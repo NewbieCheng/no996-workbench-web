@@ -52,6 +52,9 @@ import type {
 } from './types'
 import { countActiveTasks } from './queue-logic.ts'
 
+/** 有进行中任务时，任务列表的轮询间隔（进度由执行器直接写 IndexedDB，不会触发 runner 通知） */
+const TASK_PROGRESS_POLL_MS = 1000
+
 type Snapshot = {
   userId: number | null
   jobs: WorkbenchTaskRecord[]
@@ -217,6 +220,33 @@ export function WorkbenchTaskProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (authStatus !== 'authenticated' || userId == null) return
     void safeLoadJobs().catch(() => undefined)
+  }, [authStatus, userId, safeLoadJobs])
+
+  /**
+   * 进行中任务的进度同步。
+   *
+   * 执行器把 `meta.pct` / `meta.progress` 直接写进 IndexedDB，不会经过
+   * WorkbenchTaskRunner 的 onJobsChanged；没有这个轮询时，任务中心只会在
+   * 「开始」和「结束」刷新两次，进度条会一直停在 0%，直到任务完成才跳到 100%。
+   *
+   * 只在当前账号确实有 queued / running 任务时读取，任务全部结束后自动空转。
+   */
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || userId == null) return
+    let alive = true
+    const timer = window.setInterval(() => {
+      if (!alive) return
+      const hasActive = snapshot.jobs.some(
+        (job) =>
+          job.ownerUserId === userId && (job.status === 'queued' || job.status === 'running'),
+      )
+      if (!hasActive) return
+      void safeLoadJobs().catch(() => undefined)
+    }, TASK_PROGRESS_POLL_MS)
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+    }
   }, [authStatus, userId, safeLoadJobs])
 
   const actions = useMemo<Actions>(

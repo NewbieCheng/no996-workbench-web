@@ -55,6 +55,7 @@ import { pickTargets, roundFromReview, shouldStop, MAX_ROUNDS, RETENTION_TARGET 
 import { purposeById, purposeIdFromGoal } from './purposes'
 import type { StoredChatAttachment } from '../../../lib/chat-attachments/types'
 import {
+  strengthLabel,
   videoTargetChars,
   type ScriptAutofill,
   type ScriptBrief,
@@ -270,6 +271,8 @@ function buildPurposeFacts(config: ScriptConfig): string {
     const text = value?.trim()
     if (text) rows.push(`- ${label}：${text}`)
   }
+  // 产品名是本次创作的主体，必须出现在「本次素材」里，而不只是提示词顶部的一个标签。
+  push('产品/主题（用户确认，不得替换）', config.product)
   push('产品/主题介绍', config.intro)
   push('目标人群', config.audience)
   push('痛点/问题', config.pain)
@@ -282,6 +285,48 @@ function buildPurposeFacts(config: ScriptConfig): string {
     }
   }
   return rows.length ? rows.join('\n') : '（无，请只写用户已提供的产品名与主题，不要补造事实）'
+}
+
+/**
+ * 策划员只能补「用户没填」的字段，且不能把示例占位词当成结果。
+ *
+ * 之前 `brief.product = planned?.product ?? config.product`：模型返回
+ * 「产品」「某产品」或换一个说法，就会覆盖用户输入，编剧便照着改写后的
+ * 主体写。这里先把占位值清掉，宿主再决定是否采用。
+ */
+const INFERENCE_PLACEHOLDERS = new Set([
+  '产品',
+  '产品名称',
+  '商品',
+  '主题',
+  '某产品',
+  '某商品',
+  '人群',
+  '目标人群',
+  '目标用户',
+  '某人群',
+  '相关人群',
+  '特定人群',
+  '痛点',
+  '卖点',
+  '无',
+  '未提供',
+  '未知',
+  'null',
+  'undefined',
+  'n/a',
+  'na',
+])
+
+function cleanInference(value: unknown, fieldLabel: string): string {
+  if (value && typeof value === 'object') return ''
+  const text = String(value ?? '').trim()
+  if (!text) return ''
+  const normalized = text.replace(/[「」“”"'‘’\s]/g, '')
+  if (!normalized) return ''
+  if (INFERENCE_PLACEHOLDERS.has(normalized.toLowerCase()) || normalized === fieldLabel) return ''
+  if (/^(?:示例|样例|格式示例|具体(?:产品|人群|痛点|卖点))$/.test(normalized)) return ''
+  return text
 }
 
 /* --------------------------- 硬校验可执行化 --------------------------- */
@@ -385,13 +430,23 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
   const purposeLabel = purpose?.label ?? config.goal
   const purposeMethod = purpose?.method ?? ''
   const purposeReviewFocus = purpose?.reviewFocus ?? ''
-  const purposeFacts = isVideo ? buildPurposeFacts(config) : ''
+  // 视频和直播都需要「本次素材」：直播之前完全没有这个块，只拿到产品名和兜底的人群/卖点。
+  const purposeFacts = buildPurposeFacts(config)
 
   // 人设注入：只把正文交给模板，标签由提示词模板自己写（避免两处都加前缀拼出双标题）。
   // 关掉开关时 config.personaContent 为 undefined，模板会渲染成「表达参考人设：无」。
   const personaBlock = config.personaContent ?? ''
   // 背景人设（身份 + 定位卡片）单独一路：走 system 消息，不进「表达参考人设」变量。
-  const personaBackground = config.personaBackground ?? ''
+  // 必须显式写明「本次主体是产品，人设不是产品」，否则模型会把人设的主营业务写成正文。
+  const rawPersonaBackground = config.personaBackground?.trim() ?? ''
+  const personaBackground = rawPersonaBackground
+    ? [
+        '【背景人设｜只影响说话人身份与语气】',
+        `本次创作主体是「${config.product.trim()}」。以下人设资料不是本次产品；`,
+        '不得把人设的主营业务、客户、案例写成本次产品的事实，也不得用它们替换用户填写的产品名。',
+        rawPersonaBackground,
+      ].join('\n')
+    : ''
 
   // 预算先取（只跟客户端模式有关），流程截止时间要用它。
   const budgets = resolveBudgets(clients.isMock)
@@ -498,9 +553,12 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
         throw new Error('该任务缺少预填步骤检查点，无法从后续步骤恢复。')
       }
 
-      const audience = config.audience?.trim() || autofill?.audience || '有这类需求的人'
-      const sellingPoints = config.sellingPoints?.trim() || autofill?.sellingPoints || '好用又省事'
-      const pain = config.pain?.trim() || autofill?.pain || '总被同一个问题困扰'
+      // 预填失败时 autofill 里是代码兜底常量（fromFallback）。它们不是模型推断，
+      // 不能再当成「已知事实」喂给策划/编剧 —— 否则正文会变成通用模板。
+      const usableAutofill = autofill && !autofill.fromFallback ? autofill : undefined
+      const audience = config.audience?.trim() || usableAutofill?.audience?.trim() || ''
+      const sellingPoints = config.sellingPoints?.trim() || usableAutofill?.sellingPoints?.trim() || ''
+      const pain = config.pain?.trim() || usableAutofill?.pain?.trim() || ''
 
       /* ----------------------- 2. 策划员 ----------------------- */
       if (resumeIndex <= 1) {
@@ -517,15 +575,16 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
         const planned = await runner.runModel<Record<string, unknown>>('planner', {
           userTemplate: isVideo ? PLANNER_PROMPT_VIDEO : PLANNER_PROMPT_LIVE,
           vars: {
-            audience,
+            // 空值显式写成「未提供」，避免模板渲染成「无」后模型把它当成一个真实人群
+            audience: audience || '未提供',
             product: config.product,
             durationLabel,
             goal: config.goal,
             purposeLabel,
             facts: purposeFacts,
             strength: config.strength,
-            pain,
-            sellingPoints,
+            pain: pain || '未提供',
+            sellingPoints: sellingPoints || '未提供',
             offer: config.offer,
             extra,
           },
@@ -534,16 +593,25 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
           responseFormat: { type: 'json_object' },
         })
 
+        // 宿主锁定用户已填字段：策划只补空，不能覆盖。
+        // 产品名 100% 来自用户输入，任何情况下都不采用模型返回的 product。
         brief = {
           goal: config.goal,
-          audience: String(planned?.audience ?? audience).trim() || audience,
-          pain: String(planned?.pain ?? pain).trim() || pain,
-          sellingPoints: String(planned?.sellingPoints ?? sellingPoints).trim() || sellingPoints,
-          product: String(planned?.product ?? config.product).trim() || config.product,
+          audience: config.audience?.trim() || cleanInference(planned?.audience, '人群') || audience,
+          pain: config.pain?.trim() || cleanInference(planned?.pain, '痛点') || pain,
+          sellingPoints:
+            config.sellingPoints?.trim() ||
+            cleanInference(planned?.sellingPoints, '卖点') ||
+            sellingPoints,
+          product: config.product.trim(),
           durationSec: config.durationSec,
           targetChars: isVideo ? target : undefined,
           strength: config.strength,
-          assumption: planned?.assumption ? String(planned.assumption) : null,
+          assumption: planned?.assumption
+            ? String(planned.assumption)
+            : autofill?.fromFallback
+              ? '预填未成功：人群/痛点/卖点没有自动补全，正文只依据你填写的信息生成。'
+              : null,
         }
         if (!brief) throw new Error('策划步骤没有可恢复结果。')
         await runner.setCheckpoint('planner', { autofill, brief })
@@ -602,7 +670,9 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
           ? `参考用户给的过往脚本，学习其节奏和语气，但不得照抄：\n${config.refGood}\n`
           : ''
         const writerVars = {
-          product: brief.product,
+          // 产品名始终是用户输入；不用 brief 里的任何模型改写结果。
+          product: config.product,
+          intro: config.intro?.trim() ?? '',
           audience: brief.audience,
           pain: brief.pain,
           sellingPoints: brief.sellingPoints,
@@ -614,6 +684,9 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
           bannedWords: config.bannedWords?.join('、') ?? '',
           offer: config.offer,
           refGood,
+          refCompetitor: config.refCompetitor?.trim() ?? '',
+          strength: config.strength,
+          strengthLabel: strengthLabel(config.strength),
           persona: personaBlock,
           // 四类目的：把该目的的方法与事实清单交给编剧
           purposeLabel,
@@ -647,7 +720,8 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             userTemplate: isVideo ? WRITER_PROMPT_VIDEO : WRITER_PROMPT_LIVE,
             vars: writerVars,
             timeoutMs: budgets.stepMs,
-            chatAttachments: isVideo ? chatAttachments : undefined,
+            // 直播也需要参考资料：之前只有视频编剧拿到附件，直播页的上传位等于白填。
+            chatAttachments,
             // 编剧走流式，不加 response_format；截断由内核识别并抬高 max_tokens 重试。
             onDelta: displayDelta,
           })
@@ -703,6 +777,9 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
             const reviewed = await runner.runModel<Record<string, unknown>>('reviewer', {
               userTemplate: isVideo ? REVIEWER_PROMPT_VIDEO : REVIEWER_PROMPT_LIVE,
               vars: {
+                // 评审必须知道本次主体，否则「写成了别的产品」它根本看不出来。
+                product: config.product,
+                facts: purposeFacts,
                 purposeLabel,
                 purposeReviewFocus,
                 segments: structuredSegments
@@ -717,6 +794,8 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
                 // 提示词却声称已在 mustFixIds 给出。现在把段 id 一起交出去。
                 hardCheck: formatHardCheckForReview(checked),
               },
+              // 独立评审不继承人设：只按产品/主题和稿子本身判断，避免被「我是谁」带偏。
+              background: `【独立评审】本次只评审下面这篇稿子是否围绕「${config.product}」展开，不继承人设身份。`,
               round,
               timeoutMs: budgets.reviewerMs,
               maxTokens: budgets.reviewerMaxTokens,
@@ -801,6 +880,8 @@ export async function runScriptFlow(input: RunScriptFlowInput): Promise<ScriptGe
                 : '（本次任务不设总字数区间）',
               stopRetention: RETENTION_TARGET,
               maxRounds: MAX_ROUNDS,
+              strength: config.strength,
+              strengthLabel: strengthLabel(config.strength),
             },
             round,
             timeoutMs: budgets.stepMs,
@@ -983,9 +1064,9 @@ function parseReview(
 function emptyBrief(config: ScriptConfig): ScriptBrief {
   return {
     goal: config.goal,
-    audience: config.audience?.trim() || '有这类需求的人',
-    pain: config.pain?.trim() || '总被同一个问题困扰',
-    sellingPoints: config.sellingPoints?.trim() || '好用又省事',
+    audience: config.audience?.trim() || '',
+    pain: config.pain?.trim() || '',
+    sellingPoints: config.sellingPoints?.trim() || '',
     product: config.product,
     durationSec: config.durationSec,
     targetChars: config.mode === 'video' ? videoTargetChars(config.durationSec) : undefined,
@@ -1024,6 +1105,7 @@ export async function generateAlternate(input: AlternateInput): Promise<{ spoken
       product: config.product,
       sellingPoints: config.sellingPoints ?? '',
       offer: config.offer ?? '无',
+      strength: config.strength,
       strengthLabel,
     },
     { mark: false },

@@ -39,13 +39,15 @@ const userRecord = {
 }
 
 describe('persona-form-prefill', () => {
-  it('maps user form into empty script config', () => {
+  it('maps only audience/pain into empty script config', () => {
     const { patch, filledCount } = deriveScriptPrefillPatch(userRecord, baseConfig)
-    assert.equal(filledCount, 4)
+    // 产品专属字段（intro / sellingPoints）不再从人设自动填：
+    // 换个产品后，人设的主营业务不能冒充本次产品的介绍与卖点。
+    assert.equal(filledCount, 2)
     assert.equal(patch.audience, '本地餐饮老板')
     assert.equal(patch.pain, '不会拍、没流量')
-    assert.equal(patch.intro, '帮老板做短视频获客')
-    assert.equal(patch.sellingPoints, '强调案例')
+    assert.equal(patch.intro, undefined)
+    assert.equal(patch.sellingPoints, undefined)
   })
 
   it('does not overwrite user-edited script fields', () => {
@@ -54,10 +56,11 @@ describe('persona-form-prefill', () => {
       audience: '我自己写的',
       pain: '已有痛点',
     })
-    assert.equal(filledCount, 2)
+    assert.equal(filledCount, 0)
     assert.equal(patch.audience, undefined)
     assert.equal(patch.pain, undefined)
-    assert.equal(patch.intro, '帮老板做短视频获客')
+    assert.equal(patch.intro, undefined)
+    assert.equal(patch.sellingPoints, undefined)
   })
 
   it('fills audience from role when targetClients empty', () => {
@@ -99,10 +102,10 @@ describe('persona-form-prefill', () => {
       },
     }
     const { patch, filledCount } = deriveScriptPrefillPatch(company, baseConfig)
-    assert.equal(filledCount, 3)
+    assert.equal(filledCount, 1)
     assert.equal(patch.audience, '宝妈')
-    assert.equal(patch.intro, '保温杯')
-    assert.equal(patch.sellingPoints, '316钢')
+    assert.equal(patch.intro, undefined)
+    assert.equal(patch.sellingPoints, undefined)
   })
 
   it('user record maps audience and referenceText to SocialStudioBrief', () => {

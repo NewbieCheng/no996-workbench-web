@@ -692,13 +692,16 @@ export function createIndexedDbWorkbenchTaskRepository(): WorkbenchTaskRepositor
         run: input.resumeSnapshot ?? null,
         resumeFromStageId: input.resumeFromStageId,
       }
+      const modeLabel = input.config.mode === 'live' ? '直播脚本' : '视频脚本'
+      const productLabel = input.config.product.trim() || '未命名产品'
       const job: WorkbenchTaskRecord = {
         id,
         ownerUserId,
         kind: 'script_generate',
         status: 'queued',
         title: input.title,
-        subtitle: input.config.mode === 'live' ? '直播脚本' : '视频脚本',
+        // 任务中心「上下文」列直接显示产品名：多条任务时才分得清各自在写什么。
+        subtitle: `${modeLabel} · ${productLabel}`,
         route: input.route,
         createdAt: Date.now(),
         payloadId: id,

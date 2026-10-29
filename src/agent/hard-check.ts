@@ -77,7 +77,7 @@ export type HardCheckHit = {
   /** 命中词或规则名 */
   label: string
   /** 规则分类 */
-  rule: 'banned' | 'user-banned' | 'must-word' | 'medical-profit' | 'fake-urgency' | 'unsupported-number' | 'length' | 'early-selling' | 'segment-duplicate' | 'fake-offer'
+  rule: 'banned' | 'user-banned' | 'must-word' | 'medical-profit' | 'fake-urgency' | 'unsupported-number' | 'length' | 'early-selling' | 'segment-duplicate' | 'fake-offer' | 'subject-drift'
   /** 命中所在的段/章 id（若可定位） */
   segmentId?: string
   /** 说明 */
@@ -129,6 +129,21 @@ export type HardCheckInput = {
    * 口播中的数字若不在其中，视为编造数据。
    */
   allowedNumberSources?: string
+  /**
+   * 本次创作主体（产品名 / 主题）。
+   *
+   * 只把它传给提示词还不够：模型完全可能整篇都不提这个产品。
+   * 传了 `subject` + `subjectRequired` 时，正文必须至少出现主体名的一个
+   * 关键片段，否则判为跑题。
+   */
+  subject?: string
+  /**
+   * 是否强制主体出现。
+   *
+   * 直播、获客、转化这类「围绕一个具体产品」的任务应为 true；
+   * 人设、观点干货这类主题可能是抽象概念的视频可为 false（由评审判断相关性）。
+   */
+  subjectRequired?: boolean
 }
 
 export type HardCheckResult = {
@@ -163,6 +178,46 @@ const NON_SPOKEN_CHARS = /[\s\u3000-\u303f\uff00-\uffef!-/:-@[-`{-~]/g
  */
 export function countSpokenChars(text: string): number {
   return [...String(text ?? '').replace(NON_SPOKEN_CHARS, '')].length
+}
+
+/** 去掉空白、标点与符号，只保留可比较的正文（用于产品名/主题匹配） */
+function normalizeSubject(text: string): string {
+  return String(text ?? '')
+    .toLowerCase()
+    .replace(NON_SPOKEN_CHARS, '')
+}
+
+/** 主体名被分隔符切开后的有效关键词（至少 2 个字） */
+export function subjectKeywords(subject: string): string[] {
+  return String(subject ?? '')
+    .split(/[\s·・\/\\|｜,，、;；:：()（）【】\[\]<>《》"“”'‘’+＋&＆\-—–]+/)
+    .map((part) => normalizeSubject(part))
+    .filter((part) => [...part].length >= 2)
+}
+
+/**
+ * 正文是否在讲这个主体。
+ *
+ * 先比完整主体名；再比被分隔符切开的关键词；最后允许「产品名的一个
+ * 连续片段」出现（例如「儿童保温杯」写成「保温杯」、「水煮肉片调料包」
+ * 写成「调料包」）。片段至少 3 个字，避免「产品」「好用」这类泛词误判。
+ */
+export function mentionsSubject(text: string, subject: string): boolean {
+  const body = normalizeSubject(text)
+  const full = normalizeSubject(subject)
+  if (!body || !full) return false
+  if (body.includes(full)) return true
+  if (subjectKeywords(subject).some((keyword) => body.includes(keyword))) return true
+
+  const chars = [...full]
+  const minFragment = chars.length >= 3 ? 3 : chars.length
+  for (let length = Math.min(6, chars.length); length >= minFragment; length -= 1) {
+    for (let start = 0; start + length <= chars.length; start += 1) {
+      const fragment = chars.slice(start, start + length).join('')
+      if (fragment.length >= minFragment && body.includes(fragment)) return true
+    }
+  }
+  return false
 }
 
 /** 某一处「第一」是否属于序数用法（不是极限宣称） */
@@ -247,6 +302,17 @@ export function runHardCheck(input: HardCheckInput): HardCheckResult {
         detail: `必须出现的词「${word}」未在脚本中出现，需要挑一段自然补进去`,
       })
     }
+  }
+
+  // 2.5 主体相关性：整篇不能完全不提本次产品/主题
+  if (input.subjectRequired && input.subject?.trim() && !mentionsSubject(text, input.subject)) {
+    hits.push({
+      label: '未围绕本次产品/主题',
+      rule: 'subject-drift',
+      // 全局问题也要落到一段，编辑步骤才有 targetId 可改（第一段通常是建立关联的位置）
+      segmentId: input.segments?.[0]?.id,
+      detail: `全文没有出现「${input.subject.trim()}」的关键词，内容可能写成了别的产品或泛泛而谈；必须回到本次主体。`,
+    })
   }
 
   // 3. 医疗与收益承诺
