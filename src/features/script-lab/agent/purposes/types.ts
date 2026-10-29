@@ -34,6 +34,8 @@ export type PurposeMaterialField = {
   required?: boolean
   multiline?: boolean
   maxLength?: number
+  /** 字段预设（右侧列表按钮）；缺省不显示 */
+  presets?: readonly string[]
 }
 
 export type ScriptPurpose = {

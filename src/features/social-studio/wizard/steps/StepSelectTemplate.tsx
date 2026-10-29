@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CheckIcon, ArrowRightIcon, ArrowLeftIcon, BanIcon, SparklesIcon } from 'lucide-react'
 import { Button } from '@no996/ui/button'
+import { WorkbenchMediaImage } from '../../../extension/materials/WorkbenchMediaImage'
 import type { StudioCoverTemplate, TemplateCategory } from '../types'
 import {
   STUDIO_COVER_TEMPLATES,
@@ -126,12 +127,13 @@ export function StepSelectTemplate({
                     <span className="text-xs font-semibold text-foreground">不生成封面</span>
                     <span className="text-[10px] text-muted-foreground">仅生成内页内容</span>
                   </div>
-                ) : isOriginalMirror && selectedBenchmark?.coverUrl ? (
+                ) : isOriginalMirror && (selectedBenchmark?.coverUrl || selectedBenchmark?.imageUrls?.[0] || selectedBenchmark?.mediaLayout?.coverUrls?.[0]) ? (
                   <div className="relative w-full h-full rounded-lg overflow-hidden border border-white/20">
-                    <img
-                      src={selectedBenchmark.coverUrl}
+                    <WorkbenchMediaImage
+                      url={selectedBenchmark.coverUrl || selectedBenchmark.imageUrls?.[0] || selectedBenchmark.mediaLayout?.coverUrls?.[0]}
                       alt="原帖质感参考"
                       className="w-full h-full object-cover filter brightness-95"
+                      expiredMessage="原帖封面暂不可用"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-center p-2">
                       <span className="text-xs font-bold text-white drop-shadow">

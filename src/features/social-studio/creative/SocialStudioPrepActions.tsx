@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@no996/ui/button'
-import { Loader2Icon, SendHorizontal, Sparkles } from 'lucide-react'
+import { ImageIcon, Loader2Icon, RefreshCw, SendHorizontal, Sparkles } from 'lucide-react'
 
 type SocialStudioPrepActionsProps = {
   generating: boolean
@@ -8,6 +8,11 @@ type SocialStudioPrepActionsProps = {
   generateDisabled?: boolean
   generateLabel: string
   onGenerate: () => void
+  /** 已有正文时：只生成配图 */
+  onGenerateImages?: () => void
+  generateImagesLabel?: string
+  regenerateAllLabel?: string
+  hasEditorBody?: boolean
   onCancel?: () => void
   showPublish?: boolean
   publishDisabled?: boolean
@@ -23,6 +28,10 @@ export function SocialStudioPrepActions({
   generateDisabled,
   generateLabel,
   onGenerate,
+  onGenerateImages,
+  generateImagesLabel,
+  regenerateAllLabel,
+  hasEditorBody = false,
   onCancel,
   showPublish,
   publishDisabled,
@@ -32,6 +41,7 @@ export function SocialStudioPrepActions({
   publishNotice,
 }: SocialStudioPrepActionsProps) {
   const { t } = useTranslation(['socialPublish', 'common'])
+  const showSplitActions = hasEditorBody && Boolean(onGenerateImages)
 
   return (
     <div className="ssc-actions flex flex-col gap-2 pt-1 border-t border-border/60">
@@ -63,15 +73,39 @@ export function SocialStudioPrepActions({
       {publishNotice ? <p className="text-[11px] text-muted-foreground">{publishNotice}</p> : null}
 
       <div className="flex flex-col gap-1.5 w-full">
-        <Button
-          type="button"
-          disabled={generateDisabled || generating}
-          onClick={onGenerate}
-          className="w-full h-8.5 text-xs font-semibold rounded-xl gap-1.5 shadow-xs cursor-pointer"
-        >
-          <Sparkles size={13} className="shrink-0" aria-hidden />
-          <span>{generateLabel}</span>
-        </Button>
+        {showSplitActions ? (
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={generateDisabled || generating}
+              onClick={onGenerateImages}
+              className="w-full h-8.5 text-xs font-semibold rounded-xl gap-1.5 shadow-xs cursor-pointer"
+            >
+              <ImageIcon size={13} className="shrink-0" aria-hidden />
+              <span>{generateImagesLabel || t('studioGenerateImages')}</span>
+            </Button>
+            <Button
+              type="button"
+              disabled={generateDisabled || generating}
+              onClick={onGenerate}
+              className="w-full h-8.5 text-xs font-semibold rounded-xl gap-1.5 shadow-xs cursor-pointer"
+            >
+              <RefreshCw size={13} className="shrink-0" aria-hidden />
+              <span>{regenerateAllLabel || t('studioRegenerateAll')}</span>
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            disabled={generateDisabled || generating}
+            onClick={onGenerate}
+            className="w-full h-8.5 text-xs font-semibold rounded-xl gap-1.5 shadow-xs cursor-pointer"
+          >
+            <Sparkles size={13} className="shrink-0" aria-hidden />
+            <span>{generateLabel}</span>
+          </Button>
+        )}
 
         {showPublish ? (
           <Button

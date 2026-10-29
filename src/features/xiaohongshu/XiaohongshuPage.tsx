@@ -145,8 +145,8 @@ export default function XiaohongshuPage() {
     rewriteProgress,
     isRewriteMode,
     generate,
+    generateImagesOnly,
     cancel,
-    generationReady,
     markGenerationReady,
     clearGenerationReady,
   } = generation
@@ -454,10 +454,13 @@ export default function XiaohongshuPage() {
       generating={generating}
       stageLabel={stageLabel}
       generateLabel={t('socialPublish:studioAiGenerate')}
+      generateImagesLabel={t('socialPublish:studioGenerateImages')}
+      regenerateAllLabel={t('socialPublish:studioRegenerateAll')}
       onGenerate={() => void generate()}
+      onGenerateImages={() => void generateImagesOnly()}
       onCancel={cancel}
-      showPublish={generationReady}
-      publishDisabled={!content.trim()}
+      showPublish={false}
+      publishDisabled
       publishBusy={publishBusy}
       publishLabel={t('socialPublish:studioSyncDraftXhs')}
       publishNotice={publishNotice}

@@ -676,6 +676,24 @@
   min-width: 0;
 }
 
+.sl-wiz-fld__title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* 必填星号贴在标题文字右上角，不要被 space-between 甩到中间 */
+.sl-wiz-fld__req {
+  align-self: flex-start;
+  margin-left: 0.12em;
+  margin-top: 0.05em;
+  color: var(--destructive);
+  font-style: normal;
+  font-size: 0.78em;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .sl-wiz-fld__label-actions {
   display: inline-flex;
   align-items: center;

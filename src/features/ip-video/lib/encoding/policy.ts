@@ -6,10 +6,9 @@ export const VIDEO_BITRATE = 4_000_000
 export const AUDIO_BITRATE = 128_000
 export const AUDIO_SAMPLE_RATE = 48_000
 
-export type EncodingChoice = { video: 'avc'; audio: 'aac'; mime: 'video/mp4' } | { video: 'vp9'; audio: 'opus'; mime: 'video/webm' }
+export type EncodingChoice = { video: 'avc'; audio: 'aac'; mime: 'video/mp4' }
 export const ENCODING_CHOICES: readonly EncodingChoice[] = [
   { video: 'avc', audio: 'aac', mime: 'video/mp4' },
-  { video: 'vp9', audio: 'opus', mime: 'video/webm' }
 ]
 export async function chooseEncoding(
   canVideo: (codec: EncodingChoice['video']) => Promise<boolean>,

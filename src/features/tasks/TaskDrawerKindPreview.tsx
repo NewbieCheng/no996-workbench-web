@@ -1,6 +1,7 @@
 import { TaskRetalkPreview } from './TaskRetalkPreview'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Copy } from 'lucide-react'
 import { useWorkbenchTaskActions, type WorkbenchTaskRecord } from '../../services/workbench-tasks'
 import { TaskVoicePlaybackBlock } from './TaskVoicePlaybackBlock'
 import {
@@ -21,6 +22,18 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
   const { t } = useTranslation('workbench')
   const { getPayload } = useWorkbenchTaskActions()
   const [payloadHint, setPayloadHint] = useState('')
+  const [diagnosticCopyState, setDiagnosticCopyState] = useState<'idle' | 'copied' | 'manual'>('idle')
+  const diagnostic = task.kind === 'video_factory_export' ? task.meta?.diagnostic : undefined
+
+  const copyDiagnostic = async () => {
+    if (!diagnostic) return
+    try {
+      await navigator.clipboard.writeText(diagnostic)
+      setDiagnosticCopyState('copied')
+    } catch {
+      setDiagnosticCopyState('manual')
+    }
+  }
 
   const running = task.status === 'queued' || task.status === 'running'
   const failed = task.status === 'failed' || task.status === 'cancelled'
@@ -53,7 +66,22 @@ export function TaskDrawerKindPreview({ task, suppressVoicePlayer = false }: Pro
   if (task.kind === 'digital_human_retalk') return <TaskRetalkPreview task={task} />
 
   if (failed && task.errorMessage) {
-    return <p className="wb-task-drawer-preview__error">{task.errorMessage}</p>
+    return (
+      <div className="wb-task-drawer-preview__error-wrap">
+        <p className="wb-task-drawer-preview__error">{task.errorMessage}</p>
+        {diagnostic ? (
+          <div className="wb-task-drawer-preview__diagnostic">
+            <button type="button" className="wb-task-drawer-preview__copy-diagnostic" onClick={() => void copyDiagnostic()}>
+              <Copy size={14} aria-hidden="true" />
+              {diagnosticCopyState === 'copied' ? '已复制错误详情' : '复制错误详情'}
+            </button>
+            {diagnosticCopyState === 'manual' ? (
+              <textarea aria-label="可手动复制的视频导出错误详情" readOnly value={diagnostic} rows={8} onFocus={(event) => event.currentTarget.select()} />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    )
   }
 
   if (running && isVoiceSynthesisTask(task)) {

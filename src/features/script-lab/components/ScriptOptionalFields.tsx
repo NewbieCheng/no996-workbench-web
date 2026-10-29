@@ -7,6 +7,7 @@ import {
   polishScriptOptionalField,
   type ScriptOptionalFieldId,
 } from '../agent/form-assist'
+import { FieldPresetPicker } from '../../../components/agent/FieldPresetPicker'
 import {
   SCRIPT_AUDIENCE_PRESETS,
   SCRIPT_INTRO_PRESETS,
@@ -242,41 +243,63 @@ export function ScriptOptionalFields({
           <div className="sl-wiz-fgrid">
             {materialsForPurpose(config.purpose).map((field) => {
               const value = config.materials?.[field.key] ?? ''
+              const multiline = Boolean(field.multiline)
+              const presets = field.presets ?? []
+              const inputId = `sl-mat-${config.purpose}-${field.key}`
+              const setMaterial = (next: string) =>
+                onChange({ materials: { ...(config.materials ?? {}), [field.key]: next } })
               return (
                 <label
                   key={field.key}
-                  className={`sl-wiz-fld${field.multiline ? ' sl-wiz-fld--full' : ''}`}
+                  className={`sl-wiz-fld${multiline || presets.length > 0 ? ' sl-wiz-fld--full' : ''}`}
+                  htmlFor={inputId}
                 >
                   <span className="sl-wiz-fld__label">
-                    {field.label}
-                    {field.required ? <em className="sl-wiz-fld__req" aria-hidden="true">*</em> : null}
+                    <span className="sl-wiz-fld__title">
+                      {field.label}
+                      {field.required ? (
+                        <em className="sl-wiz-fld__req" aria-hidden="true">
+                          *
+                        </em>
+                      ) : null}
+                    </span>
                     <FieldBadge
                       filled={Boolean(value.trim())}
                       emptyLabel={field.required ? t('materials.required') : t('form.notRequired')}
                     />
                   </span>
-                  {field.multiline ? (
-                    <textarea
-                      className="sl-wiz-txt"
-                      rows={3}
-                      maxLength={field.maxLength ?? 600}
-                      value={value}
-                      placeholder={field.placeholder}
-                      onChange={(e) =>
-                        onChange({ materials: { ...(config.materials ?? {}), [field.key]: e.target.value } })
-                      }
-                    />
-                  ) : (
-                    <input
-                      className="sl-wiz-inp"
-                      maxLength={field.maxLength ?? 80}
-                      value={value}
-                      placeholder={field.placeholder}
-                      onChange={(e) =>
-                        onChange({ materials: { ...(config.materials ?? {}), [field.key]: e.target.value } })
-                      }
-                    />
-                  )}
+                  <div
+                    className={`sl-wiz-field-control${multiline ? ' sl-wiz-field-control--multiline' : ''}`}
+                  >
+                    {multiline ? (
+                      <textarea
+                        id={inputId}
+                        className="sl-wiz-txt"
+                        rows={3}
+                        maxLength={field.maxLength ?? 600}
+                        value={value}
+                        placeholder={field.placeholder}
+                        onChange={(e) => setMaterial(e.target.value)}
+                      />
+                    ) : (
+                      <input
+                        id={inputId}
+                        className="sl-wiz-txt"
+                        maxLength={field.maxLength ?? 80}
+                        value={value}
+                        placeholder={field.placeholder}
+                        onChange={(e) => setMaterial(e.target.value)}
+                      />
+                    )}
+                    {presets.length > 0 ? (
+                      <FieldPresetPicker
+                        label={field.label}
+                        value={value}
+                        options={presets}
+                        onSelect={setMaterial}
+                      />
+                    ) : null}
+                  </div>
                 </label>
               )
             })}

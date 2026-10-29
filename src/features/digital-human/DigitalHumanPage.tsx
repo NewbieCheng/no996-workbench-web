@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { toast as sonnerToast } from 'sonner'
 import {
   CheckCircle2,
   ChevronDown,
@@ -113,6 +114,7 @@ import {
 } from './lib/script-duration'
 import { MonitorStudioVideoPlayer, type MonitorVideoToolbar } from './MonitorStudioVideoPlayer'
 import { concatVideoBlobs, type ConcatSegmentItem } from './lib/video-concat'
+import { formatExportDiagnostic, VideoExportDiagnosticError } from '../../../packages/video-editor/src/core/export/export-diagnostics.ts'
 import './digital-human.css'
 
 /** 根据台词字数估算配音所需积分（1-100字 = 1积分，每超100字 +1积分） */
@@ -881,7 +883,21 @@ export default function DigitalHumanPage() {
     } catch (e) {
       if (!ac.signal.aborted && mounted.current) {
         const msg = apiErrorMessage(e)
-        toastError(msg)
+        if (e instanceof VideoExportDiagnosticError) {
+          const details = formatExportDiagnostic(e.diagnostic, e)
+          sonnerToast.error(msg, {
+            action: {
+              label: '复制错误详情',
+              onClick: () => {
+                void Promise.resolve().then(() => navigator.clipboard.writeText(details)).catch(() => {
+                  window.prompt('复制以下视频导出错误详情', details)
+                })
+              },
+            },
+          })
+        } else {
+          toastError(msg)
+        }
       }
     } finally {
       if (controller.current === ac) {
@@ -1547,7 +1563,7 @@ export default function DigitalHumanPage() {
         onProgress: undefined,
       })
 
-      const extension = mergedBlob.type.includes('webm') ? 'webm' : 'mp4'
+      const extension = 'mp4'
       const url = URL.createObjectURL(mergedBlob)
       downloadUrl(url, `${project.name || 'digital-human'}-full-merged.${extension}`)
       window.setTimeout(() => URL.revokeObjectURL(url), 10000)

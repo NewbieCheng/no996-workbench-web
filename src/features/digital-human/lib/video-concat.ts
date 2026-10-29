@@ -3,6 +3,8 @@
  * Uses MediaRecorder with synchronous frame stepping and Web Audio track routing.
  */
 
+import { VideoExportDiagnosticError } from '../../../../packages/video-editor/src/core/export/export-diagnostics.ts'
+
 export type ConcatSegmentItem = {
   id: string
   blob: Blob
@@ -14,10 +16,7 @@ export type ConcatSegmentItem = {
 function supportedVideoMime(): string {
   const candidates = [
     'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
+    'video/mp4;codecs=avc1.42E01E',
   ]
   for (const mime of candidates) {
     if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(mime)) {
@@ -35,11 +34,22 @@ export async function concatVideoBlobs(
   },
 ): Promise<Blob> {
   if (!items.length) throw new Error('没有可合并的成片段落。')
-  if (items.length === 1) return items[0].blob
+  if (items.length === 1) {
+    if (!items[0].blob.type.toLowerCase().startsWith('video/mp4')) {
+      throw new VideoExportDiagnosticError(
+        '该段原始视频不是可确认的 MP4，当前不能作为微信兼容成片直接导出。请使用 MP4 源文件或重新生成该段。',
+        { module: '数字人', composition: '单段直返格式检查', width: items[0].width, height: items[0].height, hasAudio: undefined, stage: '源文件格式检查', attempts: [{ strategy: `源 MIME ${items[0].blob.type || 'unknown'}`, result: 'unsupported' }] },
+      )
+    }
+    return items[0].blob
+  }
 
   const mime = supportedVideoMime()
   if (!mime || typeof HTMLCanvasElement.prototype.captureStream !== 'function') {
-    throw new Error('当前浏览器不支持前端无缝视频拼接，建议分别下载各段。')
+    throw new VideoExportDiagnosticError(
+      '当前浏览器没有可用的 MP4/H.264 MediaRecorder 拼接能力。',
+      { module: '数字人', composition: '多段视频合并', width: items[0].width || 1080, height: items[0].height || 1920, fps: 30, videoBitrate: 6_000_000, audioBitrate: 128_000, hasAudio: true, stage: '编码能力预检', attempts: [{ strategy: 'MediaRecorder MP4/H.264/AAC', result: 'unsupported' }] },
+    )
   }
 
   const targetWidth = items[0].width || 1080
@@ -98,7 +108,11 @@ export async function concatVideoBlobs(
       settled = true
       cleanup()
       if (recorder.state !== 'inactive') recorder.stop()
-      reject(err)
+      reject(err instanceof DOMException && err.name === 'AbortError' ? err : new VideoExportDiagnosticError(
+        err.message,
+        { module: '数字人', composition: '多段视频合并', width: targetWidth, height: targetHeight, fps: 30, videoBitrate: 6_000_000, audioBitrate: 128_000, hasAudio: true, stage: '浏览器解码或 MP4 拼接', attempts: [{ strategy: `MediaRecorder ${mime}`, result: 'failed', error: err.message.slice(0, 300) }] },
+        err,
+      ))
     }
 
     const abort = () => fail(new DOMException('拼接已取消', 'AbortError'))

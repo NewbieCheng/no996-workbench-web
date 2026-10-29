@@ -261,6 +261,8 @@
   "studioSaveSuccess": "已保存到本机文章库",
   "studioSaveEmpty": "请先生成或编写正文后再保存",
   "studioAiGenerate": "生成",
+  "studioGenerateImages": "生成图片",
+  "studioRegenerateAll": "全部重新生成",
   "studioSyncDraftXhs": "同步草稿",
   "studioSyncDraftWechat": "同步草稿",
   "rewriteSourceRequired": "请先在左侧编辑器写入正文，再开始改写",

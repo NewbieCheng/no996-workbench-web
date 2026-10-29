@@ -463,10 +463,14 @@ export default function PersonaPage() {
     workPanelsActive &&
     !selectFocus &&
     (personaBusy || formCollapsed || !previewCollapsed)
-  const splitActive =
-    showPreview && (showQuestionnaire || showSelect || showMainProfile) && !previewCollapsed
   // 仅生成中全屏左卡；select/profile 收起问卷时仍保持左右 split，主栏可见
   const generatingFocus = personaBusy
+  // 生成中主栏已隐藏，勿挂 --split（sticky/90dvh 会与下方过程卡抢布局）
+  const splitActive =
+    showPreview &&
+    !generatingFocus &&
+    (showQuestionnaire || showSelect || showMainProfile) &&
+    !previewCollapsed
   // 成功后不挂过程条；失败/取消保留以便重试
   const traceActive = Boolean(
     traceTask &&

@@ -1,0 +1,14 @@
+
+.wb-task-drawer-preview__error-wrap { display: grid; gap: 8px; min-width: 0; }
+.wb-task-drawer-preview__diagnostic { display: grid; gap: 6px; }
+.wb-task-drawer-preview__copy-diagnostic {
+  display: inline-flex; align-items: center; gap: 6px; width: fit-content;
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px;
+  color: var(--foreground); background: var(--background); font: inherit; font-size: 12px; cursor: pointer;
+}
+.wb-task-drawer-preview__copy-diagnostic:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.wb-task-drawer-preview__diagnostic textarea {
+  width: 100%; resize: vertical; border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px; color: var(--foreground); background: var(--background);
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+}

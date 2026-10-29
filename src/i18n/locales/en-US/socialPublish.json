@@ -261,6 +261,8 @@
   "studioSaveSuccess": "Saved to local articles",
   "studioSaveEmpty": "Add content before saving",
   "studioAiGenerate": "Generate",
+  "studioGenerateImages": "Generate images",
+  "studioRegenerateAll": "Regenerate all",
   "studioSyncDraftXhs": "Sync draft",
   "studioSyncDraftWechat": "Sync draft",
   "rewriteSourceRequired": "Add body text in the editor before rewriting",

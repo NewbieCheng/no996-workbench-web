@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { CheckIcon, HeartIcon, BookmarkIcon, ExternalLinkIcon, StarIcon, ArrowRightIcon, ArrowLeftIcon } from 'lucide-react'
 import { Button } from '@no996/ui/button'
+import { HoverTip } from '@no996/ui/tooltip'
+import { WorkbenchMediaImage } from '../../../extension/materials/WorkbenchMediaImage'
 import type { WorkbenchBridgeCollectedItem } from '../../../../services/extension/workbench-bridge-contract'
 
 type StepSelectBenchmarkProps = {
@@ -10,6 +12,10 @@ type StepSelectBenchmarkProps = {
   onNext: () => void
   onBack: () => void
   queryText?: string
+}
+
+function resolveCoverUrl(item: WorkbenchBridgeCollectedItem): string | undefined {
+  return item.coverUrl || item.imageUrls?.[0] || item.mediaLayout?.coverUrls?.[0]
 }
 
 function formatPositiveCount(num: number): string {
@@ -44,7 +50,6 @@ export function StepSelectBenchmark({
 
   return (
     <div className="w-full max-w-6xl mx-auto py-6 px-4 space-y-6">
-      {/* 头部状态与指示 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -76,12 +81,11 @@ export function StepSelectBenchmark({
         </div>
       </div>
 
-      {/* 爆款卡片网格 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {items.map((item) => {
           const isSelected = selectedItem?.url === item.url
           const isStarred = starredUrls.has(item.url)
-          const cover = item.coverUrl || item.imageUrls?.[0]
+          const cover = resolveCoverUrl(item)
           const showLikes = hasPositiveMetric(item.likes)
           const showCollects = hasPositiveMetric(item.collects)
           const showMetrics = showLikes || showCollects
@@ -96,14 +100,13 @@ export function StepSelectBenchmark({
                   : 'border-border/70 hover:border-primary/50'
               }`}
             >
-              {/* 封面区 */}
               <div className="relative aspect-[3/4] w-full bg-muted/40 overflow-hidden">
                 {cover ? (
-                  <img
-                    src={cover}
+                  <WorkbenchMediaImage
+                    url={cover}
                     alt={item.title || '封面'}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
+                    expiredMessage="封面暂不可用"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-3 text-center">
@@ -111,14 +114,12 @@ export function StepSelectBenchmark({
                   </div>
                 )}
 
-                {/* 选中的勾选角标 */}
                 {isSelected && (
                   <div className="absolute top-2.5 right-2.5 z-10 size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md animate-in zoom-in-75">
                     <CheckIcon className="size-3.5 stroke-[3]" />
                   </div>
                 )}
 
-                {/* 加星收藏按钮 */}
                 <button
                   type="button"
                   onClick={(e) => toggleStar(e, item.url)}
@@ -155,7 +156,6 @@ export function StepSelectBenchmark({
                 ) : null}
               </div>
 
-              {/* 信息区 */}
               <div className="p-3 flex flex-col flex-1 justify-between gap-2">
                 <h3 className="text-xs font-semibold text-foreground line-clamp-2 leading-relaxed">
                   {item.title || '无标题爆款笔记'}
@@ -163,18 +163,20 @@ export function StepSelectBenchmark({
 
                 <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[11px] text-muted-foreground">
                   <span className="truncate max-w-[90px]">{item.author || '爆款博主'}</span>
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-0.5 text-primary hover:underline hover:text-primary/80"
-                    >
-                      <span>看原文</span>
-                      <ExternalLinkIcon className="size-2.5" />
-                    </a>
-                  )}
+                  {item.url ? (
+                    <HoverTip label="查看原文" side="top">
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex size-6 items-center justify-center rounded-md text-primary hover:bg-primary/10 shrink-0"
+                        aria-label="查看原文"
+                      >
+                        <ExternalLinkIcon className="size-3.5" />
+                      </a>
+                    </HoverTip>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -182,7 +184,6 @@ export function StepSelectBenchmark({
         })}
       </div>
 
-      {/* 底部悬浮/操作区 */}
       <div className="flex items-center justify-between pt-4 border-t border-border/50">
         <span className="text-xs text-muted-foreground">
           {selectedItem ? (

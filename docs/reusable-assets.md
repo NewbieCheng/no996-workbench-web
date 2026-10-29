@@ -728,7 +728,8 @@ function PersonaInjectionToggle({ state, className }: { state: PersonaInjectionS
 
 - 与 `content`/`background` **并行**：注入管生成时语气与身份；预填只把定位卡片里可对应的字段写入页面表单。
 - **仅填空**；关注入不删已填；换档对新档再填空。
-- 个人档优先读已保存的五模块主 Profile：`核心客户→audience`，`三大痛点→pain`，`产品承接→intro`，`差异化价值→sellingPoints`。没有主 Profile 时回退问卷/旧 7 字段：`audiences|targetClients→audience`，`clientSituations|clientPainPoints→pain`，`products|primaryBusiness→intro`，`differentiation|additionalInfo→sellingPoints`；`audience` 空时用 `role`+`industry`。企业档：`targetMarket→audience`，`mainBusiness→intro`，`competitiveEdge→sellingPoints`。
+- 个人档优先读已保存的五模块主 Profile：`核心客户→audience`，`三大痛点→pain`。没有主 Profile 时回退问卷/旧 7 字段：`audiences|targetClients→audience`，`clientSituations|clientPainPoints→pain`；`audience` 空时用 `role`+`industry`。企业档：`targetMarket→audience`。
+- **脚本页不从人设预填 `intro` / `sellingPoints`**：它们是本次产品的专属事实，不是人设自己的主营业务。之前 `产品承接→intro`、`差异化价值→sellingPoints` 会让用户换个产品后正文仍在讲人设生意，2026-10-29 已移除；这两项由用户填写（卖点也可由 Agent 在表单空着时推断，但不再来自人设）。
 - 标题页：`audience` 同上；痛点进 `supplement`（`受众困扰：…`），不自动填 `topic`。
 - 人设页问卷：`src/features/persona/views/PersonaQuestionnaireView.tsx`；候选选择：`PersonaSelectView.tsx`；主 Profile：`PersonaMainProfileView.tsx`。仅问卷草稿、没有 `content` 的档不能注入。
 
@@ -926,15 +927,17 @@ retryVideoFactoryExport(id: string): Promise<string>
 
 - **Kind**：`video_factory_export`（`src/services/workbench-tasks/types.ts`）
 - **入队**：`enqueueVideoFactoryExport`（`WorkbenchTaskProvider`）
-- **执行**：`src/services/workbench-tasks/executors/video-factory-export.ts` → `src/features/video-factory/lib/run-browser-export.ts`。默认 `composition: 'preview'` 走 [`run-preview-export.ts`](../packages/video-editor/src/panels/export/run-preview-export.ts)（挂载 `LiveShotLayer` 预览舞台 + [`composition-recorder.ts`](../packages/video-editor/src/core/export/composition-recorder.ts) 直录，**不走** `prepareShotFrames` / ShotFrameCache）。`offline` 仍走主线程 `ExportController` 逐帧编码。进度 `meta` 写库后必须经 Runner 的 `onJobsChanged` 刷新快照。
-- **通用录制器**：`recordComposition()`（`packages/video-editor/src/core/export/composition-recorder.ts`）把已画好的 canvas 按时长编码成 MP4/WebM；预览媒体池 `PreviewMediaPool`（`packages/video-editor/src/core/export/preview-media-pool.ts`）。后续页面合成复用这两个入口，不要再写一套 html-to-image 逐帧管线。
+- **执行**：`src/services/workbench-tasks/executors/video-factory-export.ts` → `src/features/video-factory/lib/run-browser-export.ts`。默认 `composition: 'preview'` 走 [`run-preview-export.ts`](../packages/video-editor/src/panels/export/run-preview-export.ts)（挂载 `LiveShotLayer` 预览舞台 + [`composition-recorder.ts`](../packages/video-editor/src/core/export/composition-recorder.ts) 直录，**不走** `prepareShotFrames` / ShotFrameCache）。`offline` 仍走主线程 `ExportController` 逐帧编码。进度 `meta` 写库后必须经 Runner 的 `onJobsChanged` 刷新快照；此外任务中心有活动任务时会每秒重载任务快照（`WorkbenchTaskProvider` 的进度轮询），兜底所有直接写 `meta.pct` / `meta.progress` 的执行器。
+- **通用录制器**：`recordComposition()`（`packages/video-editor/src/core/export/composition-recorder.ts`）把已画好的 canvas 按时长编码成 MP4；预览媒体池 `PreviewMediaPool`（`packages/video-editor/src/core/export/preview-media-pool.ts`）。后续页面合成复用这两个入口，不要再写一套 html-to-image 逐帧管线。
 - **快速 vs 精确**：导出面板主按钮「快速导出」（约等于片长、可能掉帧），次按钮「精确导出（逐帧）」。编码器速度档 `latencyMode: realtime`、约 4 Mbps。
 - **刷新即中断**：浏览器合成不能在关页后续跑。`resetStaleRunning` 与 Runner dispose 将 `video_factory_export` 标 `failed`（「页面已刷新或关闭…」），任务中心提供「重新导出」。`beforeunload` + 站内链接点击确认。`后台任务` ≠ 云端继续。
 - **资产解析**：`src/features/video-factory/lib/export-asset-resolver.ts`（工厂与 IP 编排共用）。`createAssetResolverFromDocument` 返回带 `dispose()` 的解析函数，接收素材 ID、可选源时间微秒及取消信号；图片缓存，视频按源时间逐帧解码。调用方结束时必须释放解析器，临时视频帧位图由合成调用方关闭；`runBrowserExport` 已负责释放解析器。
 - **分辨率**：`packages/video-editor/src/core/export/controller.ts` 的 `resolveExportDimensions` 按短边选择 720P/1080P、保留画幅并对齐偶数像素；按工程坐标完成合成后整体缩放，不改工程里的位置、字号或描边。
 - **原声混音**：`packages/video-editor/src/media/audio-mixer.ts` 的 `collectDocumentAudioClips` 统一收集配音和视频原声，遵守静音、solo 与音量；对应源区间已有显式音轨时不重复混入。缺媒体或解码失败报错，不冒充静音成功。
 - **字体接线**：`runBrowserExport` 先按实际字幕字体加载本机目录里的 CSS；`ExportController` 随后等待 `ensureCaptionFonts`。后台任务无需依赖编辑页面已注册字体。
-- **编码能力**：预检与编码入口都检查浏览器编码支持；能力缺失时明确失败，不返回占位视频。
+- **编码能力与格式**：浏览器导出统一以 MP4/H.264 为目标，有音轨时要求 AAC；快速录制器仅在能力检测到 H.264 MP4（有声时明确要求 AAC）时启用 MediaRecorder，不把 WebM 改名为 MP4。WebCodecs 预检与真实编码都使用 `hardwareAcceleration: 'no-preference'`，避免仅因 `prefer-hardware` 被 Edge 拒绝；实际浏览器与微信兼容仍须人工验收。
+- **失败诊断**：视频工厂与 IP 编排导出任务失败时，在任务详情提供「复制错误详情」；数字人合并失败时在错误提示上提供同名操作，剪贴板不可用时打开可手动复制的文本框。诊断不自动上传，并剔除项目/素材内容、名称、凭据、URL 与路径。人工测试步骤及未验收边界见 [`docs/video-export-troubleshooting.md`](./video-export-troubleshooting.md)。
+- **数字人合并格式**：多段浏览器拼接只选择 MP4 MediaRecorder 类型；单段直返仅接受 MIME 明确为 `video/mp4` 的 Blob，否则提示使用 MP4 源重新生成，避免扩展名与内容不一致。
 - **存储隔离**：`packages/video-editor/src/core/repository/indexeddb.ts` 的 `IndexedDBProjectRepository` / `IndexedDBAssetRepository` 接收工作区参数；默认 `video-factory` 使用 `no996-video-editor-v1`，`ip-video` 使用 `no996-ip-video-editor-v1`。两边工程与素材均不互读、不回退，账号继续由复合主键隔离；导出执行器按任务 `source` 选择对应工作区。
 - **前台约束**：标签页 `document.hidden` 时等待回到前台并写 `meta.stage`；存在 `running` 导出任务时 `beforeunload` 守卫（`WorkbenchTaskProvider` 内 `VideoExportBeforeUnloadGuard`）
 - **UI**：`ExportPanel` 默认 `exportMode="task"`；示例编辑器 `exportMode="inline"`。任务中心下载：`TaskVideoExportBlock` + `getVideoExportDownloadUrl`

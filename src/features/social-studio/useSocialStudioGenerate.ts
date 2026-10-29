@@ -8,7 +8,10 @@ import {
   isAbortError,
   runHardCheck,
 } from '../../agent'
-import { generateSocialImages } from '../../services/social-studio/generate-social-images'
+import {
+  buildSocialImagePrompts,
+  generateSocialImages,
+} from '../../services/social-studio/generate-social-images'
 import { prepareAttachmentsFromItems } from '../../lib/chat-attachments/prepare'
 import type { AttachmentUploaderItem } from '@no996/ui/attachment-uploader'
 import { readMaterialCaptureSession } from './material-import/material-capture-session-store'
@@ -208,18 +211,29 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
           setStageLabel('正文撰写完成，正在按主题生成原创配图…')
           const targetCount = Math.min(options.brief.imageCount, 4)
           const imageSize = options.platform === 'xhs' ? '1024x1365' : '1024x1024'
+          const prompts = (result.imagePrompts ?? []).filter((p) => p.trim()).slice(0, targetCount)
+          const failureMessages: string[] = []
           const imageUrls = await generateSocialImages({
-            prompts: result.imagePrompts,
+            prompts: prompts.length > 0 ? prompts : [options.brief.topic || '原创配图'],
             size: imageSize,
-            nPerPrompt: targetCount,
+            nPerPrompt: 1,
             signal: ac.signal,
-            onFailure: (error) => console.warn('[useSocialStudioGenerate] 文生图接口调用失败:', error),
+            onFailure: (error) => {
+              const message = error instanceof Error ? error.message : String(error)
+              failureMessages.push(message)
+              console.warn('[useSocialStudioGenerate] 文生图接口调用失败:', error)
+            },
           })
           if (imageUrls.length > 0) {
             options.onGeneratedImages(imageUrls)
             toast.success(`已成功生成 ${imageUrls.length} 张原创配图`)
           } else {
-            toast.message('正文已生成，但配图服务未返回图片；可稍后重试或上传本地图片。')
+            const detail = failureMessages[0]?.trim()
+            toast.message(
+              detail
+                ? `正文已生成，但配图失败：${detail}`
+                : '正文已生成，但配图服务未返回图片；可稍后重试或上传本地图片。',
+            )
           }
         }
       } else if (options.contentMode === 'image_text' && options.brief.imageCount > 0) {
@@ -237,12 +251,65 @@ export function useSocialStudioGenerate(options: UseSocialStudioGenerateOptions)
     }
   }, [composeSink, isRewriteMode, options, rewriteSink, t])
 
+  /** 仅生成配图，不重写正文（已有文章时用）。 */
+  const generateImagesOnly = useCallback(async () => {
+    if (!options.onGeneratedImages) {
+      notifyOperationWarning('当前模式不支持单独生成配图。', { id: 'social-generate', raw: true })
+      return
+    }
+    const targetCount = Math.min(Math.max(1, options.brief.imageCount || 1), 4)
+    setGenerating(true)
+    setStageLabel('正在按主题生成原创配图…')
+    const ac = new AbortController()
+    abortRef.current = ac
+    try {
+      const clients = createAgentClients()
+      if (clients.isMock) {
+        toast.message('演示模式不会调用云端生图服务；配图可通过本地素材预览。')
+        return
+      }
+      const imageSize = options.platform === 'xhs' ? '1024x1365' : '1024x1024'
+      const prompts = buildSocialImagePrompts({
+        title: options.brief.topic.trim() || '原创配图',
+        style: `${options.brief.expressionStyle}, ${options.brief.voiceTone}`,
+        count: targetCount,
+      }).slice(0, targetCount)
+      const failureMessages: string[] = []
+      const imageUrls = await generateSocialImages({
+        prompts: prompts.length > 0 ? prompts : [options.brief.topic || '原创配图'],
+        size: imageSize,
+        nPerPrompt: 1,
+        signal: ac.signal,
+        onFailure: (error) => {
+          failureMessages.push(error instanceof Error ? error.message : String(error))
+        },
+      })
+      if (imageUrls.length > 0) {
+        options.onGeneratedImages(imageUrls)
+        toast.success(`已成功生成 ${imageUrls.length} 张原创配图`)
+      } else {
+        notifyOperationError(
+          failureMessages[0]?.trim() || '配图服务未返回图片；请稍后重试或上传本地图片。',
+          { id: 'social-generate' },
+        )
+      }
+    } catch (e) {
+      if (isAbortError(e)) return
+      notifyOperationError(e instanceof Error ? e.message : String(e), { id: 'social-generate' })
+    } finally {
+      setGenerating(false)
+      setStageLabel('')
+      abortRef.current = null
+    }
+  }, [options, t])
+
   return {
     generating,
     stageLabel,
     rewriteProgress,
     isRewriteMode,
     generate,
+    generateImagesOnly,
     cancel,
     generationReady,
     markGenerationReady,

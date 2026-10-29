@@ -49,6 +49,7 @@ export type SocialStudioCreativePanelProps = {
   generating: boolean
   stageLabel?: string
   onGenerate: () => void
+  onGenerateImages?: () => void
   onCancel?: () => void
   showPublish?: boolean
   onPublish: () => void
@@ -59,6 +60,8 @@ export type SocialStudioCreativePanelProps = {
   onReset?: () => void
   onFillSample?: () => void
   generateLabel: string
+  generateImagesLabel?: string
+  regenerateAllLabel?: string
   showAttachments?: boolean
   attachmentItems?: AttachmentUploaderItem[]
   onAttachmentItemsChange?: (items: AttachmentUploaderItem[]) => void
@@ -82,6 +85,7 @@ export function SocialStudioCreativePanel({
   generating,
   stageLabel,
   onGenerate,
+  onGenerateImages,
   onCancel,
   showPublish,
   onPublish,
@@ -91,6 +95,8 @@ export function SocialStudioCreativePanel({
   publishNotice,
   onFillSample,
   generateLabel,
+  generateImagesLabel,
+  regenerateAllLabel,
   showAttachments,
   attachmentItems,
   onAttachmentItemsChange,
@@ -599,7 +605,11 @@ export function SocialStudioCreativePanel({
         stageLabel={stageLabel}
         generateDisabled={!brief.topic.trim()}
         generateLabel={generateLabel}
+        generateImagesLabel={generateImagesLabel}
+        regenerateAllLabel={regenerateAllLabel}
+        hasEditorBody={hasEditorBody}
         onGenerate={onGenerate}
+        onGenerateImages={onGenerateImages}
         onCancel={onCancel}
         showPublish={showPublish}
         publishDisabled={publishDisabled}

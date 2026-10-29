@@ -145,6 +145,7 @@ export default function WechatArticlePage() {
     rewriteProgress,
     isRewriteMode,
     generate,
+    generateImagesOnly,
     cancel,
     generationReady,
     markGenerationReady,
@@ -493,7 +494,10 @@ export default function WechatArticlePage() {
       generating={generating}
       stageLabel={stageLabel}
       generateLabel={t('socialPublish:studioAiGenerate')}
+      generateImagesLabel={t('socialPublish:studioGenerateImages')}
+      regenerateAllLabel={t('socialPublish:studioRegenerateAll')}
       onGenerate={() => void generate()}
+      onGenerateImages={() => void generateImagesOnly()}
       onCancel={cancel}
       showPublish={generationReady}
       publishDisabled={!title.trim() || !content.trim()}

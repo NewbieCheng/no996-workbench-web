@@ -1,6 +1,10 @@
-import { IndexedDBAssetRepository, IndexedDBProjectRepository } from '@no996/video-editor/core/repository/indexeddb.ts'
 import { runBrowserExport } from '../../../features/video-factory/lib/run-browser-export.ts'
 import { isDocumentHidden, waitForDocumentVisible } from '../../../features/video-factory/lib/export-visibility.ts'
+import { IndexedDBAssetRepository, IndexedDBProjectRepository } from '@no996/video-editor/core/repository/indexeddb.ts'
+import { formatExportDiagnostic, type ExportDiagnosticContext } from '../../../../packages/video-editor/src/core/export/export-diagnostics.ts'
+import { resolveExportDimensions } from '@no996/video-editor/core/export/controller.ts'
+import { FAST_EXPORT_VIDEO_BITRATE } from '@no996/video-editor/core/export/composition-recorder.ts'
+import { AUDIO_BITRATE } from '@no996/video-editor/media/pcm.ts'
 import type { WorkbenchTaskRepository } from '../repository'
 import type { VideoFactoryExportPayload, WorkbenchTaskRecord } from '../types'
 
@@ -65,40 +69,68 @@ export async function executeVideoFactoryExport(
 
     checkCancelled()
 
-    const { blob, fileName } = await runBrowserExport({
-      doc,
-      resolutionPreset: payload.resolutionPreset,
-      getAssetBlob: (blobId) => assetRepo.getAssetBlob(blobId, payload.ownerScope),
-      signal,
-      composition: payload.composition === 'offline' ? 'offline' : 'preview',
-      onProgress: (p, stage) => {
-        void patchProgress(p * 100, stage)
-      },
-      onPausedForVisibility: () => {
-        void patchProgress(0, '', true)
-      },
-    })
-
-    checkCancelled()
-
-    await repo.putBlob({ id: job.id, mime: blob.type || 'video/mp4', data: blob })
-    await repo.patchPayload(job.payloadId, { ...payload, fileName })
-    await repo.patchJob(job.id, {
-      status: 'succeeded',
-      finishedAt: Date.now(),
-      blobId: job.id,
-      audioByteLength: blob.size,
-      meta: {
-        progress: '100',
-        stage: '导出完成',
-        resolution: payload.resolutionPreset,
-        source: payload.source,
+    const dimensions = resolveExportDimensions(doc, payload.resolutionPreset)
+    const diagnostic: ExportDiagnosticContext = {
+      module: payload.source === 'ip-composition' ? 'IP 视频' : '视频工厂',
+      composition: payload.composition === 'offline' ? '逐帧精确导出' : '预览快速导出',
+      width: dimensions.width,
+      height: dimensions.height,
+      fps: doc.canvas.fps.num / doc.canvas.fps.den,
+      videoBitrate: FAST_EXPORT_VIDEO_BITRATE,
+      audioBitrate: AUDIO_BITRATE,
+      hasAudio: undefined,
+      stage: '准备导出',
+      attempts: [],
+    }
+    try {
+      const { blob, fileName } = await runBrowserExport({
+        doc,
+        resolutionPreset: payload.resolutionPreset,
+        getAssetBlob: (blobId) => assetRepo.getAssetBlob(blobId, payload.ownerScope),
+        signal,
         composition: payload.composition === 'offline' ? 'offline' : 'preview',
-        fileName,
-        byteLength: String(blob.size),
-      },
-    })
-    await repo.pruneForUser(job.ownerUserId)
+        onProgress: (p, stage) => {
+          diagnostic.stage = stage
+          void patchProgress(p * 100, stage)
+        },
+        onPausedForVisibility: () => {
+          void patchProgress(0, '', true)
+        },
+      })
+      checkCancelled()
+      await repo.putBlob({ id: job.id, mime: blob.type || 'video/mp4', data: blob })
+      await repo.patchPayload(job.payloadId, { ...payload, fileName })
+      await repo.patchJob(job.id, {
+        status: 'succeeded',
+        finishedAt: Date.now(),
+        blobId: job.id,
+        audioByteLength: blob.size,
+        meta: {
+          progress: '100',
+          stage: '导出完成',
+          resolution: payload.resolutionPreset,
+          source: payload.source,
+          composition: payload.composition === 'offline' ? 'offline' : 'preview',
+          fileName,
+          byteLength: String(blob.size),
+        },
+      })
+      await repo.pruneForUser(job.ownerUserId)
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        const errorDetails = error instanceof Error && 'diagnostic' in error
+          ? (error as Error & { diagnostic?: Partial<ExportDiagnosticContext> }).diagnostic
+          : undefined
+        if (errorDetails) {
+          diagnostic.stage = errorDetails.stage ?? diagnostic.stage
+          diagnostic.attempts = errorDetails.attempts ?? diagnostic.attempts
+        }
+        await repo.patchJob(job.id, {
+          meta: { ...job.meta, diagnostic: formatExportDiagnostic(diagnostic, error) },
+        })
+      }
+      throw error
+    }
   } finally {
     if (visibilityInterval !== undefined) clearInterval(visibilityInterval)
   }

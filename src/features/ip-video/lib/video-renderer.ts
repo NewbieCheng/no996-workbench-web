@@ -42,7 +42,7 @@ export function subtitleIndexAt(timeline: SubtitleSegment[], time: number): numb
 }
 export function supportedRealtimeMime(): string {
   if (typeof MediaRecorder === 'undefined') return ''
-  return ['video/mp4;codecs=avc1.424028,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(mime => MediaRecorder.isTypeSupported(mime)) ?? ''
+  return ['video/mp4;codecs=avc1.424028,mp4a.40.2', 'video/mp4;codecs=avc1.424028'].find(mime => MediaRecorder.isTypeSupported(mime)) ?? ''
 }
 export function canRenderIPVideo(): boolean {
   return typeof VideoEncoder !== 'undefined' || (typeof HTMLCanvasElement !== 'undefined' && typeof HTMLCanvasElement.prototype.captureStream === 'function' && Boolean(supportedRealtimeMime()))

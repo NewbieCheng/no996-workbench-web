@@ -44,13 +44,14 @@ test('real audio duration wins only inside explicit tolerance; captions are not 
   assert.throws(() => resolveDuration(10, 9.89), /audioDurationMismatch/)
 })
 
-test('codec strategy tries a complete MP4 pair before WebM and omits audio check for silent output', async () => {
+test('codec strategy only emits a complete MP4 pair and fails when H.264/AAC is unavailable', async () => {
   const calls = []
-  const result = await chooseEncoding(async codec => { calls.push(codec); return true }, async codec => { calls.push(codec); return codec === 'opus' })
-  assert.equal(result?.mime, 'video/webm')
-  assert.deepEqual(calls, ['avc', 'aac', 'vp9', 'opus'])
+  const result = await chooseEncoding(async codec => { calls.push(codec); return true }, async codec => { calls.push(codec); return codec === 'aac' })
+  assert.equal(result?.mime, 'video/mp4')
+  assert.deepEqual(calls, ['avc', 'aac'])
   assert.equal((await chooseEncoding(async () => true))?.mime, 'video/mp4')
   assert.equal(await chooseEncoding(async () => false), null)
+  assert.equal(await chooseEncoding(async () => true, async () => false), null)
 })
 
 test('codec probing errors propagate rather than silently selecting another format', async () => {

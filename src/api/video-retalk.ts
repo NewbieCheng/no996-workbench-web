@@ -1,6 +1,9 @@
 import { api } from './client'
 import { parseApiError, throwApiError } from './errors'
 
+/** 与 agent/worker nginx `/api/v1/ai/videos/` 1800s 及 gentask 30min 对齐。 */
+export const RETALK_HTTP_TIMEOUT_MS = 1_800_000
+
 function retalkError(e: unknown): never {
   const parsed = parseApiError(e)
   if (parsed) {
@@ -58,16 +61,27 @@ export async function submitRetalk(input: RetalkSubmitInput, signal?: AbortSigna
   assertRetalkReference(input.audio)
   if (input.face_reference) assertRetalkReference(input.face_reference)
   if (!input.client_request_id.trim()) throw new Error('缺少本次提交的幂等标识。')
-  try { return validateTask((await api.post<RetalkTask>('/ai/videos/retalk', input, { signal })).data) }
-  catch (e) { retalkError(e) }
+  try {
+    return validateTask((await api.post<RetalkTask>('/ai/videos/retalk', input, {
+      signal,
+      timeout: RETALK_HTTP_TIMEOUT_MS,
+    })).data)
+  } catch (e) { retalkError(e) }
 }
 export async function getRetalkTask(id: string, signal?: AbortSignal): Promise<RetalkTask> {
-  try { return validateTask((await api.get<RetalkTask>(`/ai/videos/retalk/tasks/${encodeURIComponent(id)}`, { signal })).data) }
-  catch (e) { retalkError(e) }
+  try {
+    return validateTask((await api.get<RetalkTask>(`/ai/videos/retalk/tasks/${encodeURIComponent(id)}`, {
+      signal,
+      timeout: RETALK_HTTP_TIMEOUT_MS,
+    })).data)
+  } catch (e) { retalkError(e) }
 }
 export async function cancelRetalkTask(id: string, signal?: AbortSignal): Promise<RetalkTask> {
   try {
-    await api.post(`/ai/videos/retalk/tasks/${encodeURIComponent(id)}/cancel`, undefined, { signal })
+    await api.post(`/ai/videos/retalk/tasks/${encodeURIComponent(id)}/cancel`, undefined, {
+      signal,
+      timeout: RETALK_HTTP_TIMEOUT_MS,
+    })
     // A successful HTTP response is not a locally invented cancellation: read the authoritative state.
     return await getRetalkTask(id, signal)
   } catch (e) { retalkError(e) }

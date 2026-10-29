@@ -1,5 +1,5 @@
 /**
- * 浏览器合成录制器：把已画好的 canvas 按时长编码成 MP4/WebM。
+ * 浏览器合成录制器：把已画好的 canvas 按时长编码成 MP4。
  * 供视频工厂、IP 编排与后续页面合成复用；不含工程光栅化。
  */
 import {
@@ -14,6 +14,7 @@ import {
   canEncodeVideo,
   type StreamTargetChunk,
 } from 'mediabunny'
+import { VideoExportDiagnosticError } from './export-diagnostics.ts'
 import { AUDIO_BITRATE, abortable, throwIfAborted, yieldTask, type PCM } from '../../media/pcm.ts'
 import { BoundedByteStore } from '../../media/byte-store.ts'
 
@@ -37,30 +38,52 @@ export type RecordCompositionResult = {
   mime: string
 }
 
-function encodingConfig(codec: 'avc' | 'vp9') {
+class CompositionPaintError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause })
+    this.name = 'CompositionPaintError'
+  }
+}
+
+function encodingConfig(codec: 'avc', hardwareAcceleration: 'prefer-hardware' | 'no-preference' = 'no-preference') {
   return {
     codec,
     quality: new Quality({ bitrate: FAST_EXPORT_VIDEO_BITRATE }),
     latencyMode: 'realtime' as const,
-    hardwareAcceleration: 'prefer-hardware' as const,
+    hardwareAcceleration,
     keyFrameInterval: 2,
   }
 }
 
 export async function canRecordComposition(width: number, height: number, fps: number, pcm?: PCM): Promise<'webcodecs' | 'mediarecorder'> {
+  const attempts: Array<{ strategy: string; result: 'supported' | 'unsupported' | 'failed'; error?: string }> = []
   if (typeof globalThis.VideoEncoder === 'function' && typeof globalThis.VideoFrame === 'function') {
-    if (await canEncodeVideo('avc', { width, height, frameRate: fps, quality: new Quality({ bitrate: FAST_EXPORT_VIDEO_BITRATE }) })) {
-      if (!pcm || await canEncodeAudio('aac', {
-        sampleRate: pcm.sampleRate,
-        numberOfChannels: pcm.channels.length,
-        quality: new Quality({ bitrate: AUDIO_BITRATE }),
-      })) return 'webcodecs'
+    const audioSupported = !pcm || (typeof globalThis.AudioEncoder === 'function' && await canEncodeAudio('aac', {
+      sampleRate: pcm.sampleRate,
+      numberOfChannels: pcm.channels.length,
+      quality: new Quality({ bitrate: AUDIO_BITRATE }),
+    }))
+    if (audioSupported) {
+      const supported = await canEncodeVideo('avc', {
+        width, height, frameRate: fps, ...encodingConfig('avc', 'no-preference'),
+      })
+      attempts.push({ strategy: 'WebCodecs H.264/AAC，no-preference', result: supported ? 'supported' : 'unsupported' })
+      if (supported) return 'webcodecs'
+    } else {
+      attempts.push({ strategy: 'WebCodecs AAC', result: 'unsupported' })
     }
+  } else {
+    attempts.push({ strategy: 'WebCodecs API', result: 'unsupported' })
   }
-  if (typeof MediaRecorder !== 'undefined' && typeof HTMLCanvasElement !== 'undefined' && typeof HTMLCanvasElement.prototype.captureStream === 'function') {
-    return 'mediarecorder'
-  }
-  throw new Error('当前浏览器缺少视频编码能力，请更换 Chrome / Edge 后重试')
+  const mp4RecorderAvailable = typeof HTMLCanvasElement !== 'undefined'
+    && typeof HTMLCanvasElement.prototype.captureStream === 'function'
+    && Boolean(pickRecorderMime(Boolean(pcm)))
+  attempts.push({ strategy: `MediaRecorder MP4${pcm ? ' H.264/AAC' : ' H.264'}`, result: mp4RecorderAvailable ? 'supported' : 'unsupported' })
+  if (mp4RecorderAvailable) return 'mediarecorder'
+  throw new VideoExportDiagnosticError(
+    '当前浏览器没有可用的 MP4/H.264 编码配置；请尝试较低分辨率或更新浏览器后重试',
+    { module: '视频导出', composition: 'browser', width, height, fps, videoBitrate: FAST_EXPORT_VIDEO_BITRATE, audioBitrate: AUDIO_BITRATE, hasAudio: Boolean(pcm), attempts },
+  )
 }
 
 export async function recordComposition(input: RecordCompositionInput): Promise<RecordCompositionResult> {
@@ -69,8 +92,41 @@ export async function recordComposition(input: RecordCompositionInput): Promise<
   if (!canvas.width || !canvas.height) throw new Error('录制画布尺寸无效')
   if (!(durationMs > 0) || !(fps > 0)) throw new Error('录制时长或帧率无效')
   const mode = await canRecordComposition(canvas.width, canvas.height, fps, pcm)
-  if (mode === 'webcodecs') return recordWithWebCodecs(input)
-  return recordWithMediaRecorder(input)
+  if (mode === 'mediarecorder') {
+    try {
+      return await recordWithMediaRecorder(input)
+    } catch (error) {
+      if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) throw error
+      throw new VideoExportDiagnosticError(
+        'MediaRecorder MP4/H.264 编码失败，请复制错误详情反馈。',
+        { module: '视频导出', composition: 'MediaRecorder', width: canvas.width, height: canvas.height, fps, videoBitrate: FAST_EXPORT_VIDEO_BITRATE, audioBitrate: AUDIO_BITRATE, hasAudio: Boolean(pcm), stage: 'MediaRecorder 编码', attempts: [{ strategy: `MediaRecorder ${pickRecorderMime(Boolean(pcm))}`, result: 'failed', error: error instanceof Error ? error.message.slice(0, 300) : '未知错误' }] },
+        error,
+      )
+    }
+  }
+  try {
+    return await recordWithWebCodecs(input)
+  } catch (error) {
+    if (error instanceof CompositionPaintError) throw error.cause
+    if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) throw error
+    const mime = pickRecorderMime(Boolean(pcm))
+    if (!mime) throw new VideoExportDiagnosticError(
+      'MP4/H.264 编码器启动或运行失败，且当前浏览器没有可用的 MP4 MediaRecorder 回退。',
+      { module: '视频导出', composition: 'WebCodecs', width: canvas.width, height: canvas.height, fps, videoBitrate: FAST_EXPORT_VIDEO_BITRATE, audioBitrate: AUDIO_BITRATE, hasAudio: Boolean(pcm), stage: 'WebCodecs 编码', attempts: [{ strategy: 'WebCodecs H.264/AAC，no-preference', result: 'failed', error: error instanceof Error ? error.message.slice(0, 300) : '未知错误' }, { strategy: 'MediaRecorder MP4', result: 'unsupported' }] },
+      error,
+    )
+    try {
+      const result = await recordWithMediaRecorder(input)
+      return result
+    } catch (fallbackError) {
+      if (signal?.aborted || (fallbackError instanceof DOMException && fallbackError.name === 'AbortError')) throw fallbackError
+      throw new VideoExportDiagnosticError(
+        'WebCodecs 与 MediaRecorder 均未能导出 MP4，请复制错误详情反馈。',
+        { module: '视频导出', composition: '编码器回退', width: canvas.width, height: canvas.height, fps, videoBitrate: FAST_EXPORT_VIDEO_BITRATE, audioBitrate: AUDIO_BITRATE, hasAudio: Boolean(pcm), stage: 'MediaRecorder MP4', attempts: [{ strategy: 'WebCodecs H.264/AAC，no-preference', result: 'failed', error: error instanceof Error ? error.message.slice(0, 300) : '未知错误' }, { strategy: `MediaRecorder ${mime}`, result: 'failed', error: fallbackError instanceof Error ? fallbackError.message.slice(0, 300) : '未知错误' }] },
+        fallbackError,
+      )
+    }
+  }
 }
 
 async function recordWithWebCodecs(input: RecordCompositionInput): Promise<RecordCompositionResult> {
@@ -108,7 +164,11 @@ async function recordWithWebCodecs(input: RecordCompositionInput): Promise<Recor
     for (let frame = 0; frame < totalFrames; frame++) {
       throwIfAborted(signal)
       const timeUs = Math.round((frame * 1_000_000) / fps)
-      await onPaint(timeUs, frame)
+      try {
+        await onPaint(timeUs, frame)
+      } catch (error) {
+        throw new CompositionPaintError(error)
+      }
       const timestampSec = frame / fps
       const durationSec = 1 / fps
       await videoSource.add(timestampSec, durationSec)
@@ -163,7 +223,7 @@ async function recordWithWebCodecs(input: RecordCompositionInput): Promise<Recor
 
 async function recordWithMediaRecorder(input: RecordCompositionInput): Promise<RecordCompositionResult> {
   const { canvas, durationMs, fps, pcm, signal, onProgress, onPaint } = input
-  const mime = pickRecorderMime()
+  const mime = pickRecorderMime(Boolean(pcm))
   if (!mime) throw new Error('当前浏览器不支持 MediaRecorder 导出')
   const totalFrames = Math.max(1, Math.round((durationMs / 1000) * fps))
   const stream = canvas.captureStream(0)
@@ -245,14 +305,12 @@ async function recordWithMediaRecorder(input: RecordCompositionInput): Promise<R
   }
 }
 
-function pickRecorderMime(): string {
+function pickRecorderMime(withAudio: boolean): string {
   if (typeof MediaRecorder === 'undefined') return ''
-  return [
-    'video/mp4;codecs=avc1.424028,mp4a.40.2',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-  ].find((item) => MediaRecorder.isTypeSupported(item)) ?? ''
+  const candidates = withAudio
+    ? ['video/mp4;codecs=avc1.424028,mp4a.40.2']
+    : ['video/mp4;codecs=avc1.424028']
+  return candidates.find((item) => MediaRecorder.isTypeSupported(item)) ?? ''
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {

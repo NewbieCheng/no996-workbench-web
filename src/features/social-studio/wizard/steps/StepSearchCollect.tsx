@@ -45,6 +45,7 @@ import {
   REQUIRED_EXTENSION_VERSION,
   isExtensionOutdated,
 } from '../../../../services/extension/extension-version'
+import { mapCaptureErrorMessage } from '../../material-import/map-capture-error'
 import {
   mockSearchWorks,
   mockResolveWork,
@@ -410,38 +411,23 @@ export function StepSearchCollect({
     }
   }
 
-  // 查询知源插件状态与小红书登录状态
+  // 查询知源插件状态与小红书登录状态；切回本页时再刷一次，避免「切采集页才识别」
   useEffect(() => {
     let mounted = true
-    void (async () => {
-      if (demoMode) {
-        if (!mounted) return
-        setIsConnected(true)
-        setXhsLoggedIn(true)
-        return
-      }
-      try {
-        const status = await extensionClient.checkStatus(1200)
-        if (!mounted) return
-        const connected = Boolean(status.connected)
-        setIsConnected(connected)
-        if (connected) {
-          const accs = await extensionClient.listAccounts()
-          if (!mounted) return
-          const currentAcc = accs.find((a) => a.platformId === 'xiaohongshu')
-          setXhsLoggedIn(currentAcc?.status === 'logged_in')
-        } else {
-          setXhsLoggedIn(false)
-        }
-      } catch {
-        if (mounted) {
-          setIsConnected(false)
-          setXhsLoggedIn(false)
-        }
-      }
-    })()
+    const refresh = () => {
+      if (!mounted) return
+      void refreshExtensionStatus()
+    }
+    refresh()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       mounted = false
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [demoMode])
 
@@ -547,7 +533,7 @@ export function StepSearchCollect({
         onCollected(items, false, 'benchmark_clone')
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
+      const message = mapCaptureErrorMessage(err instanceof Error ? err.message : String(err))
       notifyOperationError(`抓取失败: ${message}`, { id: WIZARD_SEARCH_TOAST_ID, raw: true })
     } finally {
       setLoading(false)
@@ -588,7 +574,7 @@ export function StepSearchCollect({
       writeMaterialCaptureSession(merged)
       onCollected(merged.items, false, 'benchmark_clone')
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
+      const message = mapCaptureErrorMessage(err instanceof Error ? err.message : String(err))
       notifyOperationError(`链接解析失败: ${message}`, { id: WIZARD_SEARCH_TOAST_ID, raw: true })
     } finally {
       setLoading(false)
@@ -1040,7 +1026,7 @@ export function StepSearchCollect({
                     {loading ? (
                       <>
                         <Loader2 size={14} className="animate-spin" />
-                        <span>探测抓取中...</span>
+                        <span>后台采集中，无需切换标签…</span>
                       </>
                     ) : (
                       <>

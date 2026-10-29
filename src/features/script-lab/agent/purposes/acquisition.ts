@@ -83,6 +83,11 @@ export const ACQUISITION_PURPOSE: ScriptPurpose = {
       required: true,
       multiline: true,
       maxLength: 200,
+      presets: [
+        '想做短视频获客，但选题没方向，不知道拍什么能吸引对的人',
+        '知道要获客，一开口就像推销，评论区没人愿意继续聊',
+        '每天都在发，问询很少，说不清卡在内容还是入口',
+      ],
     },
     {
       key: 'method',
@@ -91,14 +96,36 @@ export const ACQUISITION_PURPOSE: ScriptPurpose = {
       required: true,
       multiline: true,
       maxLength: 300,
+      presets: [
+        '先给一个今天就能做的小检查清单，再说明为什么有效',
+        '用一个真实场景演示最小可行做法，并标出适用边界',
+        '拆成三步可执行动作，先交付一点价值再留沟通入口',
+      ],
     },
     {
       key: 'channel',
       label: '沟通入口',
       placeholder: '真实可用的入口，例如「评论区回复」「私信」「已有的预约方式」',
       required: true,
-      maxLength: 80,
+      multiline: true,
+      maxLength: 120,
+      presets: [
+        '评论区回复关键词，例如「咨询」',
+        '私信发送具体需求，方便一对一回复',
+        '通过主页已有预约 / 表单入口了解',
+      ],
     },
-    { key: 'case', label: '可展示的交付物或案例', placeholder: '真实的交付物、流程截图或案例，没有可留空', multiline: true, maxLength: 300 },
+    {
+      key: 'case',
+      label: '可展示的交付物或案例',
+      placeholder: '真实的交付物、流程截图或案例，没有可留空',
+      multiline: true,
+      maxLength: 300,
+      presets: [
+        '客户交付前后对比截图（已获授权）',
+        '完整服务流程示意（已脱敏）',
+        '真实案例结果与关键可复用步骤',
+      ],
+    },
   ],
 }

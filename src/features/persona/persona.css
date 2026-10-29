@@ -56,56 +56,77 @@
 .persona-workbench-page .persona-workspace--has-trace .persona-workspace__trace {
   grid-column: 1 / -1;
   order: 99;
+  flex: none;
   width: 100%;
   max-width: none;
   margin-inline: 0;
+  position: relative;
+  z-index: 1;
 }
 
-/* 生成中 + 过程条：纵向全屏左卡（仅 --card-focus，不影响 select/profile） */
+.persona-workbench-page .persona-workspace--has-trace .persona-workspace__trace .wf-card {
+  background: var(--card);
+}
+
+/*
+ * 生成中 + 过程条：预览在上、过程卡在下的文档流。
+ * 禁止 preview 吃满视口 / overflow 锁高，否则展开步骤会叠在人设正文上。
+ */
 .persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: var(--brain-space-5);
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: min-content;
+  height: auto;
+  overflow: visible;
 }
 
 .persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: none;
   min-height: 0;
   height: auto;
   max-height: none;
   align-self: stretch;
+  position: static;
+  top: auto;
+  overflow: visible;
 }
 
-.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-profile-card {
-  height: 100%;
-  max-height: 100%;
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-profile-card,
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace-preview-card {
+  height: auto;
+  max-height: none;
   min-height: 0;
 }
 
-.persona-workbench-page .persona-workspace--card-focus .persona-workspace__preview {
-  height: 100%;
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-profile-card__scroll-area {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-profile-card__scroll-area [data-slot='scroll-area-viewport'] {
+  block-size: auto;
+  max-block-size: none;
+  height: auto !important;
+}
+
+/* 无过程条的生成焦点：仍全宽预览，但不锁死视口高度 */
+.persona-workbench-page .persona-workspace--card-focus:not(.persona-workspace--has-trace) .persona-workspace__preview {
+  height: auto;
   max-height: none;
   align-self: stretch;
-  position: relative;
+  position: static;
   top: auto;
 }
 
-.persona-workbench-page .persona-workspace--card-focus .persona-profile-card {
-  height: 100%;
+.persona-workbench-page .persona-workspace--card-focus:not(.persona-workspace--has-trace) .persona-profile-card {
+  height: auto;
   max-height: none;
-}
-
-.persona-workbench-page .persona-workspace--card-focus .persona-profile-card__scroll-area {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
-}
-
-.persona-workbench-page .persona-workspace--card-focus .persona-profile-card__scroll-area [data-slot='scroll-area-viewport'] {
-  block-size: 100%;
-  max-block-size: none;
 }
 
 /* 标题与正文同处可拖拽列内，跟手柄一起收放 */
@@ -122,6 +143,23 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* 有过程条时祖先按内容增高（须压过上方 flex:1），由 layout__body 滚动 */
+.persona-workbench-page
+  .persona-module-layout
+  .no996-module-layout__inner
+  > .flex.w-full:has(.persona-workspace--has-trace.persona-workspace--card-focus),
+.persona-workbench-page
+  .persona-module-layout
+  .no996-module-layout__inner
+  > .flex.w-full
+  > .localized-panel-copy:has(.persona-workspace--has-trace.persona-workspace--card-focus),
+.persona-workbench-page .persona-page:has(> .persona-workspace--has-trace.persona-workspace--card-focus) {
+  flex: 0 1 auto;
+  min-height: min-content;
+  height: auto;
+  overflow: visible;
 }
 
 .persona-empty {
@@ -1385,7 +1423,7 @@
   grid-template-columns: minmax(0, 1fr);
   justify-items: stretch;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .persona-workspace--card-focus .persona-workspace__preview {
@@ -1512,7 +1550,7 @@
 
 .persona-workspace--split.persona-workspace--card-focus .persona-workspace__preview,
 .persona-workspace--split.persona-workspace--form-collapsed.persona-workspace--card-focus .persona-workspace__preview {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   width: 100%;
   max-width: none;
 }
@@ -1522,11 +1560,31 @@
   display: none;
 }
 
-/* 生成中：勿 sticky 预览栏，否则会压住下方 WorkflowRunCard */
+/* 生成中：勿 sticky / 90dvh 上限，否则会压住下方 WorkflowRunCard */
 .persona-workbench-page .persona-workspace--card-focus .persona-workspace__preview,
-.persona-workbench-page .persona-workspace--form-collapsed.persona-workspace--card-focus .persona-workspace__preview {
-  position: static;
-  top: auto;
+.persona-workbench-page .persona-workspace--form-collapsed.persona-workspace--card-focus .persona-workspace__preview,
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview,
+.persona-workbench-page .persona-workspace--split.persona-workspace--card-focus .persona-workspace__preview,
+.persona-workbench-page .persona-workspace--split.persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview {
+  position: static !important;
+  top: auto !important;
+  max-height: none;
+  height: auto;
+}
+
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview > .persona-profile-card,
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview > .persona-workspace-preview-card,
+.persona-workbench-page .persona-workspace--split.persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview > .persona-profile-card,
+.persona-workbench-page .persona-workspace--split.persona-workspace--has-trace.persona-workspace--card-focus .persona-workspace__preview > .persona-workspace-preview-card {
+  height: auto;
+  max-height: none;
+}
+
+.persona-workbench-page .persona-workspace--has-trace.persona-workspace--card-focus .persona-profile-card__scroll-area [data-slot='scroll-area-viewport'],
+.persona-workbench-page .persona-workspace--split.persona-workspace--has-trace.persona-workspace--card-focus .persona-profile-card__scroll-area [data-slot='scroll-area-viewport'] {
+  block-size: auto;
+  max-block-size: none;
+  height: auto !important;
 }
 
 .persona-form-reopen {

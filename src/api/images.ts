@@ -8,6 +8,9 @@
 import { ensureAccessToken } from './client'
 import { throwApiError } from './errors'
 
+/** 与 agent/worker nginx `/api/` 180s 对齐；超时由 AbortSignal 触发。 */
+export const IMAGE_REQUEST_TIMEOUT_MS = 180_000
+
 export type GenerateAiImagesParams = {
   prompt: string
   /** 比例尺寸：小红书建议 1024x1365，微信横版建议 1024x576 或 1024x1024 */
@@ -44,15 +47,31 @@ export async function generateAiImages(
   }
   if (params.image?.trim()) payload.image = params.image.trim()
 
-  const res = await fetch('/api/v1/ai/images/generations', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-    signal: params.signal,
-  })
+  const timeoutController = new AbortController()
+  const timeoutId = setTimeout(() => timeoutController.abort(), IMAGE_REQUEST_TIMEOUT_MS)
+  const onOuterAbort = () => timeoutController.abort()
+  params.signal?.addEventListener('abort', onOuterAbort, { once: true })
+
+  let res: Response
+  try {
+    res = await fetch('/api/v1/ai/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+      signal: timeoutController.signal,
+    })
+  } catch (error) {
+    if (timeoutController.signal.aborted && !params.signal?.aborted) {
+      throw new Error('生图请求超时（超过 180 秒）。请稍后重试，或减少配图张数。')
+    }
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+    params.signal?.removeEventListener('abort', onOuterAbort)
+  }
 
   if (!res.ok) {
     await throwApiError(res)

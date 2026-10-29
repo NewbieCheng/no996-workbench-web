@@ -47,6 +47,7 @@ export async function assertBrowserEncodingSupport(options: {
     height: options.height,
     frameRate: options.frameRate ? options.frameRate.num / options.frameRate.den : 30,
     quality: new Quality({ bitrate: 6_000_000 }),
+    hardwareAcceleration: 'no-preference',
   })) throw new Error(`当前浏览器不支持所选分辨率的 ${format === 'mp4' ? 'H.264' : 'VP9'} 编码`)
   if (options.pcm && !await canEncodeAudio(format === 'mp4' ? 'aac' : 'opus', {
     sampleRate: options.pcm.sampleRate,
@@ -206,7 +207,7 @@ export class MediabunnyMediaAdapter implements MediaEngineAdapter {
         codec: format === 'mp4' ? 'avc' : 'vp9',
         quality: new Quality({ bitrate: 6_000_000 }),
         latencyMode: 'quality',
-        hardwareAcceleration: 'prefer-hardware',
+        hardwareAcceleration: 'no-preference',
         keyFrameInterval: 2,
       })
 
