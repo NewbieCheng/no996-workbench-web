@@ -18,17 +18,19 @@ export {
 } from './store'
 
 /**
- * 本机数据归属键：同浏览器切账号时不串产品与报告。
+ * 本机数据归属键：同浏览器切账号、切空间时不串产品与报告。
  *
- * 后端 JWT 只有 uid / tid，没有 sub；未登录时返回 undefined（页面本身在工作台
- * 守卫之后，正常不会走到）。
+ * 按「账号 + 空间」分桶：空间模型重构后 JWT 里没有 `tid` 了，位置由
+ * `sk`（空间类型）/`sid`（空间 id）表达；团队空间与个人空间各自的 id
+ * 可能撞在一起，所以两个都要进键。未登录时返回 undefined（页面本身在
+ * 工作台守卫之后，正常不会走到）。
  */
 export function getProductPositionOwner(): string | undefined {
   const token = getAccessToken()
   if (!token) return undefined
   const claims = parseJwtPayload(token)
   if (!claims?.uid) return undefined
-  return `u${claims.uid}-t${claims.tid ?? 0}`
+  return `u${claims.uid}-s${claims.sk ?? 0}-${claims.sid ?? 0}`
 }
 
 export type ProductFieldErrors = Partial<Record<'name' | 'type' | 'specs', string>>

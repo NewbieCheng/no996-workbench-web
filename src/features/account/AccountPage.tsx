@@ -12,6 +12,10 @@ interface AccountBalanceData {
   account_id?: number
   points_balance: number
   expert_points_balance: number
+  /** 本期配额（订阅发放，到期作废）。后端 P8 才加，缺失时退回只显示总额。 */
+  period_points_balance?: number
+  /** 本期到期时间；null / 缺失表示没有在途配额。 */
+  period_expires_at?: string | null
 }
 
 interface LedgerItem {
@@ -25,13 +29,22 @@ interface LedgerItem {
 
 export default function AccountPage() {
   const { t } = useTranslation('workbench')
-  const { userEmail, userDisplayName, userId, tenantId } = useAuth()
+  const { userEmail, userDisplayName, userId, currentSpace } = useAuth()
   const [balance, setBalance] = useState<AccountBalanceData | null>(null)
   const [tenantName, setTenantName] = useState('')
   const [ledgers, setLedgers] = useState<LedgerItem[]>([])
   const [loading, setLoading] = useState(false)
 
   const displayName = userDisplayName || t('accountFallbackName')
+  const spaceLabel =
+    currentSpace?.kind === 'team'
+      ? t('accountEnterprise')
+      : currentSpace?.kind === 'platform'
+        ? '平台空间'
+        : '个人空间'
+  const periodPoints = balance?.period_points_balance
+  const hasPeriod = typeof periodPoints === 'number'
+  const periodExpiresAt = balance?.period_expires_at ? new Date(balance.period_expires_at) : null
   async function fetchAccountData() {
     setLoading(true)
     try {
@@ -53,14 +66,12 @@ export default function AccountPage() {
       // 容错处理
     }
 
-    if (tenantId != null && tenantId > 0) {
-      try {
-        const tenant = await getCurrentTenantInfo()
-        setTenantName(tenant.tenant_name)
-      } catch {
-        setTenantName('')
-      }
-    } else {
+    // 个人空间下后端用账号显示名兜底，所以这里不再要求 tenant_id > 0：
+    // 「我所在的实体」三种空间都有名字，拿不到就当没有，不影响其它数据。
+    try {
+      const tenant = await getCurrentTenantInfo()
+      setTenantName(tenant.tenant_name)
+    } catch {
       setTenantName('')
     }
 
@@ -69,7 +80,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     void fetchAccountData()
-  }, [tenantId])
+  }, [currentSpace?.kind, currentSpace?.id])
 
   return (
     <Page
@@ -96,18 +107,36 @@ export default function AccountPage() {
             <span className="field-hint">用户 UID</span>
             <p>#{userId ?? '—'}</p>
           </div>
-          {tenantId != null && tenantId > 0 && (
+          {currentSpace && (
             <div>
-              <span className="field-hint">{t('accountEnterprise')}</span>
+              <span className="field-hint">{spaceLabel}</span>
               <p>{tenantName || '—'}</p>
             </div>
           )}
-          <div>
-            <span className="field-hint">可用通用积分</span>
-            <p className="font-semibold text-primary">
-              {balance ? balance.points_balance : '—'} 点
-            </p>
-          </div>
+          {hasPeriod ? (
+            <>
+              <div>
+                <span className="field-hint">本期积分</span>
+                <p className="font-semibold text-primary">{periodPoints} 点</p>
+                <span className="text-xs text-muted-foreground">
+                  {periodExpiresAt
+                    ? `到期 ${periodExpiresAt.toLocaleString()}`
+                    : '暂未在途配额'}
+                </span>
+              </div>
+              <div>
+                <span className="field-hint">永久积分</span>
+                <p className="font-semibold">{balance ? balance.points_balance : '—'} 点</p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <span className="field-hint">可用通用积分</span>
+              <p className="font-semibold text-primary">
+                {balance ? balance.points_balance : '—'} 点
+              </p>
+            </div>
+          )}
           <div>
             <span className="field-hint">专家/高级积分</span>
             <p className="font-semibold">

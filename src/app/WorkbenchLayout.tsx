@@ -59,7 +59,9 @@ import {
 } from './workbench-brand-assets'
 import { TaskCenterTrigger } from '../features/tasks/TaskCenterDrawer'
 import { UserAvatar } from '../components/UserAvatar'
-import { toastInfo } from '../lib/toast'
+import { notifyOperationError, notifyOperationWarning, toastInfo } from '../lib/toast'
+import { spaceKey, type SpaceSummary } from '../api/space'
+import { apiErrorMessage } from '../api/client'
 
 const ABOUT_URL = 'https://no996ai.cn'
 
@@ -303,6 +305,64 @@ function WorkbenchConfigurationMenu() {
   )
 }
 
+function SpaceSwitcher() {
+  const { t } = useTranslation('workbench')
+  const { spaces, currentSpace, spacesLoading, switchSpace, enableSpace } = useAuth()
+  const [busyKey, setBusyKey] = useState<string | null>(null)
+  // 只有一个空间的用户没有「切换」这件事：不显示控件，避免一个永远只有一个选项的菜单。
+  if (spaces.length < 2) return null
+
+  const selectSpace = async (target: SpaceSummary) => {
+    const key = spaceKey(target)
+    if (busyKey || key === spaceKey(currentSpace)) return
+    setBusyKey(key)
+    try {
+      if (target.status === 'locked') {
+        if (!target.can_enable) {
+          notifyOperationWarning(t('spaceLockedHint'))
+          return
+        }
+        await enableSpace(target)
+      }
+      await switchSpace(target)
+      toastInfo(t('spaceSwitched', { name: target.name }))
+    } catch (error) {
+      notifyOperationError(apiErrorMessage(error))
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel>{t('spaceMenuLabel')}</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={spaceKey(currentSpace)}
+        onValueChange={(value) => {
+          const target = spaces.find((space) => spaceKey(space) === value)
+          if (target) void selectSpace(target)
+        }}
+      >
+        {spaces.map((space) => (
+          <DropdownMenuRadioItem
+            key={spaceKey(space)}
+            value={spaceKey(space)}
+            disabled={spacesLoading || space.status === 'removed' || busyKey != null}
+          >
+            <span className="min-w-0 flex-1 truncate">{space.name || t('spaceMenuLabel')}</span>
+            {space.status !== 'enabled' ? (
+              <span className="text-xs text-muted-foreground">
+                {space.status === 'locked' ? t('spaceLockedBadge') : t('spaceRemovedBadge')}
+              </span>
+            ) : null}
+          </DropdownMenuRadioItem>
+        ))}
+      </DropdownMenuRadioGroup>
+    </>
+  )
+}
+
 function UserMenu({ onExit, bottom = false }: { onExit: () => void; bottom?: boolean }) {
   const { t } = useTranslation('workbench')
   const { t: tc } = useTranslation('common')
@@ -324,6 +384,8 @@ function UserMenu({ onExit, bottom = false }: { onExit: () => void; bottom?: boo
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side={bottom ? 'top' : 'bottom'} className="min-w-48">
         <DropdownMenuLabel>{userEmail || t('accountCurrent')}</DropdownMenuLabel>
+        <SpaceSwitcher />
+        <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link to="/workbench/account" />}>
           <WalletCards />
           {t('accountAssets')}

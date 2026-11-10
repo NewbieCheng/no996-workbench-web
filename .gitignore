@@ -41,3 +41,6 @@ deploy/artifact.sha256
 *.sln
 *.sw?
 
+
+# 本机 codegraph 索引缓存
+.codegraph/

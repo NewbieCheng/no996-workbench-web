@@ -46,6 +46,19 @@ export function setTokens(access: string, refresh: string, remember = isRemember
   other.removeItem(REFRESH_KEY);
 }
 
+/**
+ * 只替换 access token。
+ *
+ * 切换空间时后端只换发 access token（refresh token 沿用同一个 family），
+ * 走 `setTokens` 会把 refresh token 写成空串，下一次刷新就失效了。
+ */
+export function setAccessToken(access: string, remember = isRememberMeEnabled()) {
+  const store = remember ? localStorage : sessionStorage;
+  const other = remember ? sessionStorage : localStorage;
+  store.setItem(ACCESS_KEY, access);
+  other.removeItem(ACCESS_KEY);
+}
+
 export function clearTokens() {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
