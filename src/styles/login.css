@@ -1192,6 +1192,32 @@ html[data-theme='deepsea'] .login-phone-prefix {
   user-select: none;
 }
 
+.login-phone-prefix__dial {
+  appearance: none;
+  flex-shrink: 0;
+  min-width: 4.25rem;
+  padding: 0 10px;
+  border: none;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--brand-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.login-phone-prefix__dial:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.login-phone-prefix__dial:focus-visible {
+  outline: none;
+  color: var(--brand-text);
+}
+
 .login-phone-prefix__input {
   flex: 1;
   border: none !important;

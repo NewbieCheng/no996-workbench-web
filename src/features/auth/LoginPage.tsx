@@ -10,7 +10,6 @@ import { LoginBrandAside } from './components/LoginBrandAside';
 import { LoginLegalLinksText } from './components/LoginLegalNotice';
 import { LoginWorkbenchLockup } from './components/LoginWorkbenchLockup';
 import { WorkspaceLoginDialog } from './components/WorkspaceLoginDialog';
-import { LoginIntentSegment, intentToApiMode } from './components/LoginIntentSegment';
 import { LoginAlternateMethodsBar } from './components/LoginAlternateMethodsBar';
 import type { LoginMethod } from './components/LoginMethodSegment';
 import { EnterpriseRegisterPanel } from './components/EnterpriseRegisterPanel';
@@ -38,8 +37,9 @@ import { cn } from '@/lib/utils';
 import {
   composeEmail,
   DEFAULT_EMAIL_SUFFIX,
-  isValidCNPhone,
   isValidComposedEmail,
+  isValidPhoneE164,
+  normalizePhoneE164,
 } from '@/lib/auth/emailDomains';
 import {
   useVerificationCodeCooldown,
@@ -104,9 +104,6 @@ export default function LoginPage() {
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [mounted, setMounted] = useState(false);
 
-  const [loginIntent, setLoginIntent] = useState<'personal' | 'enterprise'>(() =>
-    isLocalHost() ? 'enterprise' : 'personal',
-  );
   const [registerIntent, setRegisterIntent] = useState<RegisterIntent>('personal');
 
   /* 仅登录↔注册重播入场；个人/企业、登录方式切换不 remount，避免整页动画重跑 */
@@ -184,12 +181,10 @@ export default function LoginPage() {
       setRegisterIntent('personal');
     } else {
       if (isLocalHost()) {
-        setLoginIntent('enterprise');
         const demo = demoAccountFor('enterprise');
         form.setValue('credential', demo.credential);
         form.setValue('password', demo.password);
       } else {
-        setLoginIntent('personal');
         form.setValue('credential', '');
         form.setValue('password', '');
       }
@@ -214,9 +209,7 @@ export default function LoginPage() {
 
   const emailPlaceholder =
     authMode === 'login'
-      ? loginIntent === 'enterprise'
-        ? t('emailPlaceholder.enterprise')
-        : t('emailPlaceholder.personal')
+      ? t('emailPlaceholder.personal')
       : registerIntent === 'enterprise'
         ? t('emailPlaceholder.enterprise')
         : t('emailPlaceholder.personal');
@@ -303,7 +296,7 @@ export default function LoginPage() {
           await loginWithEmailCode(
             email,
             verificationCode,
-            intentToApiMode(loginIntent),
+            1,
             true,
           );
           toastSuccess(t('success'));
@@ -329,7 +322,7 @@ export default function LoginPage() {
       toastError(t('emailInvalid'));
       return;
     }
-    if (!isValidCNPhone(registerPhone)) {
+    if (!isValidPhoneE164(registerPhone)) {
       toastError(t('phoneInvalid'));
       return;
     }
@@ -340,7 +333,7 @@ export default function LoginPage() {
 
     await submitRegister({
       email,
-      phone: registerPhone,
+      phone: normalizePhoneE164(registerPhone),
       password: values.password,
       invite_code: values.invite_code,
       display_name: values.display_name,
@@ -386,7 +379,7 @@ export default function LoginPage() {
       await login(
         pendingPasswordLogin.credential,
         pendingPasswordLogin.password,
-        intentToApiMode(loginIntent),
+        1,
         true,
         { captcha_id: captchaId, captcha_code: captchaCode },
       );
@@ -451,23 +444,7 @@ export default function LoginPage() {
             <div key={loginStaggerKey} className="login-stagger-surface">
             <form className="login-form login-form--auth login-split-form flex flex-col" onSubmit={onSubmit}>
               <FieldGroup>
-                {authMode === 'login' ? (
-                  <div className="login-delay-400">
-                    <LoginIntentSegment
-                      value={loginIntent}
-                      onChange={(next) => {
-                        if (next !== 'personal' && next !== 'enterprise') return;
-                        setLoginIntent(next);
-                        setLoginMethod('password');
-                        if (isLocalHost()) {
-                          const demo = demoAccountFor(next);
-                          form.setValue('credential', demo.credential);
-                          form.setValue('password', demo.password);
-                        }
-                      }}
-                    />
-                  </div>
-                ) : (
+                {authMode === 'register' && (
                   <div className="login-delay-400">
                     <RegisterIntentSegment
                       value={registerIntent}

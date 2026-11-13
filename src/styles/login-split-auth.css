@@ -332,6 +332,29 @@ html[data-theme='deepsea'] .login-split-surface .login-split-form [data-slot='in
   user-select: none;
 }
 
+.login-page--split .login-split-form .login-phone-prefix__dial,
+.login-split-surface .login-split-form .login-phone-prefix__dial {
+  appearance: none;
+  flex-shrink: 0;
+  min-width: 4.25rem;
+  padding: 0 10px;
+  border: none;
+  border-right: 1px solid var(--login-split-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--login-split-muted);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.login-page--split .login-split-form .login-phone-prefix__dial:disabled,
+.login-split-surface .login-split-form .login-phone-prefix__dial:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .login-page--split .login-split-form .login-phone-prefix .login-phone-prefix__input[data-slot='input'],
 .login-split-surface .login-split-form .login-phone-prefix .login-phone-prefix__input[data-slot='input'] {
   flex: 1;

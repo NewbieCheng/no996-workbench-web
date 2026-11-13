@@ -38,6 +38,7 @@ import {
   setSessionDisplayName,
   setSessionEmail,
 } from './session';
+import { normalizePhoneE164 } from '@/lib/auth/emailDomains';
 import { resolveUserDisplayName } from './display-name';
 import { isAccessTokenValid, parseJwtPayload } from './jwt';
 import type { Workspace } from '@/theme';
@@ -249,7 +250,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isEmail = trimmed.includes('@');
         const payload: Record<string, string | number> = isEmail
           ? { email: trimmed, password, mode, session_channel: 'app' }
-          : { phone: trimmed, password, mode, session_channel: 'app' };
+          : {
+              phone: normalizePhoneE164(trimmed) || trimmed,
+              password,
+              mode,
+              session_channel: 'app',
+            };
         if (captcha?.captcha_id) payload.captcha_id = captcha.captcha_id;
         if (captcha?.captcha_code) payload.captcha_code = captcha.captcha_code;
 
@@ -283,11 +289,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         markAuthenticated();
       },
       register: async (payload) => {
+        const phone =
+          normalizePhoneE164(payload.phone ?? '') || payload.phone.trim();
         const res = await api.post<
           ApiEnvelope<{ access_token: string; refresh_token: string; user_id: number }>
         >('/auth/register', {
           email: payload.email.trim(),
-          phone: payload.phone.trim(),
+          phone,
           password: payload.password,
           invite_code: payload.invite_code?.trim() || undefined,
           display_name: payload.display_name?.trim() || undefined,

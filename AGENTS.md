@@ -1,131 +1,46 @@
 # 网页项目 AI 开发约束
 
-开始任务先读本文件与 `README.md`；接触真实接口前读 `API_CONTRACTS.md`（含接入状态与待提供资料），部署前读 `DEPLOYMENT.md`。外部来源只看 `MIGRATION_PROVENANCE.md`。
+开工必读：`README.md`、`API_CONTRACTS.md`（接口与接入态）、`DEPLOYMENT.md`。代码查询与分析优先用 CodeGraph（`codegraph query/explore/node/callers`）。复用资产查 `docs/reusable-assets.md`（新增顺手补入，`npm run test:docs` 校验）。外部来源见 `MIGRATION_PROVENANCE.md`。
 
-**要新写任何生成能力、后台任务、进度/历史/人设/素材/导出相关代码之前，先查 `docs/reusable-assets.md`（可复用资产清单）。** 优先复用清单里的东西，不要重写一套。`npm run test:docs` 会机械核对清单里**已经写到**的路径与标识名是否存在；新增可复用件时顺手补进清单（不补不会被拦住，但下一个功能就找不到它）。
+## 1. 产品与系统边界
+- **独立运行**：纯前端项目，可在无桌面/其他源码环境独立构建。严禁跨仓绝对路径/junction/Electron/DSH 依赖。
+- **页面范围**：仅开发首页与导航所列功能页。严禁聊天输入框、会话列表、续聊及全局任务过程侧栏。
+- **Agent 边界**：业务流程在 `src/features/agent-flows.ts` 统一注册；Agent loop 在浏览器，凭证绝不入浏览器。不改后端仓，接口契约见 `API_CONTRACTS.md`。
+- **IP 视频组件组装例外**：仅规格明确要求时，Agent 输出结构化组装计划；仅能选择静态登记组件/布局/动效，严禁生成/下发任意代码、TSX、HTML、CSS 或任意 URL；经本机可信编译入公共视频工程；详见 `docs/video-assembly.md`。
+- **查看创作过程边界**：业务页内默认折叠面板；**绝不渲染/复制提示词**（`actualPrompt` 仅留存快照本机排障）；JSON 流式正文必须经 `src/agent/stream-filter.ts` 的 `createDisplayDelta` 过滤；工具信息仅展示摘要；仅在页面订阅时请求上游流式，思考内容依遮挡交互展示。
+- **知源插件素材导入**：经既有扩展桥接显式导入本机 IndexedDB（`ExtensionMaterialImport.tsx` + `workbench-bridge-contract.ts`）；插件素材库由扩展共享不跨账号隔离；桥接不传凭证；发布须保留线上插件下载包并核对校验值。
+- **演示与凭证边界**：本地模拟必须标注「演示」；禁止冒充真实模型、扣款或云端存储；人设本机存 IndexedDB；未提供插件/语音保持待接入；正式 API 失败显示真实错误。
 
-## 产品边界
-- 只开发网页首页和导航中列出的功能页。禁止聊天输入框、聊天/会话列表、续聊及**全局**通用任务过程侧栏。
-- **Agent 使用范围以实际流程注册和页面接线为准**：`src/features/agent-flows.ts` 汇总脚本、人设、标题、图文、配音、IP 视频、视频工厂及朋友圈等业务流程。流程可由页面直接运行或经 `src/services/workbench-tasks` 后台执行；新增能力沿用对应业务页的模式，不把某一种执行方式写成全站唯一规则。Agent loop 留在浏览器，模型凭证不得进入浏览器。
-- **IP 视频预制组件组装例外**：仅在 IP 视频产品规格明确要求时，可使用现有 Agent 内核生成剪辑组件组装计划。AI 运行时只能选择并组合开发阶段已实现且静态登记的组件、布局、风格和动效，输出受限结构化数据；禁止生成、下发、导入或执行 TS/JS/TSX、HTML、CSS、表达式、模块路径、动态代码或任意 URL。计划必须经本机严格校验和可信确定性编译，应用到同一个公共视频编辑工程；不得另造 AI 专用编辑器、时间轴或状态。该产品例外不扩大为通用聊天入口；代码接线不代表接口、收费或成片已验收。现状见 `docs/video-assembly.md`.
-- **「查看创作过程」的边界**：提供页内过程面板的具体业务页使用本页自己的、默认折叠面板。面板解释执行阶段与可展示正文；不把它扩展成跨页面通用任务过程侧栏。
-  - **绝不展示提示词**：`actualPrompt` 仍由 `StageRunner` 记录在快照里供本机排障，但**一律不渲染**，也不给复制入口。提示词属内部实现，对用户无意义且有泄露风险。
-  - **结构化流式正文须过滤后展示**：模型返回 JSON 且界面只展示正文时，使用 `src/agent/stream-filter.ts` 的 `createDisplayDelta` 仅输出指定正文键；纯文本响应按文本展示，不把普通文本误当 JSON 过滤。流程画布的输出预览统一使用 `src/agent/stage-output-preview.ts`，并验证提示词字段不进入 UI。
-  - **工具信息按页面当前交互呈现**：过程面板不铺开原始检索返回或跨页面调用日志；已有搜索详情可展示查询目的、关键词、结果数量或错误等摘要信息。不得把提示词或原始私密内容渲染出来。
-  - **流程画布流式行为按调用场景确定**：支持流式展示的流程将 `delta.content` / `delta.reasoning_content` 写入对应快照字段；仅在页面实际订阅增量时要求上游流式响应。演示模式分块为本地 mock，不宣称为上游 SSE。思考内容依现有页面的遮挡交互展示，提示词始终不展示。
-- 本地模拟内容必须明确标注「演示」；不得冒充真实模型产物、账号、支付、余额或云端保存。人设本机副本存浏览器 IndexedDB，不得称为云端账号存储。
-- 用户未提供的插件、语音和数字人细节保持待接入；禁止自行选商、猜价格单位、放假下载地址或虚构播放结果。
-- **不改后端仓**：前端只保留 adapter 接线点，接口契约见 `API_CONTRACTS.md`。
+## 2. Agent 内核与生成规范（`src/agent/`）
+- **分层**：业务页 → 业务 flow（`features/<name>/agent/`）→ 内核（`src/agent/`）→ 传输层（`src/api/`）。内核不引 `features`，flow 不引 `workbench-tasks`（落库走 `AgentSink`）。
+- **流程定义**：`defineFlow(id, stages)`，并在 `src/features/agent-flows.ts` 汇总注册。`kind: 'model'|'algo'|'tool'` 真实标注，算法步骤不记提示词。
+- **执行与输出**：统一用 `StageRunner`；流式输出经 `createDisplayDelta` 过滤；模板 `renderTemplate` 用 `«变量»`（缺失填 empty）；大图侧栏文案走 `src/agent/stage-output-preview.ts`。
+- **人设注入与预填**：消费页统一用 `usePersonaInjection()` + 右上角 `PersonaBinding`（挂在 `Page` 的 `actions`，禁在正文造关联卡片）；关闭时传 `undefined` 且 flow 绝不注入；表单预填走 `derive*PrefillPatch` + `usePersonaFormPrefill`，**只填空**不覆盖用户改动；人设仅进提示词，不进流式展示。
+- **合规校验与收敛**：`runHardCheck` 为唯一合规入口（分段字数容差 1.3，硬上限传 1，`segmentId` 用序号）；禁止中间截断伪造合格产物；收敛上限 ≤ 3 轮；留存曲线单调不增且始于 100；预测值不得随机派生。
+- **演示 Mock**：`createMockAgentClients({ mockResponder })`，应答器由调用方显式传业务上下文，禁正则抠提示词。
 
-## 知源插件素材导入与发布
+## 3. 页面骨架与控件规范
+- **导航与路由**：唯一源 `src/app/navigation.ts`；旧地址走 `legacyRoutes`。
+- **Page 骨架（`chrome="workbench-tool"`）**：
+  - `title`：功能名（导航同名，2-4 字）。
+  - `titleExtra`：流程说明/视图切换（`AgentFlowExplain`, `WorkbenchPageViewTabs`）。
+  - `actions`：必须包 `WorkbenchPageChromeActions`，放 `PersonaBinding`、主操作、次要工具。
+  - `headerTrailing`：全局工具（直接传节点，不包 actions）。
+- **顶栏贴齐铁律**：必须在 `src/app/workbench-surface.ts` 的 `WORKBENCH_SURFACE_BY_SEGMENT` 登记路由段，至少含 `workbench-page--fluid workbench-tool-page`。严禁在 CSS 里加 padding 补丁。
+- **控件归属**：人设→右上角 `PersonaBinding`；附件→`AttachmentUploader`；Tab/Table/表单项→`@no996/ui`（Select 须 value/label 映射，Tooltip 用公共组件）；结构化产物解析为模型渲染，禁直接丢 Markdown。
+- **长页面向导与调试**：长产物向导支持整块折叠收起；调试用例与一键填入必须用 `import.meta.env.DEV` 包裹，生产构建物理剔除。
+- **后台任务（`src/services/workbench-tasks`）**：IndexedDB 存储；`WorkbenchTaskKind` 登记 → `executors/` 实现 → `enqueue*` 入队；产物存 `payload`，`meta` 纯字符串；全局串行 Runner，登出暂停；演示模式不入队。
 
-- 工作台通过既有扩展桥接，从知源工作台版插件的素材库预览并由用户选择素材，导入当前浏览器的工作台本机素材库；入口在 `src/features/extension/materials/ExtensionMaterialImport.tsx`，桥接契约在 `src/services/extension/workbench-bridge-contract.ts`。保持显式选择，不能把导入描述成云端同步。
-- 工作台账号数据按既有属主规则隔离；插件素材库本身由浏览器扩展共享，切换工作台账号不会自动隔离插件素材。桥接暴露于同源页面脚本，不能当成身份认证边界，也不能传递平台凭证。
-- 代码接线和构建成功不等于真实浏览器采集或导入已验收；须在支持扩展的浏览器中验证，无法验证时明确说明。
-- 用户明确要求推送时，先检查前端、后端和插件各自的工作区及远端，保留其他改动，按授权范围提交推送；明确要求部署时才部署。前端发布须保留线上插件下载包，发布后核对下载文件版本与校验值，避免构建产物缺包导致下载回退或丢失。
+## 4. 新增左侧功能最小清单
+1. `src/app/navigation.ts` 加导航；`App.tsx` 加路由；`locales/*/workbench.json` 加文案。
+2. `src/app/workbench-surface.ts` 登记路由段（`workbench-page--fluid workbench-tool-page`）。
+3. 页面：`src/features/<name>/<Name>Page.tsx`，用 `Page` 套骨架。
+4. 数据服务：`src/services/<name>/`（IndexedDB + `ownerSub` 隔离）。
+5. 生成流程：`features/<name>/agent/*-flow.ts` 并在 `src/features/agent-flows.ts` 注册；提示词放 `src/prompts/`。
+6. 后台任务：`WorkbenchTaskKind` 登记并实现执行器。
+7. 质量：补 `*.test.mjs`，`test:docs` 校验，可复用件记入 `docs/reusable-assets.md`。
 
-## 独立项目
-- 本项目必须在没有桌面源码或运营研究社源码的机器上单独安装、构建和运行。
-- 禁止跨仓绝对路径、junction、运行时读取其他项目、桌面 `window.no996`、Electron、IPC、5178 桥接、DSH 内核和模块 SDK 依赖。
-- 外部来源仅允许写在 `MIGRATION_PROVENANCE.md`。本地开发说明必须以当前项目内文件为准。
-
-## 实现契约
-- **导航唯一来源**：`src/app/navigation.ts`。页面不自行添加导航项，也不用两套页面逻辑处理旧地址（旧地址走 `legacyRoutes`）。
-- **默认交互形态**：表单 → 生成 → 展示/编辑/复制/下载，多数功能照这个来最省事。每个功能的输入与结果留在自己的领域页面（不要做成全局入口）。
-- **公共组件**：从本项目 `@no996/ui/*`（`packages/ui/src`）导入；`src/components/WorkbenchUI.tsx` 只做网页装配，不另建基础 UI 库。Select 提供 value/label 映射，Tooltip 用公共组件，按钮与结果操作可键盘访问。
-- **演示生成状态**：`useDemoGeneration` 提供待输入、生成中、成功、失败和取消。生成函数消费提交快照，用户编辑结果后不被后续输入变化覆盖；重置、取消与页面卸载要取消待执行计时。
-- **构建边界**：所有构建依赖都在本项目内；Vite 与 TypeScript 的 UI 别名只指向本地 `packages/ui/src`。来源仓库保持只读。
-
-## API、凭证和数据
-- 浏览器不得保存平台模型 API 密钥、支付签名或服务端凭证，不得直连生产供应商 API。
-- 正式模型/计费调用走既有 Go 后端已核实的网页接口；不得未经确认另起服务或数据库。新增接口先在 `src/api/` 加薄封装。
-- 正式余额和订单由服务端裁决。演示模式不能有可被误认为真实的扣款按钮。
-- 创作资料按用户隔离，优先既有文件/对象存储；不得把 localStorage/浏览器缓存称为云端账号存储。
-- 正式 API 失败需显示真实失败，不得回退到成功样例。
-- 素材传输按各功能的 API 契约：部分文件仅用于本机预览；有些流程会在用户确认后上传到已接通的后端/供应商路径。核实上传目标、临时授权与生命周期；临时 URL 在替换、删除和卸载时释放。不得把长期平台凭证交给 Renderer。
-
-## 后台任务（左侧功能统一模式）
-- **后台任务按页面已采用的架构接入**：`src/services/workbench-tasks` 将任务元数据、payloads 与 blobs 存于本机 IndexedDB；远程朋友圈、声音、标题、脚本、IP 视频等已有流程可使用任务队列。小红书/公众号 `social-compose` 保持现有页内生成行为；不得仅因通用文案要求将其强行改为排队。新增能力优先选择与同类页面一致的模式，并以本机任务历史/载荷约定接线；任务历史不上传服务端。
-- **演示模式**（文案工具演示、小红书/公众号占位等）不入队。
-- 新增左侧功能时：在 `WorkbenchTaskKind` 登记 kind → `executors/` 实现 → `WorkbenchTaskProvider` 暴露 `enqueue*` → 页面提交时入队并提示可到任务中心查看；登录态下全局 Runner 串行执行，登出暂停。
-- **历史回填**：执行器把最终产物写进任务的 `payload`；页面首次进入或切换历史时按 `taskId` 读取并回填结果。`meta` 的值必须是字符串（长文本放 `payload`）。
-
-## Agent 内核（生成类功能的统一底座）
-新增生成能力时**不要另写一套循环**，复用 `src/agent/`：
-
-- **分层**：业务页面 → 业务 flow（`features/<name>/agent/`）→ 内核（`src/agent/`）→ 传输层（`src/api/`）。内核**不得** import `features/`；flow **不得** import `services/workbench-tasks`（落库走 `AgentSink` 抽象）。
-- **声明流程**：`stages.ts` 里 `defineFlow(id, stages)`，并在 `src/features/agent-flows.ts` 汇总 import 一次（`main.tsx` 已引入）。否则流程不会注册进 `registry`。
-- **阶段标签要诚实**：`kind: 'model' | 'algo' | 'tool'` —— 纯算法步骤不得标成 AI；算法步骤不记提示词。UI 标签由 `kind` 驱动。
-- **执行与记录**：用 `StageRunner`（`runModel` / `runModelWithTools` / `runTool` / `runAlgo`），它自动记录步骤状态、耗时、实际提示词与每步输出，页面无需自己拼装。注意「记录」不等于「展示」：提示词只进快照供本机排障，界面不得渲染（见上方「查看创作过程」的边界）。流程大图侧栏文案统一走 `src/agent/stage-output-preview.ts` 的 `resolveStageDisplayText` / `formatStageOutputPreview`。
-- **流式输出**：耗时步骤传 `onDelta` 即可让用户看到正文在长出来。**必须**经 `createDisplayDelta` 过滤后再给界面 —— flow 的 `onDelta` 入参是原始 JSON 增量，直接透出去会把花括号和字段名给用户看。
-- **提示词**：`renderTemplate(template, vars, { mark, empty })` 用 `«变量»` 占位；变量缺失时填 `empty`（默认 `无`），不留占位符。写进提示词前用 `withCommonRules` 追加通用约束。
-- **人设注入**：**消费方**页面（视频脚本 / 直播脚本 / 爆款标题 / 朋友圈 / 公众号 / 产品定位等）统一用 `usePersonaInjection()` 管状态 + 右上角 `PersonaBinding`（`src/components/agent/PersonaBinding.tsx`，挂在 `Page` 的 `actions` 插槽，样式复用 `.persona-injection`）。`PersonaInjectionToggle` 只在 IP 视频「高级设置」这类对话框里用，不再作为页头控件。**禁止在页面正文里自造「已关联人设档案 / 默认分身」卡片**——人设是本次生成的开关，属于页头工具区。人设页面本身**不注入**（它是定义方，不是消费方）。**默认开启**；关闭时页面传 `personaContent: undefined`，flow 必须**一个字都不注入**。字段的标签写在提示词模板里（`表达参考人设：«persona»`），flow 只传正文 —— 两处都加前缀会拼出双标题。人设只进提示词，绝不进流式展示。
-- **人设表单预填**（与注入并行、不替代）：启用注入且本机有选中档时，用定位卡片 `formData` 经 `deriveScriptPrefillPatch` / `deriveTitlesPrefillPatch`（`src/lib/persona-form-prefill.ts`）+ `usePersonaFormPrefill` **只填空**已空的表单项；用户已改的不覆盖；关注入不清空表单；换档对新档再填空。`desiredImage` 等语气字段只走 `personaContent` 注入，不写入脚本选填表。细则见 `docs/reusable-assets.md` §3.7。
-- **硬校验**：`runHardCheck` 是唯一合规判定入口（内置违禁词、医疗/收益承诺、虚假紧迫感、无来源数字、分段字数）。分段字数默认 1.3 倍容差；标题这类有硬上限的场景传 `segmentCharTolerance: 1`；`segmentId` 用显示序号，评审与必改清单才能定位到具体那一条。
-- **演示模式**：`createMockAgentClients({ mockResponder })`，应答器**由调用方显式传入业务上下文**（主题/读者/平台），禁止从提示词里正则抠字段 —— 提示词一改就会静默退化成占位符。
-- **无中间截断**：不要在解析阶段按上限截断文本冒充合格产物；超限交给硬校验判为需改项，由改写步骤定向收敛。
-- **收敛**：轮次上限 ≤ 3；留存曲线必须单调不增且起点 100；评分/点击率等预测值不得由随机或占位数派生。
-
-## 页面骨架与控件归属（所有模块统一，2026-10-27 沉淀；2026-10-28 补顶栏对齐）
-新页面**先套骨架，再填内容**；不允许每个模块自己发明页头、上传和人设控件。
-
-**骨架**：`Page`（`src/components/WorkbenchUI.tsx`，`chrome="workbench-tool"`，传 `moduleId` + `layoutClassName`），四个插槽各管一件事：
-
-| 插槽 | 放什么 | 现成件 |
-| --- | --- | --- |
-| `title` | 功能名（导航同名，2–4 字） | `Page` 自带（创作页顶栏用小标题，不靠大号 h2） |
-| `titleExtra`（标题右侧） | 流程说明、视图/历史切换、页内模式切换 | `AgentFlowExplain`、`WorkbenchPageViewTabs` |
-| `actions`（右上角） | 用 `WorkbenchPageChromeActions` 包一层：人设绑定、主操作、次要工具 | `PersonaBinding`、`Button`、`WorkbenchDevToolsMenu` |
-| `headerTrailing`（最右） | 极少数全局工具（一般不用） | 直接传节点，**不要**塞 `WorkbenchPageChromeActions` |
-
-**创作页顶栏贴齐（硬规则，漏登就会顶栏下沉 ~56px）**：
-
-- 只写 `chrome="workbench-tool"` **不够**。还必须在 `src/app/workbench-surface.ts` 的 `WORKBENCH_SURFACE_BY_SEGMENT` 登记路由段，至少含 `workbench-page--fluid workbench-tool-page`（可再加 `<name>-workbench-page` 供模块 CSS 挂载）。
-- 漏登时 `.wb-page-area` 没有 `workbench-tool-page`，`wb-page-area__scroll` 仍带默认 `padding: 32px 36px 48px`，顶栏 `top-chrome` 会离开滚动区顶边（人设页 `top≈38` 对齐，漏登页会漂到 `top≈94`）。
-- 对照正确页：人设卡（`persona`）。样式真相在 `src/styles/workbench-page-chrome.css`（`.wb-page-area.workbench-tool-page .wb-page-area__scroll { padding: 0 }`）。
-- **禁止**在模块 CSS 里再给 `__scroll` / `__top-chrome` 加顶 padding 去「对齐」——先查 surface 是否漏登。
-
-**控件归属规则**：
-
-- **人设** → 右上角 `PersonaBinding`（配 `usePersonaInjection`）。不要页面内再造「已关联人设 / 默认分身」卡片或按钮。
-- **上传附件** → `@no996/ui/attachment-uploader` 的 `AttachmentUploader`（`kind` / `accept` / `maxBytes` / `layout="list"` 或 `"grid"`）。不要手写拖拽区、文件 input 和文件列表。
-- **页签** → `@no996/ui/tabs` 的 `TabsList variant="toolbar"`；**表格** → `@no996/ui/data-table`；**表单项** → `@no996/ui` 的 `Field` / `Input` / `Textarea` / `Select`；**流程进度** → `AgentProgress` + `AgentFlowExplain`；**提示** → `toastSuccess` / `toastError`。以上都已在 `docs/reusable-assets.md` 登记，先查再写。
-- **产物呈现**：结构化产物按固定模板解析成视图模型再渲染（参考 `features/product-position/lib/report-parser.ts`），不要直接把 Markdown 原样丢给用户。
-- **版式**：需要「多记录常驻对照」时可用左轨（`minmax(220px, 280px)`）+ 右内容；**产品定位等以生成主任务为中心的页**改用主区顶栏切换器，不强制左轨。编号语言与首页 bento 一致（11px / 700 / letter-spacing .14em）。区块之间用 1px 分隔线，不用大卡片套整页。
-
-**新增一个左侧模块的最小清单**（照人设 / 标题页抄；**勿只抄页面 JSX 而漏 surface**）：
-
-1. `src/app/navigation.ts` 加导航项（`PageId`、路径、`availability`、`badge`）；`src/App.tsx` 加路由；`src/i18n/locales/*/workbench.json` 加 `nav*` 文案。
-2. **`src/app/workbench-surface.ts` 登记该路由段**（创作工具页：`workbench-page--fluid workbench-tool-page`；需要模块专属样式时再加 `<segment>-workbench-page`）。漏这一步顶栏必错位。
-3. 页面：`src/features/<name>/<Name>Page.tsx` + `views/` + `<name>.css`；`Page` 传 `chrome="workbench-tool"` + `moduleId`；页面只做装配，状态与副作用留在页面层。
-4. 数据与服务：`src/services/<name>/`（类型 + IndexedDB 仓储 + `ownerSub` 隔离），产物原文永久保留、失败不覆盖上一份有效结果。
-5. 生成：`features/<name>/agent/*-flow.ts`（`defineFlow` + `StageRunner`）并在 `src/features/agent-flows.ts` 注册；提示词放 `src/prompts/`。
-6. 后台任务：`WorkbenchTaskKind` 登记 → `executors/` 实现 → `WorkbenchTaskProvider` 暴露 `enqueue*` → `task-display` 补名称与完成提示 → 页面按 `taskId` 观察真实状态。
-7. 质量：纯逻辑补 `*.test.mjs` 并挂进 `package.json` 脚本；`scripts/agent-flow-check/entry.ts` 增加注册与离线端到端断言；`docs/<name>.md` 记录与原型差异；可复用件补进 `docs/reusable-assets.md`。
-
-## 复杂创作页面布局与调试规范（2026-10-14 沉淀）
-- **输入向导整块折叠/展开**：
-  - 视频脚本、直播脚本等长产物页面必须支持将上方的输入面板（含预览轨和表单）整块收起。
-  - 用户在浏览长分镜、提词器或复盘历史时，应享受纯粹的沉浸式工作台，避免上方大向导挤压视口。收起时以轻量摘要条承接并提供快捷唤醒入口。
-- **开发专享调试数据（Dev Fixtures）与生产隔离**：
-  - 复杂表单页面应在 `features/<name>/dev/dev-fixtures.ts` 沉淀高完整度的真实业务测试用例（如水煮肉片家庭做饭案例），并支持**输入配置与成稿生成结果（分镜、评分、演进轨迹）两级 Mock 注入**。
-  - **生产隔离硬守则**：所有调试用例数据与「一键填入完整示例 / 模拟产出结果」按钮，必须严格使用 `import.meta.env.DEV` 包裹。线上生产构建（`npm run build`）时必须物理剔除，生产环境严禁泄漏任何调试入口或测试样例按钮。
-
-## UI 和质量
-- 延用本地 `src/index.css`、`src/App.css` 与 `src/styles/` 的品牌主题和排版；主题色、字体、radius 用本地 CSS 令牌。
-- 保持表单标签、键盘焦点、错误状态、加载/空态和减少动态效果支持（这些是长期要维持的体验基线，不是每个改动都要逐项重做的清单）。输入框与文本域聚焦**不出现** outline / ring / 边框变色（含产品定位、小红书/公众号标题、IP 视频 brief 等）；靠光标表明焦点即可。按钮等非文本控件仍保留中性 `:focus-visible`；错误状态仍须可辨识。窄屏适配尽力而为，不追求全站像素级一致。
-- 改本仓 UI、组件、样式、文档可以直接动手。桌面 / 参考项目 / 后端 / 生产配置不要动。
-- 2026-10-07 用户已授权通过现有 SSH 密钥向部署主机发布独立演示站点 agent.no996ai.cn，内部监听 127.0.0.1:8897，并仅为该子域名申请 HTTPS 证书和新增 Nginx 配置。允许修改站点目录与该子域名的独立配置；禁止改官网、其他服务、后端、DNS 或防火墙。不处理或记录聊天中暴露的密码。**部署主机、SSH 用户、站点目录与证书路径只写在本地 `DEPLOYMENT.md`（不入库，见 `.gitignore`）；任何文档、脚本与示例中都不得出现真实主机地址或凭据。** 超出上述范围先列具体变更并取得确认。
-- 完成时按需验证、默认免测：文档/文案/注释/样式与局部页面小改直接免测，不跑 `typecheck`/`build`/回归测试；`npm run typecheck`、`npm run build`、`npm run test:agent`、`npm run test:voice-tts`（改了生成流程再加 `npm run test:flows`）仅在用户点名验证、提交/发版前、或改动触及构建与公共契约时再跑。收尾只报改了什么、跑了哪条（或免测）、结果是什么，不再每轮必跑。
-- 改了 agent 流程、硬校验、评分/留存算法或任务队列判定后，优先补对应断言（纯函数靠 `npm run test:agent` / `test:voice-tts` 兜住静默退化）；用户明确说免测时可不补，收尾如实说明即可。
-
-## 交付与提交（2026-10-27 约定）
-- 默认**只改本地工作区**：改完代码、`npm run typecheck` 能过即交付，**不要**自行 `git commit` / `git push` / 发版。用户明确说「提交 / 推送 / 上线」时再做，且提交信息写清改了什么。
-- 用户要求「先跑通、不用测试」时，按其指令执行：只保证编译与接线正确，不追加回归与真机验证；后续微调由用户逐条给出。
-- 汇报时只说：改了哪些文件、关键行为变化、跑了哪条检查（或免测）、还有哪些已知边界，不夸大验证范围。
-
-## 部署目标（2026-10-31 约定）
-- **默认只部署测试环境**：用户没有明确说「生产 / 正式服 / 上线到生产」时，构建、上传、数据库同步都只动测试环境。
-- **生产环境只在用户明确点名时操作**：先备份生产数据库与当前程序，核对 `schema_migrations` 版本和待执行迁移，再发布；主机、目录、证书等细节只写本地 `DEPLOYMENT.md`（不入库）。
-- 测试库与生产库相互独立；除用户明确要求「把测试库同步到生产」外，不得用测试数据覆盖生产。
-- 2026-10-31 用户已授权首次部署生产前端、后端并把测试库同步一份到生产；该授权不自动扩展到之后的日常发布，后续仍按上面的默认测试规则执行。
+## 5. UI、质量、交付与部署
+- **UI 质感**：延用 CSS 令牌；输入框/文本域聚焦**不出现** outline/ring/边框变色，以光标指示；保留中性 `:focus-visible` 与错误态辨识。
+- **验证梯度**：默认免测（文档/文案/样式/局部页面小改直接交付）；仅在改动涉及构建/公共契约/流程算法或用户要求时跑 `npm run test:agent` / `test:voice-tts` / `test:docs` / `typecheck` / `build`。收尾如实汇报。
+- **交付与部署**：默认**只改本地工作区**，不自动 commit/push；默认**只部署测试环境**；生产环境部署须用户明确授权，主机与凭据只存本地 `DEPLOYMENT.md`（严禁入库），发布前先备份数据库与程序，核对迁移，严禁测试数据覆盖生产。

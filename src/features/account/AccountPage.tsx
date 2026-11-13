@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Gift, ReceiptText, RefreshCw, Wallet } from 'lucide-react'
+import { Gift, ReceiptText, RefreshCw, Sparkles, Wallet } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { Page, Panel, Notice } from '../../components/WorkbenchUI'
 import { useAuth } from '../../auth/AuthContext'
@@ -42,8 +43,6 @@ export default function AccountPage() {
       : currentSpace?.kind === 'platform'
         ? '平台空间'
         : '个人空间'
-  const periodPoints = balance?.period_points_balance
-  const hasPeriod = typeof periodPoints === 'number'
   const periodExpiresAt = balance?.period_expires_at ? new Date(balance.period_expires_at) : null
   async function fetchAccountData() {
     setLoading(true)
@@ -88,10 +87,18 @@ export default function AccountPage() {
       title="账号与资产"
       description="管理您的登录账号与可用积分资产。"
       actions={
-        <Button variant="outline" size="sm" onClick={fetchAccountData} disabled={loading}>
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          刷新资产
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link to="/workbench/membership">
+            <Button size="sm">
+              <Sparkles size={14} />
+              充值积分
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={fetchAccountData} disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            刷新资产
+          </Button>
+        </div>
       }
     >
       <Panel title="当前登录账户" description="已通过平台安全认证登录。">
@@ -113,30 +120,27 @@ export default function AccountPage() {
               <p>{tenantName || '—'}</p>
             </div>
           )}
-          {hasPeriod ? (
-            <>
-              <div>
-                <span className="field-hint">本期积分</span>
-                <p className="font-semibold text-primary">{periodPoints} 点</p>
-                <span className="text-xs text-muted-foreground">
-                  {periodExpiresAt
-                    ? `到期 ${periodExpiresAt.toLocaleString()}`
-                    : '暂未在途配额'}
-                </span>
-              </div>
-              <div>
-                <span className="field-hint">永久积分</span>
-                <p className="font-semibold">{balance ? balance.points_balance : '—'} 点</p>
-              </div>
-            </>
-          ) : (
-            <div>
-              <span className="field-hint">可用通用积分</span>
-              <p className="font-semibold text-primary">
-                {balance ? balance.points_balance : '—'} 点
-              </p>
-            </div>
-          )}
+          <div>
+            <span className="field-hint">总可用积分</span>
+            <p className="font-semibold text-primary">
+              {balance ? balance.points_balance + (balance.period_points_balance ?? 0) : '—'} 点
+            </p>
+          </div>
+          <div>
+            <span className="field-hint">临时 / 本期积分</span>
+            <p className="font-semibold text-amber-600 dark:text-amber-400">
+              {balance ? balance.period_points_balance ?? 0 : '—'} 点
+            </p>
+            <span className="text-xs text-muted-foreground">
+              {periodExpiresAt
+                ? `到期 ${periodExpiresAt.toLocaleString()} · 优先抵扣`
+                : '消费优先抵扣临时积分'}
+            </span>
+          </div>
+          <div>
+            <span className="field-hint">永久积分</span>
+            <p className="font-semibold">{balance ? balance.points_balance : '—'} 点</p>
+          </div>
           <div>
             <span className="field-hint">专家/高级积分</span>
             <p className="font-semibold">

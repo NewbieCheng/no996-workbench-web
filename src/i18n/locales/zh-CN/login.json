@@ -102,6 +102,7 @@
   "registerBothRequiredHint": "注册时邮箱与手机号均为必填；需先完成邮箱验证码验证。",
   "emailInvalid": "邮箱格式不正确",
   "phoneInvalid": "手机号格式不正确",
+  "phoneDialAria": "国际区号",
   "loginMethodPassword": "密码登录",
   "loginMethodEmailCode": "邮箱验证码",
   "loginMethodLabel": "登录方式",

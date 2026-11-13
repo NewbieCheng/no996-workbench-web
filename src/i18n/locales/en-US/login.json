@@ -102,6 +102,7 @@
   "registerBothRequiredHint": "Email and phone are required for signup; verify your email with a code first.",
   "emailInvalid": "Invalid email format",
   "phoneInvalid": "Invalid phone number",
+  "phoneDialAria": "Country dial code",
   "loginMethodPassword": "Password",
   "loginMethodEmailCode": "Email code",
   "loginMethodLabel": "Sign-in method",
