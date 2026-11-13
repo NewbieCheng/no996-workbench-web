@@ -100,30 +100,30 @@ export default function MembershipPage() {
       title="积分充值与套餐"
       description="统一微信扫码充值与管理员人工充值通道，积分实时到账并在各端同步扣减。"
       actions={
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 rounded-xl border bg-card px-3.5 py-1.5 text-xs shadow-xs">
-            <span className="inline-flex items-center gap-1 font-medium text-primary">
-              <Sparkles className="size-3.5" />
-              {spaceLabel}
-            </span>
-            <span className="text-muted-foreground">
-              可用总积分：<strong className="text-foreground tabular-nums">{totalPoints ?? '—'}</strong>
-            </span>
-            <span className="text-muted-foreground">
-              临时积分：<strong className="text-amber-600 dark:text-amber-400 tabular-nums">{balance?.period_points_balance ?? 0}</strong>
-            </span>
-            <span className="text-muted-foreground">
-              永久积分：<strong className="text-foreground tabular-nums">{balance?.points_balance ?? '—'}</strong>
-            </span>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => void loadBalance()} disabled={loadingBal}>
-            <RefreshCw size={14} className={loadingBal ? 'animate-spin' : ''} />
-            <Coins size={14} />
-            刷新积分
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => void loadBalance()} disabled={loadingBal}>
+          <RefreshCw size={14} className={loadingBal ? 'animate-spin' : ''} />
+          <Coins size={14} />
+          刷新积分
+        </Button>
       }
     >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 text-xs shadow-xs">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-primary">
+          <Sparkles className="size-4" />
+          当前空间：{spaceLabel}
+        </span>
+        <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+          <span>
+            可用总积分：<strong className="text-sm text-foreground tabular-nums">{totalPoints ?? '—'}</strong>
+          </span>
+          <span>
+            临时积分：<strong className="text-sm text-amber-600 dark:text-amber-400 tabular-nums">{balance?.period_points_balance ?? 0}</strong>
+          </span>
+          <span>
+            永久积分：<strong className="text-sm text-foreground tabular-nums">{balance?.points_balance ?? '—'}</strong>
+          </span>
+        </div>
+      </div>
       <div className="overflow-hidden rounded-2xl border bg-card shadow-xs">
         <iframe
           ref={iframeRef}
