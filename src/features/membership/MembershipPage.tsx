@@ -3,6 +3,7 @@ import { Coins, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@no996/ui/button'
 import { Page } from '../../components/WorkbenchUI'
 import { useAuth } from '../../auth/AuthContext'
+import { useTheme } from '../../app/ThemeProvider'
 import { api, getAccessToken, type ApiEnvelope } from '../../api/client'
 import { toastSuccess } from '../../lib/toast'
 
@@ -28,7 +29,9 @@ function resolveConsoleBaseUrl(): string {
 
 export default function MembershipPage() {
   const { currentSpace } = useAuth()
+  const { dark } = useTheme()
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const [iframeHeight, setIframeHeight] = useState(680)
   const [balance, setBalance] = useState<AccountBalanceData | null>(null)
   const [loadingBal, setLoadingBal] = useState(false)
 
@@ -48,35 +51,55 @@ export default function MembershipPage() {
     void loadBalance()
   }, [loadBalance, currentSpace?.kind, currentSpace?.id])
 
-  const syncTokenToIframe = useCallback(() => {
+  const syncToIframe = useCallback(() => {
     const win = iframeRef.current?.contentWindow
+    if (!win) return
     const token = getAccessToken()
-    if (!win || !token) return
-    win.postMessage({ type: 'NO996_AUTH_TOKEN', token }, '*')
-  }, [])
+    if (token) {
+      win.postMessage({ type: 'NO996_AUTH_TOKEN', token }, '*')
+    }
+    win.postMessage({ type: 'NO996_THEME', theme: dark ? 'dark' : 'light' }, '*')
+  }, [dark])
 
   useEffect(() => {
-    syncTokenToIframe()
-  }, [syncTokenToIframe, currentSpace?.kind, currentSpace?.id])
+    syncToIframe()
+  }, [syncToIframe, currentSpace?.kind, currentSpace?.id, dark])
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       const data = event.data
-      if (data && typeof data === 'object' && data.type === 'NO996_PAYMENT_SUCCESS') {
+      if (!data || typeof data !== 'object') return
+      if (data.type === 'NO996_PAYMENT_SUCCESS') {
         toastSuccess('充值成功，正在同步最新积分余额')
         void loadBalance()
+      } else if (data.type === 'NO996_EMBED_READY' || data.type === 'NO996_REQUEST_TOKEN') {
+        syncToIframe()
+      } else if (
+        data.type === 'NO996_EMBED_HEIGHT' &&
+        typeof data.height === 'number' &&
+        data.height > 200
+      ) {
+        setIframeHeight(Math.max(480, Math.ceil(data.height) + 16))
       }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [loadBalance])
+  }, [loadBalance, syncToIframe])
 
   const embedUrl = useMemo(() => {
     const base = resolveConsoleBaseUrl()
+    const token = getAccessToken()
     const params = new URLSearchParams({
       platform: 'workbench',
       embed: '1',
+      hide_header: '1',
+      lock_owner: '1',
+      brand: 'workbench',
+      theme: dark ? 'dark' : 'light',
     })
+    if (token) {
+      params.set('token', token)
+    }
     if (currentSpace?.kind === 'team' && currentSpace.id > 0) {
       params.set('owner_type', '2')
       params.set('owner_id', String(currentSpace.id))
@@ -129,8 +152,9 @@ export default function MembershipPage() {
           ref={iframeRef}
           src={embedUrl}
           title="工作台统一充值中心"
-          onLoad={syncTokenToIframe}
-          className="h-[820px] w-full border-0 bg-background"
+          onLoad={syncToIframe}
+          style={{ height: `${iframeHeight}px` }}
+          className="w-full border-0 bg-background transition-[height] duration-150"
         />
       </div>
     </Page>
